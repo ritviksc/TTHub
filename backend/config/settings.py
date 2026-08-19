@@ -82,6 +82,21 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
+"""
+Will have to change this to PostgreSQL when we deploy the app.
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "mydatabase",
+        "USER": "mydatabaseuser",
+        "PASSWORD": "mypassword",
+        "HOST": "127.0.0.1",
+        "PORT": "5432",
+    }
+}
+
+"""
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -112,9 +127,14 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en-NZ'
 
-TIME_ZONE = 'UTC'
+LANGUAGES = [
+    ("en-NZ", "English (New Zealand)"),
+    ("mi", "Māori"),
+]
+
+TIME_ZONE = 'Pacific/Auckland'
 
 USE_I18N = True
 
