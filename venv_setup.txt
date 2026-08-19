@@ -5,7 +5,7 @@ python -m venv .venv
 
 # Activate venv 
 
-#$ Linux/macOS
+## Linux/macOS
 source .venv/bin/activate
 
 ## Windows PowerShell
