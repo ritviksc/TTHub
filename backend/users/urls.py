@@ -1,10 +1,16 @@
 from django.urls import path
 from . import views
 
+"""
+Frontend
+GET  /login                show login page
+POST /api/auth/login/      submit credentials
+
+Backend
+POST /api/auth/login/      authenticate + create session
+"""
+
+
 urlpatterns = [
-    path('api/set-crsf-token', views.set_crsf_token, name='set_crsf_token'),
-    path('api/login', views.login_view, name="login"),
-    path('api/logout', views.logout_view, name='logout'),
-    path('api/user', views.user, name='user'),
-    path('api/register', views.register, name='register'),
+    path("login/", views.login_view)
 ]
