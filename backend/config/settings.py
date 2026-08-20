@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    "sim"
+    'rest_framework',
+    'users'
 ]
 
 # Send credentials with request
@@ -155,3 +156,7 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+
+# Authenticate user using UserAccount table
+AUTH_USER_MODEL = "users.UserAccount"
