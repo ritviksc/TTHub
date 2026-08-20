@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 @api_view(["POST"])
-def login_view(request):
+def login_view(request) -> Response:
     # Get username and password from POST request
     username = request.data["username"]
     password = request.data["password"]
