@@ -1,4 +1,3 @@
-from django.contrib import admin
 from django.urls import path, include
 
 # Specfic URLS will be used for the backend
@@ -12,5 +11,5 @@ from django.urls import path, include
 """
 
 urlpatterns = [
-    # TODO: Finalise API endpoints for Sprint 1
+    path("api/auth/", include("user.urls"))
 ]
