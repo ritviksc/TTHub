@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-from django.shortcuts import render
-
-# Create your views here.
-=======
 from django.contrib.auth import authenticate, login
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -37,4 +32,3 @@ def login_view(request) -> Response:
         status = status.HTTP_200_OK,
     )
 
->>>>>>> sprint-1
