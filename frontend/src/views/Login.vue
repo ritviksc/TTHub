@@ -1,6 +1,6 @@
 <script setup>
 import axios from 'axios'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { login, fetchCsrfCookie } from '@/apis.js'
 
 import { useRouter } from 'vue-router'
