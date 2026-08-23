@@ -160,3 +160,12 @@ MAILERS = {
 
 # Authenticate user using UserAccount table
 AUTH_USER_MODEL = "users.UserAccount"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}

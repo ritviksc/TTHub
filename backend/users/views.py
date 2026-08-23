@@ -1,12 +1,15 @@
 from django.contrib.auth import authenticate, login
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.utils.decorators import method_decorator
+from rest_framework.permissions import AllowAny
 
 @api_view(["POST"])
 def login_view(request) -> Response:
     # Get username and password from POST request
-    username = request.data["username"]
+    username = request.data.get("username", None)
     password = request.data["password"]
 
 
@@ -32,3 +35,10 @@ def login_view(request) -> Response:
         status = status.HTTP_200_OK,
     )
 
+@ensure_csrf_cookie
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def csrf_view(request):
+    return Response(
+        {"detail": "CSRF cookie set"}
+        )
