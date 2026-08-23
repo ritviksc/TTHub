@@ -44,7 +44,7 @@ INSTALLED_APPS = [
 # Send credentials with request
 # frontend running at localhost:5173
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ORIGINS = ["http://localhost:5173"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
 CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
 
 
