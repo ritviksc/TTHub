@@ -13,6 +13,6 @@ class UserAccount(AbstractUser): # Default fields for user come from AbstractUse
  
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     role = models.CharField(max_length=20, choices=Role.choices)
- 
+
     def __str__(self):
         return self.get_full_name() or self.username

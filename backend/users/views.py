@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny
 def login_view(request) -> Response:
     # Get username and password from POST request
     username = request.data.get("username", None)
-    password = request.data["password"]
+    password = request.data["password", None]
 
 
     user = authenticate(
@@ -21,7 +21,7 @@ def login_view(request) -> Response:
 
     if user is None: # No user found
         return Response(
-            {"error": "Invalid userame or password"},
+            {"error": "Invalid username or password"},
             status = status.HTTP_401_UNAUTHORIZED,
         )
 

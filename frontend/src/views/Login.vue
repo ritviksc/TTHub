@@ -1,7 +1,7 @@
 <script setup>
 import axios from 'axios'
 import { ref } from 'vue'
-import { login } from '@/apis.js'
+import { login, fetchCsrfCookie } from '@/apis.js'
 
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -11,15 +11,23 @@ const password = ref('')
 const error = ref('')
 const loading = ref(false)
 
+const roleRoutes = {
+  super_admin: '/super-admin/dashboard',
+  branch_manager: '/branch-manager/dashboard',
+  instructor: '/instructor/dashboard',
+}
+
+onMounted(fetchCsrfCookie)
+
 async function handleLogin() {
   loading.value = true
   error.value = ""
   try {
-    await login(username.value, password.value)
-    router.push('/testdashboard')
+    const data = await login(username.value, password.value)
+    router.push('/testdashboard') // Can switch to router.push(roleRoutes[data.role]) once we have routing sorted
 
   } catch (e) {
-    e.value = "Login failed"
+    error.value = "Login failed"
 
   } finally {
     loading.value = false
