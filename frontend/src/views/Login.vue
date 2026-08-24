@@ -25,7 +25,7 @@ async function handleLogin() {
   try {
     await fetchCsrfCookie() // validate request
     const data = await login(username.value, password.value)
-    // router.push('/testdashboard') // Can switch to router.push(roleRoutes[data.role]) once we have routing sorted
+    router.push(roleRoutes[data.role])
     console.log(data)
 
   } catch (e) {
