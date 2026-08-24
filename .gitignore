@@ -1,4 +1,29 @@
+# Python virtual environment
 .venv/
+venv/
+env/
+
+# Python cache
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Vue
+node_modules/
+dist/
+build/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+
+# Environment/secrets
 .env
+.env.*
+
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
