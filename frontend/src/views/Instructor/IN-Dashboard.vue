@@ -9,7 +9,7 @@ const router = useRouter()
 </script>
 
 <template>
-    <p>Test Dashboard</p>
+    <p>Instructor Dashboard</p>
 </template>
 
 <style scoped></style>
