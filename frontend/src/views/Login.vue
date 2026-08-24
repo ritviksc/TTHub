@@ -1,7 +1,7 @@
 <script setup>
 import axios from 'axios'
 import { ref, onMounted } from 'vue'
-import { login, fetchCsrfCookie } from '@/apis.js'
+import { TIMEOUT_ERROR, MAX_RETRIES, withRetry, login, fetchCsrfCookie } from '@/apis.js'
 
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -17,24 +17,41 @@ const roleRoutes = {
   instructor: '/instructor/dashboard',
 }
 
-onMounted(fetchCsrfCookie)
+onMounted(async () => {
+  try {
+    await withRetry(MAX_RETRIES, fetchCsrfCookie);
+  } catch (err) {
+    console.error("Unable to get CSRF cookie:",err);
+    error.value = "Unable to connect to server. Try logging in later."
+    
+  }
+});
 
 async function handleLogin() {
   loading.value = true
   error.value = ""
   try {
-    await fetchCsrfCookie() // validate request
     const data = await login(username.value, password.value)
     router.push(roleRoutes[data.role])
     console.log(data)
 
-  } catch (e) {
-    error.value = "Login failed"
-
+  } catch (err) {
+    if (err.code === TIMEOUT_ERROR) {
+      error.value = "The server took too long to respond.";
+    } else if (err.response?.status === 401) {
+        error.value = "Incorrect username or password.";
+    } else if (err.response?.status === 403) {
+        error.value = "Request was rejected. Please refresh and try again.";
+    } else if (!err.response) {
+        error.value = "Unable to reach the server.";
+    } else {
+        error.value = "Something went wrong. Please try again later.";
+    }
   } finally {
     loading.value = false
   }
 }
+
 </script>
 
 <template>
