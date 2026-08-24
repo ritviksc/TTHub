@@ -23,8 +23,10 @@ async function handleLogin() {
   loading.value = true
   error.value = ""
   try {
+    await fetchCsrfCookie() // validate request
     const data = await login(username.value, password.value)
-    router.push('/testdashboard') // Can switch to router.push(roleRoutes[data.role]) once we have routing sorted
+    // router.push('/testdashboard') // Can switch to router.push(roleRoutes[data.role]) once we have routing sorted
+    console.log(data)
 
   } catch (e) {
     error.value = "Login failed"
