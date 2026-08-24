@@ -140,6 +140,7 @@ const activeNav = ref('Overview')
       </div>
     </main>
   </div>
+    <p>Branch Admin Dashboard</p>
 </template>
  
 <style scoped>
