@@ -28,3 +28,8 @@ export async function login(username, password) {
 
   return response.data;
 }
+
+export async function createStaffAccount(payload){
+  const response = await api.post("/auth/staff/", payload)
+  return response.data
+}
