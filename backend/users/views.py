@@ -7,11 +7,11 @@ from django.utils.decorators import method_decorator
 from rest_framework.permissions import AllowAny
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def login_view(request) -> Response:
     # Get username and password from POST request
-    username = request.data.get("username", None)
-    password = request.data["password", None]
-
+    username = request.data.get("username")
+    password = request.data.get("password")
 
     user = authenticate(
         request,
@@ -38,7 +38,7 @@ def login_view(request) -> Response:
 @ensure_csrf_cookie
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def csrf_view(request):
+def csrf_view(request) -> Response:
     return Response(
         {"detail": "CSRF cookie set"}
         )
