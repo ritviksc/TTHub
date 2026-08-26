@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import UserAccount
+from .models import UserAccount, Branch
 
 class StaffCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -31,4 +31,8 @@ class StaffCreateSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
-    
+
+class BranchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Branch
+        fields = ["id", "name", "region"]
