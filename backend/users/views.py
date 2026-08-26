@@ -4,7 +4,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
+from django.contrib.auth import logout
+
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -42,3 +45,11 @@ def csrf_view(request) -> Response:
     return Response(
         {"detail": "CSRF cookie set"}
         )
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def logout_view(request) -> Response:
+    logout(request)
+    return Response(
+        {"detail": "User logged out"}
+    )
