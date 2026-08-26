@@ -1,7 +1,7 @@
 <script setup>
 import axios from 'axios'
 import { ref, onMounted } from 'vue'
-import { TIMEOUT_ERROR, MAX_RETRIES, withRetry, login, fetchCsrfCookie } from '@/apis.js'
+import { TIMEOUT_ERROR, MAX_ATTEMPTS, withRetry, login, fetchCsrfCookie } from '@/apis.js'
 
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -19,7 +19,7 @@ const roleRoutes = {
 
 onMounted(async () => {
   try {
-    await withRetry(MAX_RETRIES, fetchCsrfCookie);
+    await withRetry(MAX_ATTEMPTS, fetchCsrfCookie);
   } catch (err) {
     console.error("Unable to get CSRF cookie:",err);
     error.value = "Unable to connect to server. Try logging in later."
@@ -33,8 +33,7 @@ async function handleLogin() {
   try {
     const data = await login(username.value, password.value)
     router.push(roleRoutes[data.role])
-    console.log(data)
-
+    console.log(data);
   } catch (err) {
     if (err.code === TIMEOUT_ERROR) {
       error.value = "The server took too long to respond.";
