@@ -60,3 +60,9 @@ def logout_view(request) -> Response:
 class StaffCreateView(generics.CreateAPIView):
     serializer_class = StaffCreateSerializer
     permission_classes = [IsSuperAdmin]
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    user = request.user
+    return Response({"email": user.email, "role": user.role})

@@ -16,4 +16,5 @@ urlpatterns = [
     path("csrf/", views.csrf_view),
     path("logout/", views.logout),
     path("staff/", views.StaffCreateView.as_view()),
+    path("me/", views.me_view),
 ]

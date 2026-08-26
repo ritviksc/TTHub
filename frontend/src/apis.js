@@ -99,3 +99,8 @@ export async function createStaffAccount(payload){
   const response = await api.post("/auth/staff/", payload)
   return response.data
 }
+
+export async function fetchMe() {
+  const response = await api.get("/auth/me/")
+  return response.data
+}
