@@ -9,7 +9,12 @@ const router = useRouter()
 </script>
 
 <template>
-    <p>SUDO Dashboard</p>
+    <div class="dashboard">
+        <h1>Super Admin Dashboard</h1>
+        <nav class="dashboard-nav">
+            <RouterLink to="/super-admin/create-staff">+ Create Staff Account</RouterLink>
+        </nav>
+    </div>
 </template>
 
 <style scoped></style>
