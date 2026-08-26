@@ -11,7 +11,7 @@ const api = axios.create({
 
 // Helper function to pause execution for 'ms' milliseconds
 function sleep(ms) {
-  return new Promise(function(resolve) {
+  return new Promise(function (resolve) {
     setTimeout(resolve, ms);
   });
 }
@@ -45,6 +45,8 @@ export async function withRetry(maxRetries, axiosFunction, ...args) {
   }
 }
 
+// fetch Crsf token and store it as a cookie
+// for future requests
 export async function fetchCsrfCookie() {
   await api.get("/auth/csrf/");
 }
@@ -63,14 +65,32 @@ export async function login(username, password) {
       },
     },
     {
-      timeout: 5000 // wait 5 seconds
-
-    },
-    {
+      timeout: 5000, // wait 5 seconds
       transitional: {
         clarifyTimeoutError: true,
       }
-    });
+
+    }
+  );
   return response.data;
 
+}
+
+export async function logout() {
+  const response = await api.post(
+    "/auth/logout/",
+    null,
+    {
+      headers: {
+        "X-CSRFToken": csrfToken,
+      },
+    },
+    {
+      timeout: 5000, // wait 5 seconds
+      transitional: {
+        clarifyTimeoutError: true,
+      }
+    }
+  );
+  return response.data
 }
