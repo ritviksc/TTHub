@@ -3,8 +3,18 @@ from django.db import models
 import uuid
 from django.contrib.auth.models import AbstractUser
 
-class UserAccount(AbstractUser): # Default fields for user come from AbstractUser
+class Branch(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)
+    region = models.CharField(max_length=255, blank=True)
 
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+class UserAccount(AbstractUser): # Default fields for user come from AbstractUser
     # A user of the system will have one of these roles
     class Role(models.TextChoices):
         SUPER_ADMIN = "super_admin", "Super Admin" 
@@ -13,6 +23,14 @@ class UserAccount(AbstractUser): # Default fields for user come from AbstractUse
  
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     role = models.CharField(max_length=20, choices=Role.choices)
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.PROTECT,
+        related_name="staff",
+        null=True,
+        blank=True,
+        help_text="Null for Super Admin, who is not scoped to a single branch.",
+    )
 
     def __str__(self):
         return self.get_full_name() or self.username

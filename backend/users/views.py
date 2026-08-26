@@ -6,6 +6,8 @@ from rest_framework import generics
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from .models import Branch
+from .serializers import BranchSerializer
 
 from django.contrib.auth import logout
 
@@ -65,12 +67,17 @@ def logout_view(request) -> Response:
         {"detail": "User logged out"}
     )
 
-class StaffCreateView(generics.CreateAPIView):
-    serializer_class = StaffCreateSerializer
-    permission_classes = [IsSuperAdmin]
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def me_view(request):
     user = request.user
     return Response({"email": user.email, "role": user.role})
+
+class BranchListView(generics.ListAPIView):
+    queryset = Branch.objects.all()
+    serializer_class = BranchSerializer
+    permission_classes = [IsAuthenticated]
+
+class StaffCreateView(generics.CreateAPIView):
+    serializer_class = StaffCreateSerializer
+    permission_classes = [IsSuperAdmin]

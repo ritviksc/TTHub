@@ -89,3 +89,8 @@ export async function fetchMe() {
   )
   return response.data
 }
+
+export async function listBranches() {
+  const response = await api.get("/auth/branches/")
+  return response.data
+}
