@@ -14,7 +14,7 @@ POST /api/auth/login/      authenticate + create session
 urlpatterns = [    
     path("login/", views.login_view),
     path("csrf/", views.csrf_view),
-    path("logout/", views.logout),
+    path("logout/", views.logout_view),
     path("staff/", views.StaffCreateView.as_view()),
     path("me/", views.me_view),
 ]

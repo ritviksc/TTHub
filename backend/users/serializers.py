@@ -14,7 +14,7 @@ class StaffCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"email": "An account with this email already exists."})
         
         requesting_user = self.context["request"].user
-        if attrs.get("role") == UserAccount.Role.SUPER_ADMIN and requesting_user != UserAccount.Role.SUPER_ADMIN:
+        if attrs.get("role") == UserAccount.Role.SUPER_ADMIN and requesting_user.role != UserAccount.Role.SUPER_ADMIN:
             raise serializers.ValidationError({"role": "Only a Super Admin can grant the Super Admin role."})
         return attrs
     

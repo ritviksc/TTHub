@@ -7,6 +7,9 @@ export const TIMEOUT_ERROR = "ETIMEDOUT";
 const api = axios.create({
   baseURL: "http://localhost:8000/api",
   withCredentials: true,
+  withXSRFToken: true,
+  xsrfCookieName: "csrftoken",
+  xsrfHeaderName: "X-CSRFToken",
 });
 
 // Helper function to pause execution for 'ms' milliseconds
