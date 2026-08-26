@@ -15,6 +15,14 @@ from .serializers import StaffCreateSerializer
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login_view(request) -> Response:
+    # if user is already logged in, return
+    if request.user.is_authenticated:
+        return Response(
+            {"authenticated": True,
+             "role": request.user.role},
+            status=status.HTTP_200_OK,
+        )
+
     # Get username and password from POST request
     username = request.data.get("username")
     password = request.data.get("password")
@@ -35,7 +43,7 @@ def login_view(request) -> Response:
     login(request, user)
 
     return Response(
-        {"message": "Login succesful",
+        {"authenticated": True,
          "role": user.role,
         },
         status = status.HTTP_200_OK,
