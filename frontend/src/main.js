@@ -1,7 +1,12 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
+import './assets/theme.css'
 import './assets/main.css'
+import './assets/nav.css'
+import './assets/public.css'
+import './assets/dashboard.css'
+import { loadUser } from './stores/auth.js'
 
-
-createApp(App).use(router).mount('#app')
+// Load the session before mount, or you get a flash of the public bar on every refresh
+loadUser().finally(() => createApp(App).use(router).mount('#app'))

@@ -1,0 +1,85 @@
+/* The top bar. Shared by NavBar.vue (public) and DashboardNav.vue (signed in)
+   so the two are the same object with different contents, not two lookalikes
+   that drift apart. */
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  height: var(--nav-height);
+  padding: 0 24px;
+
+  background: var(--ink);
+  color: var(--text-on-ink);
+}
+
+/* Left: logo, wordmark, scope */
+.app-nav .nav-left { display: flex; align-items: center; gap: 10px; }
+/* The mark is a tall portrait tiki (~1:2), so height drives it and the width
+   follows. Anything taller than this crowds a 52px bar. */
+.app-nav .nav-logo { height: 32px; width: auto; }
+.app-nav .nav-brand {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-on-ink);
+  text-decoration: none;
+}
+.app-nav .nav-brand:hover { text-decoration: none; opacity: 0.85; }
+.app-nav .nav-scope { font-size: var(--text-sm); color: var(--teal); font-weight: 500; }
+
+/* Middle: pill links */
+.app-nav .nav-links { display: flex; align-items: center; gap: 4px; }
+.app-nav .nav-link {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-base);
+  color: var(--text-on-ink-dim);
+  text-decoration: none;
+  white-space: nowrap;
+  background: none;
+  border: none;
+}
+.app-nav .nav-link:hover { color: var(--text-on-ink); text-decoration: none; }
+.app-nav .nav-link.router-link-active {
+  background: var(--ink-soft);
+  color: var(--text-on-ink);
+}
+
+/* Right: identity and actions */
+.app-nav .nav-right {
+  display: flex; align-items: center; gap: 12px;
+  font-size: var(--text-sm); white-space: nowrap;
+}
+.app-nav .nav-user { color: var(--text-on-ink-dim); }
+.app-nav .nav-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--text-on-ink);
+  border-radius: var(--radius-sm);
+  padding: 5px 14px;
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+.app-nav .nav-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  text-decoration: none;
+}
+.app-nav .nav-btn--accent {
+  background: var(--teal);
+  border-color: var(--teal);
+  font-weight: 600;
+}
+.app-nav .nav-btn--accent:hover { background: var(--teal-dark); border-color: var(--teal-dark); }
+
+@media (max-width: 700px) {
+  .app-nav { padding: 0 14px; gap: 8px; }
+  .app-nav .nav-link { padding: 6px 9px; font-size: var(--text-sm); }
+  .app-nav .nav-scope { display: none; }
+}
+
+@media (max-width: 520px) {
+  .app-nav .nav-user { display: none; }
+  .app-nav .nav-logo { display: none; }
+}
