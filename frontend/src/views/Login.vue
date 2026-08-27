@@ -19,7 +19,7 @@ const loading = ref(false)
 const roleRoutes = {
   super_admin: '/super-admin/dashboard',
   branch_manager: '/branch-manager/dashboard',
-  instructor: '/instructor/dashboard',
+  instructor: '/instructor/dashboard'
 }
 
 onMounted(async () => {
@@ -45,8 +45,6 @@ async function handleSubmit() {
       error.value = 'Incorrect username or password.'
     } else if (err.response?.status === 403) {
       error.value = 'Request was rejected. Please refresh and try again.'
-    } else if (!err.response) {
-      error.value = 'Unable to reach the server.'
     } else {
       error.value = 'Something went wrong. Please try again later.'
     }
