@@ -10,6 +10,7 @@ import SADashboard from '@/views/SuperAdmin/SA-Dashboard.vue'
 import CreateStaff from '@/views/SuperAdmin/CreateStaff.vue'
 import CreateInstructor from '@/views/BranchManager/CreateInstructor.vue'
 import { fetchMe } from '@/apis.js'
+import StaffList from '@/views/StaffList.vue'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -28,7 +29,11 @@ const router = createRouter({
         { path: '/super-admin/create-staff', name: 'create-staff', component: CreateStaff,
             meta: { requiresAuth: true, roles: ['super_admin'] } },
         { path: '/branch-manager/create-instructor', name: 'create-instructor', component: CreateInstructor,
-            meta: { requiresAuth: true, roles: ['branch_manager'] } },
+            meta: { requiresAuth: true, roles: ['branch-manager'] } },
+        { path: '/super-admin/staff', name: 'sa-staff-list', component: StaffList,
+            meta: {requiresAuth: true, roles: ['super_admin'] } },
+        { path: '/branch-manager/staff', name: 'bm-staff-list', component: StaffList,
+            meta: {requiresAuth: true, roles: ['branch_manager'] } },
     ]
 })
 

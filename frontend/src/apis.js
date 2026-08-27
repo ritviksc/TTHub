@@ -94,3 +94,13 @@ export async function listBranches() {
   const response = await api.get("/auth/branches/")
   return response.data
 }
+
+export async function listStaff() {
+  const response = await api.get("/auth/staff/list/")
+  return response.data
+}
+
+export async function deactivateStaff(id) {
+  const response = await api.post(`/auth/staff/${id}/deactivate/`)
+  return response.data
+}
