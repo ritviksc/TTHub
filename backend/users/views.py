@@ -11,7 +11,7 @@ from .serializers import BranchSerializer
 
 from django.contrib.auth import logout
 
-from .permissions import IsSuperAdmin
+from .permissions import IsSuperAdmin, IsBranchManager, IsInstructor
 from .serializers import StaffCreateSerializer
 
 @api_view(["POST"])
@@ -72,4 +72,4 @@ class BranchListView(generics.ListAPIView):
 
 class StaffCreateView(generics.CreateAPIView):
     serializer_class = StaffCreateSerializer
-    permission_classes = [IsSuperAdmin]
+    permission_classes = [IsSuperAdmin | IsBranchManager]
