@@ -18,94 +18,84 @@ function handleSubmit() {
 
 <template>
   <div class="public-page">
-    <article class="panel contact-panel">
-        <h1>Contact Us</h1>
+    <header class="page-head">
+      <p class="eyebrow">Contact us</p>
+      <h1>Get in touch</h1>
+      <p class="lead">
+        Have a question about Taurite Tū, or want to find a class near you? Use the details
+        below, or send us a message and we'll get back to you.
+      </p>
 
-        <p class="lead">
-          Have a question about Taurite Tū, or want to find a class near you? Get in touch
-          using the details below, or send us a message and we'll get back to you.
-        </p>
+      <div class="contact-details">
+        <a class="detail-item" href="tel:+64223449201">
+          <span class="info-icon" aria-hidden="true">📞</span>
+          <span>022 344 9201</span>
+        </a>
 
-        <div class="contact-details">
-          <a class="detail-item" href="tel:+64223449201">
-            <span class="info-icon" aria-hidden="true">📞</span>
-            <span>022 344 9201</span>
-          </a>
+        <span class="detail-divider" aria-hidden="true"></span>
 
-          <span class="detail-divider" aria-hidden="true"></span>
+        <a class="detail-item" href="mailto:tauritetu@tro.org.nz">
+          <span class="info-icon" aria-hidden="true">✉️</span>
+          <span>tauritetu@tro.org.nz</span>
+        </a>
+      </div>
+    </header>
 
-          <a class="detail-item" href="mailto:tauritetu@tro.org.nz">
-            <span class="info-icon" aria-hidden="true">✉️</span>
-            <span>tauritetu@tro.org.nz</span>
-          </a>
+    <form class="contact-form" @submit.prevent="handleSubmit">
+      <h2>Send us a message</h2>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="name">Name</label>
+          <input
+            id="name"
+            v-model="name"
+            type="text"
+            placeholder="Your name"
+            required
+          />
         </div>
 
-        <form class="contact-form" @submit.prevent="handleSubmit">
-          <h2>Send us a message</h2>
+        <div class="field">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            v-model="email"
+            type="email"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+      </div>
 
-          <div class="field-row">
-            <div class="field">
-              <label for="name">Name</label>
-              <input
-                id="name"
-                v-model="name"
-                type="text"
-                placeholder="Your name"
-                required
-              />
-            </div>
+      <div class="field">
+        <label for="message">Message</label>
+        <textarea
+          id="message"
+          v-model="message"
+          rows="5"
+          placeholder="How can we help?"
+          required
+        ></textarea>
+      </div>
 
-            <div class="field">
-              <label for="email">Email</label>
-              <input
-                id="email"
-                v-model="email"
-                type="email"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-          </div>
+      <p v-if="submitted" class="success-msg" role="status">
+        Thanks for reaching out! We'll be in touch soon.
+      </p>
 
-          <div class="field">
-            <label for="message">Message</label>
-            <textarea
-              id="message"
-              v-model="message"
-              rows="5"
-              placeholder="How can we help?"
-              required
-            ></textarea>
-          </div>
-
-          <p v-if="submitted" class="success-msg" role="status">
-            Thanks for reaching out! We'll be in touch soon.
-          </p>
-
-          <button type="submit">Send Message</button>
-        </form>
-    </article>
+      <button type="submit">Send Message</button>
+    </form>
   </div>
 </template>
 
 <style scoped>
-.contact-panel { text-align: center; }
-
-.contact-panel .lead {
-  color: var(--text-secondary);
-  margin: 0 auto 32px;
-  max-width: 560px;
-}
-
 .contact-details {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 24px;
   flex-wrap: wrap;
-  margin-bottom: 48px;
-  padding-bottom: 40px;
-  border-bottom: 1px solid var(--border);
+  margin-top: 32px;
 }
 
 .detail-item {
@@ -126,9 +116,10 @@ function handleSubmit() {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  max-width: 480px;
-  margin: 0 auto;
-  text-align: left;
+  max-width: 520px;
+  margin: 64px auto 0;
+  padding-top: 56px;
+  border-top: 1px solid var(--border);
 }
 
 .contact-form h2 {
@@ -154,6 +145,7 @@ function handleSubmit() {
 @media (max-width: 640px) {
   .contact-details { flex-direction: column; gap: 16px; }
   .detail-divider { display: none; }
+  .contact-form { margin-top: 44px; padding-top: 40px; }
   .field-row { grid-template-columns: 1fr; }
 }
 </style>

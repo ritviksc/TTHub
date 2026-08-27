@@ -1,56 +1,47 @@
-<script setup>
-import { RouterLink } from 'vue-router'
-</script>
-
 <template>
-  <div class="public-page landing">
-    <section class="hero">
-      <p class="eyebrow">Taurite Tū</p>
-      <h1>Programme tracking made simple</h1>
+  <div class="public-page">
+    <header class="page-head">
+      <p class="eyebrow">Nau mai, haere mai ki Taurite Tū</p>
+      <h1>Supporting the kaimahi behind every class</h1>
       <p class="lead">
-        A digital platform designed to help manage, track and monitor
-        programmes across kapa.
+        Taurite Tū is a strength and balance wellness programme designed by Māori, for
+        Māori aged 50 plus and their whānau. This site is where the people who deliver
+        the programme keep track of it.
       </p>
-    </section>
+    </header>
+
+    <div class="prose">
+      <p>
+        Kapa meet each week to work through exercises that build strength, balance and
+        confidence, drawing on mau rākau, tī rākau, poi and other Māori movement forms.
+        What happens in those sessions is recorded here, so the mahi stays visible to the
+        people supporting it.
+      </p>
+
+      <h2>Who this site is for</h2>
+
+      <p>
+        Instructors take the roll for their weekly class, record what the kapa worked
+        through, and note how participants found the session.
+      </p>
+
+      <p>
+        Branch managers see every session their kapa has run and who is coming along, and
+        they set up the instructor accounts for their rohe.
+      </p>
+
+      <p>
+        Nationally, those same records build one picture of the programme across Aotearoa:
+        every kapa, every account, and the reporting that ties them together.
+      </p>
+
+      <h2>Getting started</h2>
+
+      <p>
+        Accounts are created for you by your branch manager, so there is nothing to sign
+        up for here. Once you have one, sign in from the top of the page and you will be
+        taken straight to the pages for your role.
+      </p>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.landing {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 24px;
-}
-
-.hero {
-  max-width: 700px;
-  text-align: center;
-  padding: 80px 0;
-}
-
-.eyebrow {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--teal);
-  margin: 0 0 12px;
-}
-
-.hero h1 {
-  font-size: 52px;
-  color: var(--text);
-  margin-bottom: 16px;
-}
-
-.hero .lead {
-  color: var(--text-secondary);
-  margin-bottom: 32px;
-}
-
-@media (max-width: 640px) {
-  .hero { padding: 56px 0; }
-  .hero h1 { font-size: 34px; }
-}
-</style>
