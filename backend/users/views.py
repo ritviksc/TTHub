@@ -14,6 +14,7 @@ from .serializers import (
     StaffCreateSerializer,
     StaffListSerializer,
 )
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import logout
@@ -254,7 +255,16 @@ class BranchStaffView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user = get_object_or_404(UserAccount, pk=user_id)
+        try:
+            user = UserAccount.objects.get(pk=user_id)
+        except (UserAccount.DoesNotExist, DjangoValidationError, ValueError, TypeError):
+            # user_id arrives in the body, so it is not filtered by the URL
+            # converter the way pk is. A malformed id is "no such user", not a
+            # database error.
+            return Response(
+                {"detail": "No user account matches that id."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         if user.role == UserAccount.Role.SUPER_ADMIN:
             return Response(
