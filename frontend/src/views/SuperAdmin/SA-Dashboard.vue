@@ -2,32 +2,56 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import logoSrc from '@/assets/logo.png'
+import { logout, createStaffAccount, listBranches } from '@/apis.js'
  
 const router = useRouter()
  
-// Current tab — controls which page content is shown
+async function handleLogout() {
+  try { await logout() } catch (e) {}
+  router.push('/login')
+}
+ 
+const showModal = ref(false)
+const branches = ref([])
+const createError = ref(null)
+const createSuccess = ref(false)
+const newStaff = ref({ username: '', password: '', first_name: '', last_name: '', role: 'branch_manager', branch_id: '' })
+ 
+async function openModal() {
+  showModal.value = true
+  createError.value = null
+  createSuccess.value = false
+  try { branches.value = await listBranches() } catch (e) { branches.value = [] }
+}
+ 
+async function submitCreateStaff() {
+  createError.value = null
+  try {
+    await createStaffAccount(newStaff.value)
+    createSuccess.value = true
+    newStaff.value = { username: '', password: '', first_name: '', last_name: '', role: 'branch_manager', branch_id: '' }
+  } catch (e) {
+    createError.value = e.response?.data?.detail ?? 'Failed to create account.'
+  }
+}
+ 
 const activeNav = ref('Administration')
 const navItems = ['National overview', 'Kapa', 'Reporting', 'Users', 'Administration']
  
-// Logged-in super admin info (placeholder — replace with API call later)
 const adminName = ref('Anahera M.')
  
-// ── Users page data ──────────────────────────────────────────────────────────
-// Filter for the users table ('All', 'Branch Managers', 'Instructors', 'Super Admins', 'Pending')
 const activeFilter = ref('All')
 const filters = ['All', 'Branch Managers', 'Instructors', 'Super Admins', 'Pending']
  
-// Hardcoded user list — replace with GET /api/users/ when backend is ready
 const users = ref([
-  { name: 'Materoa Ngātai',   role: 'Branch Manager', kapa: 'Ngā Hau e Whā', status: 'Active' },
-  { name: 'Rāhera Tuhi',      role: 'Branch Manager', kapa: 'Te Puna Ora',    status: 'Active' },
-  { name: 'Piripi Kereama',   role: 'Branch Manager', kapa: 'Te Rerenga',     status: 'Active' },
-  { name: 'Wikitōria Paraone',role: 'Instructor',     kapa: 'Ngā Hau e Whā', status: 'Active' },
-  { name: 'Ngaire Wharekura', role: 'Instructor',     kapa: 'Waiora Kapa',   status: 'Pending' },
-  { name: 'Anahera Mihaka',   role: 'Super Admin',    kapa: null,             status: 'Active' },
+  { name: 'Materoa Ngātai',    role: 'Branch Manager', kapa: 'Ngā Hau e Whā', status: 'Active' },
+  { name: 'Rāhera Tuhi',       role: 'Branch Manager', kapa: 'Te Puna Ora',    status: 'Active' },
+  { name: 'Piripi Kereama',    role: 'Branch Manager', kapa: 'Te Rerenga',     status: 'Active' },
+  { name: 'Wikitōria Paraone', role: 'Instructor',     kapa: 'Ngā Hau e Whā', status: 'Active' },
+  { name: 'Ngaire Wharekura',  role: 'Instructor',     kapa: 'Waiora Kapa',   status: 'Pending' },
+  { name: 'Anahera Mihaka',    role: 'Super Admin',    kapa: null,             status: 'Active' },
 ])
  
-// Filter users based on the active pill button
 const filteredUsers = computed(() => {
   if (activeFilter.value === 'All') return users.value
   if (activeFilter.value === 'Pending') return users.value.filter(u => u.status === 'Pending')
@@ -41,7 +65,7 @@ const filteredUsers = computed(() => {
 <template>
   <div class="sa-dashboard">
  
-    <!-- ── Navbar ─────────────────────────────────────────────────────────── -->
+    <!-- Navbar -->
     <nav class="navbar">
       <div class="nav-left">
         <img :src="logoSrc" class="logo" alt="Taurite Tū logo" />
@@ -58,17 +82,67 @@ const filteredUsers = computed(() => {
           {{ item }}
         </button>
       </div>
-      <div class="nav-right">{{ adminName }} · Super Admin</div>
+      <div class="nav-right">
+        <span>{{ adminName }} · Super Admin</span>
+        <button class="logout-btn" @click="handleLogout">Log out</button>
+      </div>
     </nav>
  
-    <!-- ════════════════════════════════════════════════════════════════════
-         ADMINISTRATION TAB
-    ════════════════════════════════════════════════════════════════════════ -->
+    <!-- Create Staff Account Modal -->
+    <div v-if="showModal" class="modal-backdrop" @click.self="showModal = false">
+      <div class="modal">
+        <h2>Create staff account</h2>
+        <div v-if="createSuccess" class="form-success">
+          Account created successfully. <a href="#" @click="createSuccess = false">Add another</a>
+        </div>
+        <form v-else @submit.prevent="submitCreateStaff">
+          <div class="form-row">
+            <div class="form-group">
+              <label>First name</label>
+              <input v-model="newStaff.first_name" required />
+            </div>
+            <div class="form-group">
+              <label>Last name</label>
+              <input v-model="newStaff.last_name" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Username</label>
+            <input v-model="newStaff.username" required />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input v-model="newStaff.password" type="password" required />
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select v-model="newStaff.role">
+              <option value="branch_manager">Branch Manager</option>
+              <option value="instructor">Instructor</option>
+              <option value="super_admin">Super Admin</option>
+            </select>
+          </div>
+          <div class="form-group" v-if="newStaff.role !== 'super_admin'">
+            <label>Branch (Kapa)</label>
+            <select v-model="newStaff.branch_id" required>
+              <option value="" disabled>Select a branch</option>
+              <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
+            </select>
+          </div>
+          <div v-if="createError" class="form-error">{{ createError }}</div>
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" @click="showModal = false">Cancel</button>
+            <button type="submit" class="btn-primary">Create account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+ 
+    <!-- ADMINISTRATION TAB -->
     <main v-if="activeNav === 'Administration'" class="content">
       <h1>Administration</h1>
       <p class="page-subtitle">Low-frequency national settings and records.</p>
  
-      <!-- Three action cards -->
       <div class="admin-cards">
         <div class="admin-card">
           <h3>Vocabularies</h3>
@@ -90,17 +164,13 @@ const filteredUsers = computed(() => {
       <p class="demo-note">Demonstration data only. All names, kapa and quotes are fictional.</p>
     </main>
  
-    <!-- ════════════════════════════════════════════════════════════════════
-         USERS TAB
-    ════════════════════════════════════════════════════════════════════════ -->
+    <!-- USERS TAB -->
     <main v-else-if="activeNav === 'Users'" class="content">
       <div class="page-header">
         <h1>Users</h1>
-        <!-- Add user button — will open a form/modal once that's built -->
-        <button class="btn-primary">Add user</button>
+        <button class="btn-primary" @click="openModal">Add user</button>
       </div>
  
-      <!-- Filter pills -->
       <div class="pills">
         <button
           v-for="f in filters"
@@ -112,7 +182,6 @@ const filteredUsers = computed(() => {
         </button>
       </div>
  
-      <!-- Users table -->
       <table class="data-table">
         <thead>
           <tr>
@@ -137,9 +206,7 @@ const filteredUsers = computed(() => {
       <p class="demo-note">Demonstration data only. All names, kapa and quotes are fictional.</p>
     </main>
  
-    <!-- ════════════════════════════════════════════════════════════════════
-         OTHER TABS (placeholder until those pages are built)
-    ════════════════════════════════════════════════════════════════════════ -->
+    <!-- OTHER TABS -->
     <main v-else class="content">
       <div class="placeholder-page">
         <h2>{{ activeNav }}</h2>
@@ -159,14 +226,12 @@ const filteredUsers = computed(() => {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
  
-/* Navbar */
 .navbar {
   display: flex; align-items: center; justify-content: space-between;
   background: #1a1a1a; color: white; padding: 0 24px; height: 52px; gap: 16px;
 }
 .nav-left { display: flex; align-items: center; gap: 8px; }
-.logo { height: 30px; width: auto; filter: brightness(0) invert(1); }
-.brand { font-weight: 700; font-size: 15px; }
+.logo { height: 30px; width: auto; }.brand { font-weight: 700; font-size: 15px; }
 .scope { font-size: 12px; color: #4D9298; font-weight: 500; }
 .nav-links { display: flex; gap: 4px; }
 .nav-link {
@@ -175,71 +240,62 @@ const filteredUsers = computed(() => {
 }
 .nav-link:hover { color: white; }
 .nav-link.active { background: #333; color: white; border-radius: 20px; }
-.nav-right { font-size: 12px; opacity: 0.7; white-space: nowrap; }
+.nav-right { display: flex; align-items: center; gap: 12px; font-size: 12px; opacity: 0.85; white-space: nowrap; }
+.logout-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer; }
+.logout-btn:hover { background: rgba(255,255,255,0.25); }
  
-/* Content */
 .content { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
  
 h1 { font-size: 28px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
 .page-subtitle { font-size: 13px; color: #888; margin-bottom: 32px; }
  
-/* Administration cards */
 .admin-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 48px; }
-.admin-card {
-  background: white; border-radius: 10px; padding: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-}
+.admin-card { background: white; border-radius: 10px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
 .admin-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; color: #1a1a1a; }
 .admin-card p { font-size: 13px; color: #777; line-height: 1.5; margin-bottom: 16px; }
 .admin-card a { font-size: 13px; font-weight: 600; color: #1a1a1a; text-decoration: none; }
 .admin-card a:hover { text-decoration: underline; }
  
-/* Users page */
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.btn-primary {
-  background: #7a2e2e; color: white; border: none; border-radius: 6px;
-  padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
-}
+.btn-primary { background: #7a2e2e; color: white; border: none; border-radius: 6px; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .btn-primary:hover { background: #6a2424; }
  
-/* Filter pills */
 .pills { display: flex; gap: 8px; margin-bottom: 20px; }
-.pill {
-  padding: 6px 16px; border: 1.5px solid #ccc; border-radius: 20px;
-  font-size: 13px; background: white; cursor: pointer; color: #444;
-}
+.pill { padding: 6px 16px; border: 1.5px solid #ccc; border-radius: 20px; font-size: 13px; background: white; cursor: pointer; color: #444; }
 .pill:hover { border-color: #888; }
 .pill.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
  
-/* Table */
 .data-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
-.data-table th {
-  text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600;
-  color: #888; background: #f7f4ef; border-bottom: 1px solid #e8e2d8;
-}
+.data-table th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; color: #888; background: #f7f4ef; border-bottom: 1px solid #e8e2d8; }
 .data-table td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #f0ede6; color: #333; }
 .data-table tr:last-child td { border-bottom: none; }
  
-/* Role badges */
-.role-badge {
-  display: inline-block; padding: 3px 10px; border-radius: 20px;
-  font-size: 11px; font-weight: 500; background: #e8e2d8; color: #555;
-}
+.role-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; background: #e8e2d8; color: #555; }
  
-/* Status badges */
-.status-badge {
-  display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
-}
+.status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
 .status-badge.active  { background: #e6f4ec; color: #2a7a4a; }
 .status-badge.pending { background: #e0f2f3; color: #2a7a7a; }
  
 .edit-cell a { color: #7a2e2e; font-size: 13px; font-weight: 600; text-decoration: none; }
 .edit-cell a:hover { text-decoration: underline; }
  
-/* Demo note */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal { background: white; border-radius: 12px; padding: 32px; width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+.modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 24px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.form-group label { font-size: 12px; font-weight: 600; color: #555; }
+.form-group input, .form-group select { border: 1.5px solid #ddd; border-radius: 6px; padding: 8px 12px; font-size: 13px; outline: none; }
+.form-group input:focus, .form-group select:focus { border-color: #4D9298; }
+.form-error { background: #fdecea; color: #c0392b; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
+.form-success { background: #e6f4ec; color: #2a7a4a; border-radius: 6px; padding: 14px; font-size: 13px; }
+.form-success a { color: #2a7a4a; font-weight: 600; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.btn-cancel { background: #333; border: 1.5px solid #ddd; border-radius: 6px; padding: 8px 18px; font-size: 13px; cursor: pointer; }
+.btn-cancel:hover { border-color: #888; }
+ 
 .demo-note { text-align: center; font-size: 12px; color: #aaa; margin-top: 48px; }
  
-/* Placeholder */
 .placeholder-page { text-align: center; padding: 80px; color: #aaa; }
 .placeholder-page h2 { font-size: 20px; margin-bottom: 8px; color: #888; }
 </style>

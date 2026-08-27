@@ -1,12 +1,16 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-// Import logo so Vite can resolve the asset path correctly
 import logoSrc from '@/assets/logo.png'
+import { logout } from '@/apis.js'
  
 const router = useRouter()
  
-// Hardcoded placeholder data — swap these out for real API calls later
+async function handleLogout() {
+  try { await logout() } catch (e) {}
+  router.push('/login')
+}
+ 
 const branchName = ref('Ngā Hau e Whā')
 const managerName = ref('Materoa N.')
  
@@ -54,7 +58,10 @@ const activeNav = ref('Overview')
           {{ item }}
         </button>
       </div>
-      <div class="nav-right">{{ managerName }} · Branch Manager</div>
+      <div class="nav-right">
+        <span>{{ managerName }} · Branch Manager</span>
+        <button class="logout-btn" @click="handleLogout">Log out</button>
+      </div>
     </nav>
  
     <main class="content">
@@ -140,7 +147,6 @@ const activeNav = ref('Overview')
       </div>
     </main>
   </div>
-    <p>Branch Admin Dashboard</p>
 </template>
  
 <style scoped>
@@ -157,8 +163,7 @@ const activeNav = ref('Overview')
   background: #4D9298; color: white; padding: 0 24px; height: 56px; gap: 16px;
 }
 .nav-left { display: flex; align-items: center; gap: 10px; }
-.logo { height: 36px; width: auto; filter: brightness(0) invert(1); }
-.brand { font-weight: 700; font-size: 16px; letter-spacing: 0.3px; }
+.logo { height: 30px; width: auto; }.brand { font-weight: 700; font-size: 16px; letter-spacing: 0.3px; }
 .branch-name { font-size: 12px; opacity: 0.75; }
 .nav-links { display: flex; gap: 4px; }
 .nav-link {
@@ -168,7 +173,12 @@ const activeNav = ref('Overview')
 }
 .nav-link:hover { background: rgba(255,255,255,0.15); color: white; }
 .nav-link.active { background: rgba(255,255,255,0.2); color: white; font-weight: 600; }
-.nav-right { font-size: 12px; opacity: 0.85; white-space: nowrap; }
+.nav-right { display: flex; align-items: center; gap: 12px; font-size: 12px; opacity: 0.85; white-space: nowrap; }
+.logout-btn {
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+  color: white; border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer;
+}
+.logout-btn:hover { background: rgba(255,255,255,0.25); }
  
 .content { max-width: 1100px; margin: 0 auto; padding: 36px 24px; }
  
