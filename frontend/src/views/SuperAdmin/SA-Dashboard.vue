@@ -1,8 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import logoSrc from '@/assets/logo.png'
-import { logout, createStaffAccount, listBranches } from '@/apis.js'
+import { logout, createStaffAccount, listBranches, listStaff, fetchMe, deactivateStaff } from '@/apis.js'
  
 const router = useRouter()
  
@@ -15,7 +15,7 @@ const showModal = ref(false)
 const branches = ref([])
 const createError = ref(null)
 const createSuccess = ref(false)
-const newStaff = ref({ username: '', password: '', first_name: '', last_name: '', role: 'branch_manager', branch_id: '' })
+const newStaff = ref({ email: '', password: '', first_name: '', last_name: '', role: 'branch_manager', branch_id: '' })
  
 async function openModal() {
   showModal.value = true
@@ -29,35 +29,50 @@ async function submitCreateStaff() {
   try {
     await createStaffAccount(newStaff.value)
     createSuccess.value = true
-    newStaff.value = { username: '', password: '', first_name: '', last_name: '', role: 'branch_manager', branch_id: '' }
+    newStaff.value = { email: '', password: '', first_name: '', last_name: '', role: 'branch_manager', branch_id: '' }
   } catch (e) {
     createError.value = e.response?.data?.detail ?? 'Failed to create account.'
+  }
+}
+
+async function handleDeactivate(id) {
+  if (!confirm('Deactivate this account?')) return
+  try {
+    await deactivateStaff(id)
+    users.value = await listStaff()  // refresh so the row reflects the change
+  } catch (e) {
+    // could surface this in a toast/error area if you have one
   }
 }
  
 const activeNav = ref('Administration')
 const navItems = ['National overview', 'Kapa', 'Reporting', 'Users', 'Administration']
- 
-const adminName = ref('Anahera M.')
+
  
 const activeFilter = ref('All')
-const filters = ['All', 'Branch Managers', 'Instructors', 'Super Admins', 'Pending']
+const filters = ['All', 'Branch Managers', 'Instructors', 'Super Admins']
  
-const users = ref([
-  { name: 'Materoa Ngātai',    role: 'Branch Manager', kapa: 'Ngā Hau e Whā', status: 'Active' },
-  { name: 'Rāhera Tuhi',       role: 'Branch Manager', kapa: 'Te Puna Ora',    status: 'Active' },
-  { name: 'Piripi Kereama',    role: 'Branch Manager', kapa: 'Te Rerenga',     status: 'Active' },
-  { name: 'Wikitōria Paraone', role: 'Instructor',     kapa: 'Ngā Hau e Whā', status: 'Active' },
-  { name: 'Ngaire Wharekura',  role: 'Instructor',     kapa: 'Waiora Kapa',   status: 'Pending' },
-  { name: 'Anahera Mihaka',    role: 'Super Admin',    kapa: null,             status: 'Active' },
-])
+const adminName = ref('')
+const users = ref([])
+
+onMounted(async () => {
+  try {
+    const me = await fetchMe()
+    adminName.value = `${me.first_name ?? ''} ${me.last_name ?? ''}`.trim() || me.email
+  } catch (e) { /* guard already redirects if this fails */ }
+
+  try {
+    users.value = await listStaff()
+  } catch (e) {
+    users.value = []
+  }
+})
  
 const filteredUsers = computed(() => {
   if (activeFilter.value === 'All') return users.value
-  if (activeFilter.value === 'Pending') return users.value.filter(u => u.status === 'Pending')
-  if (activeFilter.value === 'Branch Managers') return users.value.filter(u => u.role === 'Branch Manager')
-  if (activeFilter.value === 'Instructors') return users.value.filter(u => u.role === 'Instructor')
-  if (activeFilter.value === 'Super Admins') return users.value.filter(u => u.role === 'Super Admin')
+  if (activeFilter.value === 'Branch Managers') return users.value.filter(u => u.role === 'branch_manager')
+  if (activeFilter.value === 'Instructors') return users.value.filter(u => u.role === 'instructor')
+  if (activeFilter.value === 'Super Admins') return users.value.filter(u => u.role === 'super_admin')
   return users.value
 })
 </script>
@@ -107,8 +122,8 @@ const filteredUsers = computed(() => {
             </div>
           </div>
           <div class="form-group">
-            <label>Username</label>
-            <input v-model="newStaff.username" required />
+            <label>Email</label>
+            <input v-model="newStaff.email" required />
           </div>
           <div class="form-group">
             <label>Password</label>
@@ -124,7 +139,7 @@ const filteredUsers = computed(() => {
           </div>
           <div class="form-group" v-if="newStaff.role !== 'super_admin'">
             <label>Branch (Kapa)</label>
-            <select v-model="newStaff.branch_id" required>
+            <select v-model="newStaff.branch" required>
               <option value="" disabled>Select a branch</option>
               <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
             </select>
@@ -193,13 +208,15 @@ const filteredUsers = computed(() => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in filteredUsers" :key="user.name">
-            <td>{{ user.name }}</td>
-            <td><span :class="['role-badge', user.role.toLowerCase().replace(' ', '-')]">{{ user.role }}</span></td>
-            <td>{{ user.kapa ?? '—' }}</td>
-            <td><span :class="['status-badge', user.status.toLowerCase()]">{{ user.status }}</span></td>
-            <td class="edit-cell"><a href="#">Edit</a></td>
-          </tr>
+            <tr v-for="user in filteredUsers" :key="user.id">
+                <td>{{ user.first_name }} {{ user.last_name }}</td>
+                <td><span :class="['role-badge', user.role.replace('_', '-')]">{{ user.role }}</span></td>
+                <td>{{ user.branch_name ?? '—' }}</td>
+                <td><span :class="['status-badge', user.is_active ? 'active' : 'inactive']">{{ user.is_active ? 'Active' : 'Inactive' }}</span></td>
+                <td class="edit-cell">
+                    <a v-if="user.is_active" href="#" @click.prevent="handleDeactivate(user.id)">Deactivate</a>
+                </td>
+            </tr>
         </tbody>
       </table>
  

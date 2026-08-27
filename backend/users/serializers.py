@@ -43,6 +43,11 @@ class BranchSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "region"]
 
 class StaffListSerializer(serializers.ModelSerializer):
+    branch_name = serializers.SerializerMethodField()
+
     class Meta:
         model = UserAccount
-        fields = ["id", "email", "first_name", "last_name", "role", "branch", "is_active"]
+        fields = ["id", "email", "first_name", "last_name", "role", "branch_name", "is_active"]
+
+    def get_branch_name(self, obj):
+        return obj.branch.name if obj.branch else None
