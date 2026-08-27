@@ -16,6 +16,12 @@ const password = ref('')
 const error = ref('')
 const loading = ref(false)
 
+const roleRoutes = {
+  super_admin: '/super-admin/dashboard',
+  branch_manager: '/branch-manager/dashboard',
+  instructor: '/instructor/dashboard',
+}
+
 onMounted(async () => {
   try {
     await withRetry(MAX_ATTEMPTS, fetchCsrfCookie)
@@ -30,11 +36,8 @@ async function handleSubmit() {
   error.value = ''
 
   try {
-    await login(username.value, password.value)
-
-    // One login for everyone.
-    // The backend handles the user's role/permissions.
-    router.push('/')
+    const data = await login(username.value, password.value)
+    router.push(roleRoutes[data.role] ?? '/')
   } catch (err) {
     if (err.code === TIMEOUT_ERROR) {
       error.value = 'The server took too long to respond.'

@@ -28,7 +28,7 @@ function sleep(ms) {
 export async function withRetry(maxRetries, axiosFunction, ...args) {
   // Set default value manually if not provided
   if (maxRetries === undefined || maxRetries === null)
-    maxRetries = MAX_RETRIES
+    maxRetries = MAX_ATTEMPTS
 
   for (let x = 1; x <= maxRetries; x++) {
     try {
