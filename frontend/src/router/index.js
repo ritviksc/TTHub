@@ -8,6 +8,7 @@ import BMDashboard from '@/views/BranchManager/BM-Dashboard.vue'
 import INDashboard from '@/views/Instructor/IN-Dashboard.vue'
 import SADashboard from '@/views/SuperAdmin/SA-Dashboard.vue'
 import CreateStaff from '@/views/SuperAdmin/CreateStaff.vue'
+import CreateInstructor from '@/views/BranchManager/CreateInstructor.vue'
 import { fetchMe } from '@/apis.js'
 
 const router = createRouter({
@@ -26,6 +27,8 @@ const router = createRouter({
             meta: {requiresAuth: true, roles: ['super_admin'] } },
         { path: '/super-admin/create-staff', name: 'create-staff', component: CreateStaff,
             meta: { requiresAuth: true, roles: ['super_admin'] } },
+        { path: '/branch-manager/create-instructor', name: 'create-instructor', component: CreateInstructor,
+            meta: { requiresAuth: true, roles: ['branch_manager'] } },
     ]
 })
 

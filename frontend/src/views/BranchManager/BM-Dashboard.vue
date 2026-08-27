@@ -9,7 +9,12 @@ const router = useRouter()
 </script>
 
 <template>
-    <p>Branch Admin Dashboard</p>
+    <div class="dashboard">
+        <h1>Branch Manager Dashboard</h1>
+        <nav class="dashboard-nav">
+            <RouterLink to="/branch-manager/create-instructor">+ Create Instructor</RouterLink>
+        </nav>
+    </div>
 </template>
 
 <style scoped></style>
