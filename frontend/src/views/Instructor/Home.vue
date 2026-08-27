@@ -102,7 +102,7 @@ const alerts = ref([
 
       </div>
 
-      <p class="demo-note">Demonstration data only. All names, kapa and quotes are fictional.</p>
+      <p class="demo-note">Demonstration data only. All names, branches and quotes are fictional.</p>
     </main>
   </div>
 </template>

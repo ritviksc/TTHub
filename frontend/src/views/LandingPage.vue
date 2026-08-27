@@ -12,7 +12,7 @@
 
     <div class="prose">
       <p>
-        Kapa meet each week to work through exercises that build strength, balance and
+        Branches run a class each week, working through exercises that build strength, balance and
         confidence, drawing on mau rākau, tī rākau, poi and other Māori movement forms.
         What happens in those sessions is recorded here, so the mahi stays visible to the
         people supporting it.
@@ -21,18 +21,18 @@
       <h2>Who this site is for</h2>
 
       <p>
-        Instructors take the roll for their weekly class, record what the kapa worked
+        Instructors take the roll for their weekly class, record what the class worked
         through, and note how participants found the session.
       </p>
 
       <p>
-        Branch managers see every session their kapa has run and who is coming along, and
+        Branch managers see every session their branch has run and who is coming along, and
         they set up the instructor accounts for their rohe.
       </p>
 
       <p>
         Nationally, those same records build one picture of the programme across Aotearoa:
-        every kapa, every account, and the reporting that ties them together.
+        every branch, every account, and the reporting that ties them together.
       </p>
 
       <h2>Getting started</h2>

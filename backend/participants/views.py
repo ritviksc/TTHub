@@ -18,8 +18,8 @@ ANY_STAFF = [IsSuperAdmin | IsBranchManager | IsInstructor]
 def participants_for(user):
     """Every participant this user is allowed to touch.
 
-    A Super Admin sees the motu. Everyone else is scoped to their own kapa,
-    which is what keeps one kapa's records out of another's screens.
+    A Super Admin sees the motu. Everyone else is scoped to their own branch,
+    which is what keeps one branch's records out of another's screens.
     """
     qs = Participant.objects.select_related("branch")
     if user.role != UserAccount.Role.SUPER_ADMIN:
@@ -63,7 +63,7 @@ class ParticipantListCreateView(generics.ListCreateAPIView):
 
 
 class ParticipantDetailView(generics.RetrieveUpdateAPIView):
-    """GET for the participant record, PATCH for edits from the kapa page."""
+    """GET for the participant record, PATCH for edits from the branch page."""
 
     serializer_class = ParticipantSerializer
     permission_classes = ANY_STAFF

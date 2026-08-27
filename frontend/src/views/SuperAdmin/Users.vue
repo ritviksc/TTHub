@@ -122,7 +122,7 @@ async function handleDeactivate(id) {
           </div>
 
           <div class="form-group" v-if="newStaff.role !== 'super_admin'">
-            <label>Branch (Kapa)</label>
+            <label>Branch</label>
             <select v-model="newStaff.branch" required>
               <option value="" disabled>Select a branch</option>
               <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
@@ -164,7 +164,7 @@ async function handleDeactivate(id) {
             <th>Name</th>
             <th>Email</th>
             <th>Role</th>
-            <th>Kapa</th>
+            <th>Branch</th>
             <th>Status</th>
             <th></th>
           </tr>

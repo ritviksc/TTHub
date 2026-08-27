@@ -8,7 +8,7 @@ from .models import Participant
 
 
 class ParticipantSerializer(serializers.ModelSerializer):
-    """Full record: used for create, retrieve and edit on the kapa page."""
+    """Full record: used for create, retrieve and edit on the branch page."""
 
     full_name = serializers.CharField(read_only=True)
     branch_name = serializers.CharField(source="branch.name", read_only=True)
@@ -45,13 +45,13 @@ class ParticipantSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         user = self.context["request"].user
 
-        # Only a Super Admin picks the kapa. For everyone else it is forced to
+        # Only a Super Admin picks the branch. For everyone else it is forced to
         # their own, so a branch manager cannot create a participant in, or move
-        # one to, a kapa they do not run.
+        # one to, a branch they do not run.
         if user.role != UserAccount.Role.SUPER_ADMIN:
             attrs["branch"] = user.branch
         elif self.instance is None and not attrs.get("branch"):
-            raise serializers.ValidationError({"branch": "Kapa is required."})
+            raise serializers.ValidationError({"branch": "Branch is required."})
 
         return attrs
 

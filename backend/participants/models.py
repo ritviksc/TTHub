@@ -4,7 +4,7 @@ from django.db import models
 
 
 class Participant(models.Model):
-    """Someone who attends a kapa. Not a system user: participants never log in,
+    """Someone who attends a branch. Not a system user: participants never log in,
     so this deliberately does not extend UserAccount."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -14,7 +14,7 @@ class Participant(models.Model):
     preferred_name = models.CharField(
         max_length=150,
         blank=True,
-        help_text="What the kapa actually calls them, if different.",
+        help_text="What the branch actually calls them, if different.",
     )
 
     date_of_birth = models.DateField(null=True, blank=True)
@@ -31,7 +31,7 @@ class Participant(models.Model):
         "users.Branch",
         on_delete=models.PROTECT,
         related_name="participants",
-        help_text="The kapa this participant attends.",
+        help_text="The branch this participant attends.",
     )
 
     joined_on = models.DateField(null=True, blank=True)

@@ -15,5 +15,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("users.urls")),
     path("api/participants/", include("participants.urls")),
-    path("api/kapa/", include("users.kapa_urls")),
+    path("api/branches/", include("users.branch_urls")),
 ]

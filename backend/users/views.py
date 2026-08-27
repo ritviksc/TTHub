@@ -9,7 +9,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Branch, UserAccount
 from .serializers import (
     BranchSerializer,
-    KapaListSerializer,
+    BranchDetailSerializer,
+    BranchListSerializer,
     StaffCreateSerializer,
     StaffListSerializer,
 )
@@ -111,9 +112,52 @@ ACTIVE_MANAGERS = UserAccount.objects.filter(
     role=UserAccount.Role.BRANCH_MANAGER, is_active=True
 )
 
+ACTIVE_INSTRUCTORS = UserAccount.objects.filter(
+    role=UserAccount.Role.INSTRUCTOR, is_active=True
+)
 
-class KapaListCreateView(generics.ListCreateAPIView):
-    """The Kapa table, and the Add kapa action behind it.
+
+def branches_for(user):
+    """Every branch this user may see, with the columns the table needs.
+
+    A Super Admin works nationally; everyone else is scoped to their own branch,
+    the same rule the participant endpoints use.
+    """
+    qs = Branch.objects.annotate(
+        participant_count=Count(
+            "participants",
+            filter=Q(participants__is_active=True),
+            distinct=True,
+        ),
+        manager_count=Count(
+            "staff",
+            filter=Q(
+                staff__role=UserAccount.Role.BRANCH_MANAGER,
+                staff__is_active=True,
+            ),
+            distinct=True,
+        ),
+        instructor_count=Count(
+            "staff",
+            filter=Q(
+                staff__role=UserAccount.Role.INSTRUCTOR,
+                staff__is_active=True,
+            ),
+            distinct=True,
+        ),
+    ).prefetch_related(
+        Prefetch("staff", queryset=ACTIVE_MANAGERS, to_attr="managers"),
+        Prefetch("staff", queryset=ACTIVE_INSTRUCTORS, to_attr="instructors"),
+    )
+
+    if user.role != UserAccount.Role.SUPER_ADMIN:
+        qs = qs.filter(pk=user.branch_id)
+
+    return qs
+
+
+class BranchListCreateView(generics.ListCreateAPIView):
+    """The Branch table, and the Add branch action behind it.
 
     Every signed-in role can read the list; only a Super Admin can add one.
     """
@@ -125,28 +169,11 @@ class KapaListCreateView(generics.ListCreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method == "GET":
-            return KapaListSerializer
+            return BranchListSerializer
         return BranchSerializer
 
     def get_queryset(self):
-        qs = (
-            Branch.objects.annotate(
-                participant_count=Count(
-                    "participants",
-                    filter=Q(participants__is_active=True),
-                    distinct=True,
-                ),
-                manager_count=Count(
-                    "staff",
-                    filter=Q(
-                        staff__role=UserAccount.Role.BRANCH_MANAGER,
-                        staff__is_active=True,
-                    ),
-                    distinct=True,
-                ),
-            )
-            .prefetch_related(Prefetch("staff", queryset=ACTIVE_MANAGERS, to_attr="managers"))
-        )
+        qs = branches_for(self.request.user)
 
         search = self.request.query_params.get("search", "").strip()
         if search:
@@ -156,3 +183,126 @@ class KapaListCreateView(generics.ListCreateAPIView):
             qs = qs.filter(manager_count=0)
 
         return qs
+
+
+class BranchDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """One branch: the detail page reads it, a Super Admin edits or deletes it."""
+
+    serializer_class = BranchDetailSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsSuperAdmin()]
+
+    def get_queryset(self):
+        return branches_for(self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        """Deleting a branch is refused while anyone still points at it.
+
+        Both UserAccount.branch and Participant.branch are PROTECT, so the
+        alternative is a database error. Saying which records are in the way is
+        more use than a 500, and it keeps people's records from vanishing with
+        the branch they happened to belong to.
+        """
+        branch = self.get_object()
+
+        blockers = []
+        staff_count = branch.staff.count()
+        participant_count = branch.participants.count()
+        if staff_count:
+            blockers.append(f"{staff_count} staff account{'s' if staff_count > 1 else ''}")
+        if participant_count:
+            blockers.append(
+                f"{participant_count} participant{'s' if participant_count > 1 else ''}"
+            )
+
+        if blockers:
+            return Response(
+                {
+                    "detail": (
+                        f"Cannot delete {branch.name}: it still has "
+                        + " and ".join(blockers)
+                        + ". Move or remove them first."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        branch.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class BranchStaffView(generics.GenericAPIView):
+    """Assign someone to this branch in a given role.
+
+    The role comes from the URL via as_view(role=...), so managers and
+    instructors run through exactly the same rules.
+    """
+
+    permission_classes = [IsSuperAdmin]
+    role = None
+
+    def post(self, request, pk):
+        branch = get_object_or_404(Branch, pk=pk)
+        user_id = request.data.get("user_id")
+
+        if not user_id:
+            return Response(
+                {"detail": "user_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = get_object_or_404(UserAccount, pk=user_id)
+
+        if user.role == UserAccount.Role.SUPER_ADMIN:
+            return Response(
+                {"detail": "A Super Admin works nationally and cannot be assigned to a branch."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not user.is_active:
+            return Response(
+                {"detail": "That account is deactivated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Assigning from this page also sets the role, so this can promote an
+        # instructor or step a manager down. The UI reports whichever happened.
+        previous_role = user.role
+        role_changed = previous_role != self.role
+        moved_from = user.branch.name if user.branch and user.branch_id != branch.id else None
+
+        user.role = self.role
+        user.branch = branch
+        user.save()
+
+        return Response(
+            {
+                "id": str(user.id),
+                "name": user.get_full_name() or user.username,
+                "role": user.role,
+                "previous_role": previous_role,
+                "role_changed": role_changed,
+                "moved_from": moved_from,
+            }
+        )
+
+
+class BranchStaffDetailView(generics.GenericAPIView):
+    """Unassign someone from this branch."""
+
+    permission_classes = [IsSuperAdmin]
+    role = None
+
+    def delete(self, request, pk, user_id):
+        branch = get_object_or_404(Branch, pk=pk)
+        person = get_object_or_404(UserAccount, pk=user_id, branch=branch, role=self.role)
+
+        # Unassigned, not deleted or demoted: the account stays exactly as it
+        # was so it can be pointed at another branch.
+        person.branch = None
+        person.save()
+
+        return Response({"id": str(person.id), "branch": None})

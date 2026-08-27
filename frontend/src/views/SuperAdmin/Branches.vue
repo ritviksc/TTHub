@@ -1,11 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { listKapa, createKapa } from '@/apis.js'
+import { listBranches, createBranch } from '@/apis.js'
 
 const router = useRouter()
 
-const kapa = ref([])
+const branches = ref([])
 const loading = ref(true)
 const loadError = ref(null)
 
@@ -24,19 +24,19 @@ const filters = [
 
 const PENDING_DATA = 'Needs session and questionnaire records, which do not exist yet.'
 
-// 30 kapa is a short list, so filtering here keeps typing instant. The same two
+// 30 branches is a short list, so filtering here keeps typing instant. The same two
 // filters exist on the endpoint (?search= and ?no_manager=) for when it grows.
-const visibleKapa = computed(() => {
+const visibleBranches = computed(() => {
   const query = search.value.trim().toLowerCase()
 
-  return kapa.value.filter((k) => {
+  return branches.value.filter((b) => {
     const matchesSearch =
       !query ||
-      k.name.toLowerCase().includes(query) ||
-      (k.region ?? '').toLowerCase().includes(query)
+      b.name.toLowerCase().includes(query) ||
+      (b.region ?? '').toLowerCase().includes(query)
 
     const matchesFilter =
-      activeFilter.value !== 'No manager' || !k.manager_name
+      activeFilter.value !== 'No manager' || !b.manager_name
 
     return matchesSearch && matchesFilter
   })
@@ -45,11 +45,11 @@ const visibleKapa = computed(() => {
 async function load() {
   loading.value = true
   try {
-    kapa.value = await listKapa()
+    branches.value = await listBranches()
     loadError.value = null
   } catch (e) {
-    kapa.value = []
-    loadError.value = 'Could not load the kapa list.'
+    branches.value = []
+    loadError.value = 'Could not load the branch list.'
   } finally {
     loading.value = false
   }
@@ -57,35 +57,35 @@ async function load() {
 
 onMounted(load)
 
-function openKapa(id) {
-  router.push(`/super-admin/kapa/${id}`)
+function openBranch(id) {
+  router.push(`/super-admin/branches/${id}`)
 }
 
-/* ---- add kapa ---- */
+/* ---- add branch ---- */
 
-const emptyKapa = () => ({ name: '', region: '' })
+const emptyBranch = () => ({ name: '', region: '' })
 
 const showModal = ref(false)
-const newKapa = ref(emptyKapa())
+const newBranch = ref(emptyBranch())
 const createError = ref(null)
 const saving = ref(false)
 
 function openModal() {
-  newKapa.value = emptyKapa()
+  newBranch.value = emptyBranch()
   createError.value = null
   showModal.value = true
 }
 
-async function submitCreateKapa() {
+async function submitCreateBranch() {
   saving.value = true
   createError.value = null
   try {
-    await createKapa(newKapa.value)
+    await createBranch(newBranch.value)
     showModal.value = false
     await load()
   } catch (e) {
     const data = e.response?.data
-    createError.value = data?.name?.[0] ?? data?.detail ?? 'Could not add this kapa.'
+    createError.value = data?.name?.[0] ?? data?.detail ?? 'Could not add this branch.'
   } finally {
     saving.value = false
   }
@@ -95,20 +95,20 @@ async function submitCreateKapa() {
 <template>
   <div class="dash-page">
 
-    <!-- Add kapa -->
+    <!-- Add branch -->
     <div v-if="showModal" class="modal-backdrop" @click.self="showModal = false">
       <div class="modal">
-        <h2>Add kapa</h2>
+        <h2>Add branch</h2>
 
-        <form @submit.prevent="submitCreateKapa">
+        <form @submit.prevent="submitCreateBranch">
           <div class="form-group">
-            <label for="kapa-name">Name</label>
-            <input id="kapa-name" v-model="newKapa.name" required />
+            <label for="branch-name">Name</label>
+            <input id="branch-name" v-model="newBranch.name" required />
           </div>
 
           <div class="form-group">
-            <label for="kapa-region">Region</label>
-            <input id="kapa-region" v-model="newKapa.region" />
+            <label for="branch-region">Region</label>
+            <input id="branch-region" v-model="newBranch.region" />
           </div>
 
           <div v-if="createError" class="form-error">{{ createError }}</div>
@@ -116,7 +116,7 @@ async function submitCreateKapa() {
           <div class="modal-actions">
             <button type="button" class="btn-cancel" @click="showModal = false">Cancel</button>
             <button type="submit" class="btn-primary" :disabled="saving">
-              {{ saving ? 'Adding…' : 'Add kapa' }}
+              {{ saving ? 'Adding…' : 'Add branch' }}
             </button>
           </div>
         </form>
@@ -125,18 +125,18 @@ async function submitCreateKapa() {
 
     <main class="content">
       <div class="page-header">
-        <h1>Kapa</h1>
-        <button class="btn-primary" @click="openModal">Add kapa</button>
+        <h1>Branch</h1>
+        <button class="btn-primary" @click="openModal">Add branch</button>
       </div>
 
       <div v-if="loadError" class="form-error">{{ loadError }}</div>
 
       <input
         v-model="search"
-        class="kapa-search"
+        class="branch-search"
         type="search"
-        placeholder="Search by kapa name or region…"
-        aria-label="Search by kapa name or region"
+        placeholder="Search by branch name or region…"
+        aria-label="Search by branch name or region"
       />
 
       <div class="pills">
@@ -152,13 +152,14 @@ async function submitCreateKapa() {
         </button>
       </div>
 
-      <p class="result-count">{{ visibleKapa.length }} of {{ kapa.length }} kapa</p>
+      <p class="result-count">{{ visibleBranches.length }} of {{ branches.length }} branches</p>
 
       <table class="data-table">
         <thead>
           <tr>
-            <th>Kapa</th>
+            <th>Branch</th>
             <th>Branch Manager</th>
+            <th>Instructors</th>
             <th>Participants</th>
             <th>Attendance</th>
             <th>Questionnaire</th>
@@ -167,33 +168,34 @@ async function submitCreateKapa() {
         </thead>
         <tbody>
           <tr
-            v-for="k in visibleKapa"
-            :key="k.id"
-            class="kapa-row"
+            v-for="b in visibleBranches"
+            :key="b.id"
+            class="branch-row"
             tabindex="0"
-            @click="openKapa(k.id)"
-            @keydown.enter="openKapa(k.id)"
+            @click="openBranch(b.id)"
+            @keydown.enter="openBranch(b.id)"
           >
             <td>
-              <span class="kapa-name">{{ k.name }}</span>
-              <span class="kapa-region">{{ k.region || '—' }}</span>
+              <span class="branch-name">{{ b.name }}</span>
+              <span class="branch-region">{{ b.region || '—' }}</span>
             </td>
             <td>
-              <span v-if="k.manager_name">{{ k.manager_name }}</span>
+              <span v-if="b.manager_name">{{ b.manager_name }}</span>
               <span v-else class="badge-warning">No manager</span>
             </td>
-            <td>{{ k.participant_count }}</td>
+            <td>{{ b.instructor_count }}</td>
+            <td>{{ b.participant_count }}</td>
             <td class="not-tracked" :title="PENDING_DATA">—</td>
             <td class="not-tracked" :title="PENDING_DATA">—</td>
             <td class="chevron" aria-hidden="true">›</td>
           </tr>
 
           <tr v-if="loading">
-            <td colspan="6" class="empty-row">Loading kapa…</td>
+            <td colspan="7" class="empty-row">Loading branches…</td>
           </tr>
-          <tr v-else-if="!visibleKapa.length">
-            <td colspan="6" class="empty-row">
-              {{ kapa.length ? 'No kapa match this search.' : 'No kapa yet. Add the first one.' }}
+          <tr v-else-if="!visibleBranches.length">
+            <td colspan="7" class="empty-row">
+              {{ branches.length ? 'No branches match this search.' : 'No branches yet. Add the first one.' }}
             </td>
           </tr>
         </tbody>
@@ -210,7 +212,7 @@ async function submitCreateKapa() {
 <style scoped>
 /* Every colour here is a theme.css token — nothing hardcoded. */
 
-.kapa-search {
+.branch-search {
   width: 100%;
   padding: 12px 18px;
   margin-bottom: 16px;
@@ -220,7 +222,7 @@ async function submitCreateKapa() {
   font-size: var(--text-md);
   outline: none;
 }
-.kapa-search:focus { border-color: var(--teal); }
+.branch-search:focus { border-color: var(--teal); }
 
 /* The two filters with no data behind them stay visible but unusable. */
 .pill:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -232,13 +234,13 @@ async function submitCreateKapa() {
   margin: 0 0 10px;
 }
 
-/* Name over region, so the kapa reads as one thing rather than two columns. */
-.kapa-name { display: block; font-weight: 600; color: var(--text); }
-.kapa-region { display: block; font-size: var(--text-sm); color: var(--text-muted); }
+/* Name over region, so the branch reads as one thing rather than two columns. */
+.branch-name { display: block; font-weight: 600; color: var(--text); }
+.branch-region { display: block; font-size: var(--text-sm); color: var(--text-muted); }
 
-.kapa-row { cursor: pointer; }
-.kapa-row:hover td { background: var(--surface-sunken); }
-.kapa-row:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
+.branch-row { cursor: pointer; }
+.branch-row:hover td { background: var(--surface-sunken); }
+.branch-row:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
 
 /* dashboard.css has no warning variant of .status-badge, and adding one there
    would change a shared class, so this stays local to the page. */
