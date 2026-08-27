@@ -41,7 +41,12 @@ const router = createRouter({
             meta: { requiresAuth: true, roles: SA },
         },
         comingSoon('/super-admin/overview', 'sa-overview', 'National overview', SA),
-        comingSoon('/super-admin/kapa', 'sa-kapa', 'Kapa', SA),
+        {
+            path: '/super-admin/kapa', name: 'sa-kapa',
+            component: () => import('@/views/SuperAdmin/Kapa.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        comingSoon('/super-admin/kapa/:id', 'sa-kapa-detail', 'Kapa detail', SA),
         comingSoon('/super-admin/reporting', 'sa-reporting', 'Reporting', SA),
         {
             path: '/super-admin/create-staff', name: 'create-staff', component: CreateStaff,

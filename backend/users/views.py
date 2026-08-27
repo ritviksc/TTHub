@@ -7,7 +7,13 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Branch, UserAccount
-from .serializers import BranchSerializer, StaffCreateSerializer, StaffListSerializer
+from .serializers import (
+    BranchSerializer,
+    KapaListSerializer,
+    StaffCreateSerializer,
+    StaffListSerializer,
+)
+from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import logout
 from .permissions import IsSuperAdmin, IsBranchManager, IsInstructor
@@ -99,3 +105,54 @@ class StaffDeactivateView(generics.GenericAPIView):
         staff.is_active = False
         staff.save()
         return Response({"id": str(staff.id), "is_active": staff.is_active})
+
+
+ACTIVE_MANAGERS = UserAccount.objects.filter(
+    role=UserAccount.Role.BRANCH_MANAGER, is_active=True
+)
+
+
+class KapaListCreateView(generics.ListCreateAPIView):
+    """The Kapa table, and the Add kapa action behind it.
+
+    Every signed-in role can read the list; only a Super Admin can add one.
+    """
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsSuperAdmin()]
+        return [IsAuthenticated()]
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return KapaListSerializer
+        return BranchSerializer
+
+    def get_queryset(self):
+        qs = (
+            Branch.objects.annotate(
+                participant_count=Count(
+                    "participants",
+                    filter=Q(participants__is_active=True),
+                    distinct=True,
+                ),
+                manager_count=Count(
+                    "staff",
+                    filter=Q(
+                        staff__role=UserAccount.Role.BRANCH_MANAGER,
+                        staff__is_active=True,
+                    ),
+                    distinct=True,
+                ),
+            )
+            .prefetch_related(Prefetch("staff", queryset=ACTIVE_MANAGERS, to_attr="managers"))
+        )
+
+        search = self.request.query_params.get("search", "").strip()
+        if search:
+            qs = qs.filter(Q(name__icontains=search) | Q(region__icontains=search))
+
+        if self.request.query_params.get("no_manager") == "true":
+            qs = qs.filter(manager_count=0)
+
+        return qs

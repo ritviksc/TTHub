@@ -51,3 +51,25 @@ class StaffListSerializer(serializers.ModelSerializer):
 
     def get_branch_name(self, obj):
         return obj.branch.name if obj.branch else None
+
+
+class KapaListSerializer(serializers.ModelSerializer):
+    """A row in the Kapa table. participant_count and the manager come from
+    annotations/prefetch on the view, so rendering the list stays a fixed
+    number of queries however many kapa there are."""
+
+    manager_name = serializers.SerializerMethodField()
+    participant_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Branch
+        fields = ["id", "name", "region", "manager_name", "participant_count"]
+
+    def get_manager_name(self, obj):
+        # to_attr="managers" on the view already narrowed this to active
+        # branch managers, so there is nothing to filter here.
+        managers = getattr(obj, "managers", [])
+        if not managers:
+            return None
+        manager = managers[0]
+        return manager.get_full_name() or manager.username
