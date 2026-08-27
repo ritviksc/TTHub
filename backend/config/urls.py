@@ -1,4 +1,5 @@
 from django.urls import path, include
+from django.contrib import admin
 
 # Specfic URLS will be used for the backend
 # For each URL, a corresponding view is provided
@@ -11,5 +12,6 @@ from django.urls import path, include
 """
 
 urlpatterns = [
+    path("admin/", admin.site.urls),
     path("api/auth/", include("users.urls"))
 ]

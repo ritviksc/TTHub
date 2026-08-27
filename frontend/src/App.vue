@@ -1,17 +1,18 @@
 <script setup>
+import Navbar from './components/NavBar.vue'
 </script>
 
 <template>
-  <nav>
-    <!--TODO: Needs to be conditional based on user state-->
-    <RouterLink to="/">Home</RouterLink>
-    <RouterLink to="/about">About Us</RouterLink>
-    <RouterLink to="/contact">Contact Us</RouterLink>
-    <RouterLink to="/login">Login</RouterLink>
-  </nav>
+  <Navbar />
+
   <main>
     <RouterView />
   </main>
 </template>
 
-<style scoped></style>
+<style scoped>
+main {
+  width: 100%;
+  min-height: calc(100vh - 64px);
+}
+</style>
