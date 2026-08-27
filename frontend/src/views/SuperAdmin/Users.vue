@@ -194,5 +194,5 @@ async function handleDeactivate(id) {
 </template>
 
 <style scoped>
-.empty-row { text-align: center; color: #aaa; padding: 32px 16px; }
+.empty-row { text-align: center; color: var(--text-faint); padding: 32px 16px; }
 </style>

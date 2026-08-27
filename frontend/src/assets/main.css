@@ -1,11 +1,6 @@
-:root {
-  --color-bg: #ffffff;
-  --color-text: #1a1a1a;
-  --color-primary: #2c3e50;
-  --color-border: #e0e0e0;
-
-  --font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-}
+/* Reset and base only. Anything that styles a *component* belongs either in
+   dashboard.css (signed-in pages) or in that component's scoped block.
+   Colours come from theme.css — no hexes here. */
 
 *,
 *::before,
@@ -13,16 +8,29 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
-  font-family: var(--font-family);
-  color: var(--color-text);
-  background-color: var(--color-bg);
+  font-family: var(--font-sans);
+  color: var(--text);
+  background-color: var(--bg);
   line-height: 1.5;
 }
 
+h1, h2, h3, h4, p, figure, blockquote {
+  margin: 0;
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
 a {
-  color: var(--color-primary);
+  color: var(--teal);
   text-decoration: none;
 }
 
@@ -30,71 +38,22 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Forms */
-
+/* Let form controls inherit type instead of the browser default.
+   Deliberately no colour, padding or border here: every button in this app
+   sets its own, and a global rule only ever has to be overridden. */
+button,
 input,
 textarea,
 select {
-  font-family: inherit;
-  font-size: 1rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  font: inherit;
+  color: inherit;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-label {
-  display: block;
-  margin-bottom: 0.25rem;
-  font-weight: 600;
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 400px;
-}
-
-/* Buttons */
-
-button,
-.btn {
-  font-family: inherit;
-  font-size: 1rem;
-  padding: 0.5rem 1.25rem;
-  border: 1px solid var(--color-primary);
-  border-radius: 4px;
-  background-color: var(--color-primary);
-  color: #ffffff;
+button {
   cursor: pointer;
-  transition: background-color 0.15s ease, opacity 0.15s ease;
 }
 
-button:hover,
-.btn:hover {
-  background-color: #1f2c38;
-}
-
-button:disabled,
-.btn:disabled {
+button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.btn-secondary {
-  background-color: transparent;
-  color: var(--color-primary);
-}
-
-.btn-secondary:hover {
-  background-color: var(--color-border);
 }

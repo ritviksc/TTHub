@@ -129,39 +129,39 @@ const chartBars = Array.from({ length: 10 }, () => ({
 
 <style scoped>
 .page-header { align-items: flex-start; margin-bottom: 28px; }
-.subtext { font-size: 13px; color: #888; margin-top: 4px; }
-.quarter-selector { font-size: 13px; color: #555; cursor: pointer; }
+.subtext { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+.quarter-selector { font-size: 13px; color: var(--text-secondary); cursor: pointer; }
 
 .stats-grid {
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 16px; margin-bottom: 32px;
 }
 .stat-card {
-  background: white; border-radius: 10px; padding: 20px;
+  background: var(--surface); border-radius: 10px; padding: 20px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
-.stat-number { font-size: 36px; font-weight: 700; color: #1a1a1a; }
-.stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+.stat-number { font-size: 36px; font-weight: 700; color: var(--text); }
+.stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 .stat-change { font-size: 11px; margin-top: 6px; }
-.positive { color: #2a7a4a; }
-.neutral { color: #888; }
+.positive { color: var(--success); }
+.neutral { color: var(--text-muted); }
 
 .section { margin-bottom: 28px; }
 .section h2 { margin-bottom: 12px; }
 .alerts { display: flex; flex-direction: column; gap: 8px; }
 .alert-row {
   display: flex; justify-content: space-between; align-items: center;
-  background: #fdf6e3; border: 1px solid #e8d9a0;
-  border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #5c4a00;
+  background: var(--warning-bg); border: 1px solid var(--warning-border);
+  border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--warning-text);
 }
 .alert-row a {
-  color: #5c4a00; font-size: 12px; text-decoration: underline;
+  color: var(--warning-text); font-size: 12px; text-decoration: underline;
   white-space: nowrap; margin-left: 16px;
 }
 
 .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .panel {
-  background: white; border-radius: 10px; padding: 20px;
+  background: var(--surface); border-radius: 10px; padding: 20px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 .panel h3 { font-size: 14px; margin-bottom: 16px; }
@@ -171,22 +171,22 @@ const chartBars = Array.from({ length: 10 }, () => ({
 }
 .bar-group { display: flex; align-items: flex-end; gap: 2px; flex: 1; }
 .bar { border-radius: 2px 2px 0 0; min-width: 8px; }
-.bar.present { background: #2a7a4a; }
-.bar.excused { background: #c8860a; }
-.bar.absent  { background: #c0392b; }
-.legend { display: flex; gap: 14px; font-size: 11px; color: #555; }
+.bar.present { background: var(--success); }
+.bar.excused { background: var(--warning); }
+.bar.absent  { background: var(--danger); }
+.legend { display: flex; gap: 14px; font-size: 11px; color: var(--text-secondary); }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
-.dot.present { background: #2a7a4a; }
-.dot.excused { background: #c8860a; }
-.dot.absent  { background: #c0392b; }
+.dot.present { background: var(--success); }
+.dot.excused { background: var(--warning); }
+.dot.absent  { background: var(--danger); }
 
 .session-row {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px;
+  padding: 10px 0; border-bottom: 1px solid var(--border-faint); font-size: 13px;
 }
-.session-date { color: #333; }
-.session-count { color: #555; }
-.amended { color: #888; font-size: 12px; }
-.view-all { display: block; margin-top: 12px; font-size: 12px; color: #4D9298; text-decoration: none; }
+.session-date { color: var(--text-secondary); }
+.session-count { color: var(--text-secondary); }
+.amended { color: var(--text-muted); font-size: 12px; }
+.view-all { display: block; margin-top: 12px; font-size: 12px; color: var(--teal); text-decoration: none; }
 .view-all:hover { text-decoration: underline; }
 </style>

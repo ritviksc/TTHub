@@ -1,7 +1,10 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
+import './assets/theme.css'
 import './assets/main.css'
+import './assets/nav.css'
+import './assets/public.css'
 import './assets/dashboard.css'
 import { loadUser } from './stores/auth.js'
 

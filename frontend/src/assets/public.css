@@ -1,0 +1,97 @@
+/* Shared shell for the public (signed-out) pages.
+   Namespaced under .public-page, mirroring how .dash-page works for the
+   signed-in side. All values come from theme.css. */
+
+.public-page {
+  min-height: calc(100vh - var(--nav-height));
+  background: var(--bg);
+  padding: 60px 24px 80px;
+}
+
+/* Centred white card holding body copy */
+.public-page .panel {
+  max-width: var(--prose-width);
+  width: 100%;
+  margin: 0 auto;
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-panel);
+  padding: 48px 56px;
+}
+
+.public-page h1 {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--teal);
+  margin: 0 0 24px;
+}
+
+.public-page h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 40px 0 16px;
+}
+
+.public-page p {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0 0 18px;
+}
+
+.public-page .lead {
+  font-size: 19px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Actions */
+.public-page .btn {
+  display: inline-block;
+  padding: 12px 30px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--teal);
+  color: var(--text-on-ink);
+  font-size: var(--text-md);
+  font-weight: 600;
+  text-decoration: none;
+}
+.public-page .btn:hover { background: var(--teal-dark); text-decoration: none; }
+
+/* Forms */
+.public-page .field { display: flex; flex-direction: column; gap: 6px; }
+.public-page .field label {
+  font-size: 14px; font-weight: 600; color: var(--text);
+}
+.public-page .field input,
+.public-page .field textarea {
+  font-size: 15px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  resize: vertical;
+  outline: none;
+}
+.public-page .field input:focus,
+.public-page .field textarea:focus { border-color: var(--teal); }
+
+.public-page .success-msg {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--success-bg);
+  color: var(--success);
+  font-size: 14px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .public-page { padding: 32px 16px 56px; }
+  .public-page .panel { padding: 32px 24px; }
+  .public-page h1 { font-size: 32px; }
+}

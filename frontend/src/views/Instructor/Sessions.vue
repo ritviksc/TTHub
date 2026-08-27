@@ -65,8 +65,8 @@ const allSessions = ref([
 </template>
 
 <style scoped>
-.attendance-ok { color: #2a7a4a; font-size: 13px; }
-.attendance-pending { color: #888; font-size: 13px; }
-.amended { color: #c8860a; font-size: 13px; font-weight: 500; }
-.arrow-cell { color: #ccc; font-size: 18px; text-align: right; }
+.attendance-ok { color: var(--success); font-size: 13px; }
+.attendance-pending { color: var(--text-muted); font-size: 13px; }
+.amended { color: var(--warning); font-size: 13px; font-weight: 500; }
+.arrow-cell { color: var(--border-strong); font-size: 18px; text-align: right; }
 </style>

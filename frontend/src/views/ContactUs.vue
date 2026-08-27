@@ -1,9 +1,5 @@
 <script setup>
-import axios from 'axios'
 import { ref } from 'vue'
-
-import { useRouter } from 'vue-router'
-const router = useRouter()
 
 const name = ref('')
 const email = ref('')
@@ -21,9 +17,8 @@ function handleSubmit() {
 </script>
 
 <template>
-    <div class="landing-page">
-    <section class="hero">
-     <div class="hero-content">
+  <div class="public-page">
+    <article class="panel contact-panel">
         <h1>Contact Us</h1>
 
         <p class="lead">
@@ -89,44 +84,15 @@ function handleSubmit() {
 
           <button type="submit">Send Message</button>
         </form>
-     </div>
-    </section>
-    </div>
+    </article>
+  </div>
 </template>
 
 <style scoped>
-.landing-page {
-  min-height: 100vh;
-  background: #f5f7f4;
-  padding: 60px 24px 80px;
-}
+.contact-panel { text-align: center; }
 
-.hero {
-  display: flex;
-  justify-content: center;
-}
-
-.hero-content {
-  max-width: 720px;
-  width: 100%;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  padding: 48px 56px;
-  text-align: center;
-}
-
-h1 {
-  font-size: 42px;
-  margin: 0 0 16px;
-  color: #4D9298;
-  line-height: 1.2;
-}
-
-.lead {
-  font-size: 18px;
-  line-height: 1.7;
-  color: #444;
+.contact-panel .lead {
+  color: var(--text-secondary);
   margin: 0 auto 32px;
   max-width: 560px;
 }
@@ -139,34 +105,22 @@ h1 {
   flex-wrap: wrap;
   margin-bottom: 48px;
   padding-bottom: 40px;
-  border-bottom: 1px solid #e5e9e6;
+  border-bottom: 1px solid var(--border);
 }
 
 .detail-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #163b2d;
+  color: var(--text);
   font-weight: 600;
-  font-size: 16px;
-  text-decoration: none;
+  font-size: var(--text-md);
 }
+.detail-item:hover { color: var(--teal); }
 
-.detail-item:hover {
-  color: #4D9298;
-  text-decoration: underline;
-}
+.info-icon { font-size: 20px; line-height: 1; }
 
-.info-icon {
-  font-size: 20px;
-  line-height: 1;
-}
-
-.detail-divider {
-  width: 1px;
-  height: 24px;
-  background: #dfe3e0;
-}
+.detail-divider { width: 1px; height: 24px; background: var(--border); }
 
 .contact-form {
   display: flex;
@@ -179,96 +133,27 @@ h1 {
 
 .contact-form h2 {
   margin: 0 0 4px;
-  font-size: 22px;
-  color: #163b2d;
+  font-size: var(--text-xl);
   text-align: center;
 }
 
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #163b2d;
-}
-
-.field input,
-.field textarea {
-  font-family: inherit;
-  font-size: 15px;
-  padding: 12px 14px;
-  border: 1px solid #dfe3e0;
-  border-radius: 8px;
-  background: #fff;
-  color: #222;
-  resize: vertical;
-}
-
-.field input:focus,
-.field textarea:focus {
-  outline: none;
-  border-color: #4D9298;
-}
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 
 .contact-form button {
   align-self: center;
   padding: 12px 36px;
   border: none;
-  border-radius: 6px;
-  background: #4D9298;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
+  border-radius: var(--radius-sm);
+  background: var(--teal);
+  color: var(--text-on-ink);
+  font-size: var(--text-md);
+  font-weight: 600;
 }
-
-.contact-form button:hover {
-  background: #163b2d;
-}
-
-.success-msg {
-  margin: 0;
-  padding: 10px 14px;
-  border-radius: 6px;
-  background: #e6f4ea;
-  color: #1e5631;
-  font-size: 14px;
-  text-align: center;
-}
+.contact-form button:hover { background: var(--teal-dark); }
 
 @media (max-width: 640px) {
-  .landing-page {
-    padding: 32px 16px 56px;
-  }
-
-  .hero-content {
-    padding: 32px 24px;
-  }
-
-  h1 {
-    font-size: 32px;
-  }
-
-  .contact-details {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .detail-divider {
-    display: none;
-  }
-
-  .field-row {
-    grid-template-columns: 1fr;
-  }
+  .contact-details { flex-direction: column; gap: 16px; }
+  .detail-divider { display: none; }
+  .field-row { grid-template-columns: 1fr; }
 }
 </style>

@@ -1,16 +1,6 @@
-<script setup>
-import axios from 'axios'
-import { ref } from 'vue'
-
-import { useRouter } from 'vue-router'
-const router = useRouter()
-
-</script>
-
 <template>
-    <div class="landing-page">
-    <section class="hero">
-     <div class="hero-content">
+  <div class="public-page">
+    <article class="panel">
         <h1>What is Taurite Tū?</h1>
 
         <p class="lead">
@@ -73,86 +63,16 @@ const router = useRouter()
           To find a Taurite Tū class near you, please email
           <a href="mailto:tauritetu@tro.org.nz">tauritetu@tro.org.nz</a>
         </p>
-     </div>
-    </section>
-    </div>
+    </article>
+  </div>
 </template>
 
 <style scoped>
-.landing-page {
-  min-height: 100vh;
-  background: #f5f7f4;
-  padding: 60px 24px 80px;
-}
-
-.hero {
-  display: flex;
-  justify-content: center;
-}
-
-.hero-content {
-  max-width: 760px;
-  width: 100%;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  padding: 48px 56px;
-}
-
-h1 {
-  font-size: 42px;
-  margin: 0 0 24px;
-  color: #4D9298;
-  line-height: 1.2;
-}
-
-h2 {
-  font-size: 24px;
-  margin: 40px 0 16px;
-  color: #163b2d;
-}
-
-p {
-  font-size: 17px;
-  line-height: 1.7;
-  color: #444;
-  margin: 0 0 18px;
-}
-
-.lead {
-  font-size: 19px;
-  color: #333;
-  font-weight: 500;
-}
-
 .cta-text {
   margin-top: 32px;
   padding-top: 24px;
-  border-top: 1px solid #e0e0e0;
-  color: #333;
+  border-top: 1px solid var(--border);
+  color: var(--text);
 }
-
-.cta-text a {
-  color: #4D9298;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.cta-text a:hover {
-  text-decoration: underline;
-}
-
-@media (max-width: 640px) {
-  .landing-page {
-    padding: 32px 16px 56px;
-  }
-
-  .hero-content {
-    padding: 32px 24px;
-  }
-
-  h1 {
-    font-size: 32px;
-  }
-}
+.cta-text a { color: var(--teal); font-weight: 600; }
 </style>
