@@ -1,17 +1,11 @@
 <script setup>
-import Navbar from './components/NavBar.vue'
+import PublicNav from './components/NavBar.vue'
+import DashboardNav from './components/DashboardNav.vue'
+import { auth } from './stores/auth.js'
 </script>
 
 <template>
-  <Navbar />
-  <main>
-    <RouterView />
-  </main>
+  <PublicNav v-if="!auth.user" />
+  <DashboardNav v-else />
+  <RouterView />
 </template>
-
-<style scoped>
-main {
-  width: 100%;
-  min-height: calc(100vh - 64px);
-}
-</style>

@@ -1,21 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import logoSrc from '@/assets/logo.png'
-import { logout } from '@/apis.js'
- 
-const router = useRouter()
- 
-async function handleLogout() {
-  try { await logout() } catch (e) {}
-  router.push('/login')
-}
- 
-const activeNav = ref('Home')
-const navItems = ['Home', 'Sessions', 'Participants', 'Feedback']
- 
-const instructorName = ref('Wikitōria P.')
-const branchName = ref('Ngā Hau e Whā')
+import { auth, ui } from '@/stores/auth.js'
+
+const instructorName = computed(() => {
+  const u = auth.user
+  if (!u) return ''
+  return `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || u.email
+})
 const today = ref('Thursday 13 August')
  
 const todaySession = ref({
@@ -55,31 +46,8 @@ const allSessions = ref([
 <template>
   <div class="in-dashboard">
  
-    <!-- Navbar -->
-    <nav class="navbar">
-      <div class="nav-left">
-        <img :src="logoSrc" class="logo" alt="Taurite Tū logo" />
-        <span class="brand">Taurite Tū</span>
-        <span class="scope">Kapa: {{ branchName }}</span>
-      </div>
-      <div class="nav-links">
-        <button
-          v-for="item in navItems"
-          :key="item"
-          :class="['nav-link', { active: activeNav === item }]"
-          @click="activeNav = item"
-        >
-          {{ item }}
-        </button>
-      </div>
-      <div class="nav-right">
-        <span>{{ instructorName }} · Instructor</span>
-        <button class="logout-btn" @click="handleLogout">Log out</button>
-      </div>
-    </nav>
- 
     <!-- HOME TAB -->
-    <main v-if="activeNav === 'Home'" class="content">
+    <main v-if="ui.activeNav === 'Home'" class="content">
  
       <h1>Kia ora, {{ instructorName.split(' ')[0] }}</h1>
       <p class="page-subtitle">{{ today }} · one session today</p>
@@ -148,7 +116,7 @@ const allSessions = ref([
     </main>
  
     <!-- SESSIONS TAB -->
-    <main v-else-if="activeNav === 'Sessions'" class="content">
+    <main v-else-if="ui.activeNav === 'Sessions'" class="content">
       <div class="page-header">
         <h1>Sessions</h1>
         <button class="btn-primary">New session</button>
@@ -196,7 +164,7 @@ const allSessions = ref([
     <!-- OTHER TABS -->
     <main v-else class="content">
       <div class="placeholder-page">
-        <h2>{{ activeNav }}</h2>
+        <h2>{{ ui.activeNav }}</h2>
         <p>This page is coming soon.</p>
       </div>
     </main>
@@ -212,27 +180,6 @@ const allSessions = ref([
   background: #f0ede6;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
- 
-.navbar {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #1a1a1a; color: white; padding: 0 24px; height: 52px; gap: 16px;
-}
-.nav-left { display: flex; align-items: center; gap: 8px; }
-.logo { height: 30px; width: auto; }.brand { font-weight: 700; font-size: 15px; }
-.scope { font-size: 12px; color: #aaa; }
-.nav-links { display: flex; gap: 4px; }
-.nav-link {
-  background: none; border: none; color: rgba(255,255,255,0.7);
-  padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
-}
-.nav-link:hover { color: white; }
-.nav-link.active { background: #333; color: white; }
-.nav-right { display: flex; align-items: center; gap: 12px; font-size: 12px; opacity: 0.85; white-space: nowrap; }
-.logout-btn {
-  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
-  color: white; border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer;
-}
-.logout-btn:hover { background: rgba(255,255,255,0.25); }
  
 .content { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
  

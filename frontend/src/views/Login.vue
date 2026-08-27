@@ -8,6 +8,7 @@ import {
   login,
   fetchCsrfCookie
 } from '@/apis.js'
+import { loadUser } from '@/stores/auth.js'
 
 const router = useRouter()
 
@@ -37,6 +38,7 @@ async function handleSubmit() {
 
   try {
     const data = await login(username.value, password.value)
+    await loadUser()
     router.push(roleRoutes[data.role] ?? '/')
   } catch (err) {
     if (err.code === TIMEOUT_ERROR) {

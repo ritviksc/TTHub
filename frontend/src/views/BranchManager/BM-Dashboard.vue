@@ -1,24 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import logoSrc from '@/assets/logo.png'
-import { logout, fetchMe } from '@/apis.js'
- 
-const router = useRouter()
+import { ref, computed } from 'vue'
+import { auth } from '@/stores/auth.js'
 
-const managerName = ref('')
-const branchName = ref('')
-
-onMounted(async () => {
-    const me = await fetchMe()
-    managerName.value = `${me.first_name ?? ''} ${me.last_name ?? ''}`.trim() || me.email
-    branchName.value = me.branch?.name ?? ''
+const managerName = computed(() => {
+  const u = auth.user
+  if (!u) return ''
+  return `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || u.email
 })
- 
-async function handleLogout() {
-  try { await logout() } catch (e) {}
-  router.push('/login')
-}
+const branchName = computed(() => auth.user?.branch?.name ?? '')
 
 const stats = ref({
   participants: 24,
@@ -40,35 +29,10 @@ const recentSessions = ref([
   { date: 'Thu 6 Aug',  name: 'Wikitōria', attended: null, total: null, amended: true },
 ])
  
-const navItems = ['Overview', 'Sessions', 'Participants', 'Instructors', 'Feedback', 'Reports']
-const activeNav = ref('Overview')
 </script>
  
 <template>
   <div class="bm-dashboard">
- 
-    <!-- Navbar -->
-    <nav class="navbar">
-      <div class="nav-left">
-        <img :src="logoSrc" class="logo" alt="Taurite Tū logo" />
-        <span class="brand">Taurite Tū</span>
-        <span class="branch-name">Kapa: {{ branchName }}</span>
-      </div>
-      <div class="nav-links">
-        <button
-          v-for="item in navItems"
-          :key="item"
-          :class="['nav-link', { active: activeNav === item }]"
-          @click="activeNav = item"
-        >
-          {{ item }}
-        </button>
-      </div>
-      <div class="nav-right">
-        <span>{{ managerName }} · Branch Manager</span>
-        <button class="logout-btn" @click="handleLogout">Log out</button>
-      </div>
-    </nav>
  
     <main class="content">
  
@@ -163,28 +127,6 @@ const activeNav = ref('Overview')
   background: #f5f7f4;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
- 
-.navbar {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #4D9298; color: white; padding: 0 24px; height: 56px; gap: 16px;
-}
-.nav-left { display: flex; align-items: center; gap: 10px; }
-.logo { height: 30px; width: auto; }.brand { font-weight: 700; font-size: 16px; letter-spacing: 0.3px; }
-.branch-name { font-size: 12px; opacity: 0.75; }
-.nav-links { display: flex; gap: 4px; }
-.nav-link {
-  background: none; border: none; color: rgba(255,255,255,0.8);
-  padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
-  transition: background 0.15s;
-}
-.nav-link:hover { background: rgba(255,255,255,0.15); color: white; }
-.nav-link.active { background: rgba(255,255,255,0.2); color: white; font-weight: 600; }
-.nav-right { display: flex; align-items: center; gap: 12px; font-size: 12px; opacity: 0.85; white-space: nowrap; }
-.logout-btn {
-  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
-  color: white; border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer;
-}
-.logout-btn:hover { background: rgba(255,255,255,0.25); }
  
 .content { max-width: 1100px; margin: 0 auto; padding: 36px 24px; }
  

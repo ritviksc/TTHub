@@ -1,16 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import logoSrc from '@/assets/logo.png'
-import { logout, createStaffAccount, listBranches, listStaff, fetchMe, deactivateStaff } from '@/apis.js'
- 
-const router = useRouter()
- 
-async function handleLogout() {
-  try { await logout() } catch (e) {}
-  router.push('/login')
-}
- 
+import { createStaffAccount, listBranches, listStaff, deactivateStaff } from '@/apis.js'
+import { ui } from '@/stores/auth.js'
+
 const showModal = ref(false)
 const branches = ref([])
 const createError = ref(null)
@@ -45,22 +37,12 @@ async function handleDeactivate(id) {
   }
 }
  
-const activeNav = ref('Administration')
-const navItems = ['National overview', 'Kapa', 'Reporting', 'Users', 'Administration']
-
- 
 const activeFilter = ref('All')
 const filters = ['All', 'Branch Managers', 'Instructors', 'Super Admins']
- 
-const adminName = ref('')
+
 const users = ref([])
 
 onMounted(async () => {
-  try {
-    const me = await fetchMe()
-    adminName.value = `${me.first_name ?? ''} ${me.last_name ?? ''}`.trim() || me.email
-  } catch (e) { /* guard already redirects if this fails */ }
-
   try {
     users.value = await listStaff()
   } catch (e) {
@@ -79,29 +61,6 @@ const filteredUsers = computed(() => {
  
 <template>
   <div class="sa-dashboard">
- 
-    <!-- Navbar -->
-    <nav class="navbar">
-      <div class="nav-left">
-        <img :src="logoSrc" class="logo" alt="Taurite Tū logo" />
-        <span class="brand">Taurite Tū</span>
-        <span class="scope">National</span>
-      </div>
-      <div class="nav-links">
-        <button
-          v-for="item in navItems"
-          :key="item"
-          :class="['nav-link', { active: activeNav === item }]"
-          @click="activeNav = item"
-        >
-          {{ item }}
-        </button>
-      </div>
-      <div class="nav-right">
-        <span>{{ adminName }} · Super Admin</span>
-        <button class="logout-btn" @click="handleLogout">Log out</button>
-      </div>
-    </nav>
  
     <!-- Create Staff Account Modal -->
     <div v-if="showModal" class="modal-backdrop" @click.self="showModal = false">
@@ -154,7 +113,7 @@ const filteredUsers = computed(() => {
     </div>
  
     <!-- ADMINISTRATION TAB -->
-    <main v-if="activeNav === 'Administration'" class="content">
+    <main v-if="ui.activeNav === 'Administration'" class="content">
       <h1>Administration</h1>
       <p class="page-subtitle">Low-frequency national settings and records.</p>
  
@@ -180,7 +139,7 @@ const filteredUsers = computed(() => {
     </main>
  
     <!-- USERS TAB -->
-    <main v-else-if="activeNav === 'Users'" class="content">
+    <main v-else-if="ui.activeNav === 'Users'" class="content">
       <div class="page-header">
         <h1>Users</h1>
         <button class="btn-primary" @click="openModal">Add user</button>
@@ -226,7 +185,7 @@ const filteredUsers = computed(() => {
     <!-- OTHER TABS -->
     <main v-else class="content">
       <div class="placeholder-page">
-        <h2>{{ activeNav }}</h2>
+        <h2>{{ ui.activeNav }}</h2>
         <p>This page is coming soon.</p>
       </div>
     </main>
@@ -242,24 +201,6 @@ const filteredUsers = computed(() => {
   background: #f0ede6;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
- 
-.navbar {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #1a1a1a; color: white; padding: 0 24px; height: 52px; gap: 16px;
-}
-.nav-left { display: flex; align-items: center; gap: 8px; }
-.logo { height: 30px; width: auto; }.brand { font-weight: 700; font-size: 15px; }
-.scope { font-size: 12px; color: #4D9298; font-weight: 500; }
-.nav-links { display: flex; gap: 4px; }
-.nav-link {
-  background: none; border: none; color: rgba(255,255,255,0.7);
-  padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
-}
-.nav-link:hover { color: white; }
-.nav-link.active { background: #333; color: white; border-radius: 20px; }
-.nav-right { display: flex; align-items: center; gap: 12px; font-size: 12px; opacity: 0.85; white-space: nowrap; }
-.logout-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer; }
-.logout-btn:hover { background: rgba(255,255,255,0.25); }
  
 .content { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
  
