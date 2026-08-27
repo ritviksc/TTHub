@@ -1,56 +1,98 @@
-import {createRouter, createWebHistory} from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import LandingPage from '@/views/LandingPage.vue'
 import Login from '@/views/Login.vue'
 import AboutUs from '@/views/AboutUs.vue'
 import ContactUs from '@/views/ContactUs.vue'
-import BMDashboard from '@/views/BranchManager/BM-Dashboard.vue'
-import INDashboard from '@/views/Instructor/IN-Dashboard.vue'
-import SADashboard from '@/views/SuperAdmin/SA-Dashboard.vue'
+import ComingSoon from '@/views/ComingSoon.vue'
 import CreateStaff from '@/views/SuperAdmin/CreateStaff.vue'
 import CreateInstructor from '@/views/BranchManager/CreateInstructor.vue'
-import { fetchMe } from '@/apis.js'
-import StaffList from '@/views/StaffList.vue'
+import { auth, loadUser } from '@/stores/auth.js'
+
+// Not-yet-built pages all share one placeholder; meta.title is what it renders.
+const comingSoon = (path, name, title, roles) => ({
+    path, name, component: ComingSoon,
+    meta: { requiresAuth: true, roles, title },
+})
+
+const SA = ['super_admin']
+const BM = ['branch_manager']
+const IN = ['instructor']
 
 const router = createRouter({
     history: createWebHistory(),
     routes: [
-        { path: '/', name: 'home', component: LandingPage},
-        { path: '/about', name: 'about-us', component: AboutUs},
-        { path: '/contact', name: 'contact-us', component: ContactUs},
-        { path: '/login', name: 'login', component: Login},
-        // Branch Manager Nav
-        { path: '/branch-manager/dashboard', name: 'bm-dashboard', component: BMDashboard,
-            meta: { requiresAuth: true, roles: ['branch_manager'] } },
-        // Instructor Nav    
-        { path: '/instructor/dashboard', name: 'in-dashboard', component: INDashboard,
-            meta: {requiresAuth: true, roles: ['instructor'] } },
-        // Super Admin Nav
-        { path: '/super-admin/dashboard', name: 'sa-dashboard', component: SADashboard,
-            meta: {requiresAuth: true, roles: ['super_admin'] } },
-        // Miscellaneous
-        { path: '/super-admin/create-staff', name: 'create-staff', component: CreateStaff,
-            meta: { requiresAuth: true, roles: ['super_admin'] } },
-        { path: '/branch-manager/create-instructor', name: 'create-instructor', component: CreateInstructor,
-            meta: { requiresAuth: true, roles: ['branch-manager'] } },
-        { path: '/super-admin/staff', name: 'sa-staff-list', component: StaffList,
-            meta: {requiresAuth: true, roles: ['super_admin'] } },
-        { path: '/branch-manager/staff', name: 'bm-staff-list', component: StaffList,
-            meta: {requiresAuth: true, roles: ['branch_manager'] } },
+        /* ---- public ---- */
+        { path: '/', name: 'home', component: LandingPage },
+        { path: '/about', name: 'about-us', component: AboutUs },
+        { path: '/contact', name: 'contact-us', component: ContactUs },
+        { path: '/login', name: 'login', component: Login },
+
+        /* ---- super admin ---- */
+        { path: '/super-admin', redirect: '/super-admin/users' },
+        { path: '/super-admin/dashboard', redirect: '/super-admin/users' },
+        {
+            path: '/super-admin/users', name: 'sa-users',
+            component: () => import('@/views/SuperAdmin/Users.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
+            path: '/super-admin/administration', name: 'sa-administration',
+            component: () => import('@/views/SuperAdmin/Administration.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        comingSoon('/super-admin/overview', 'sa-overview', 'National overview', SA),
+        comingSoon('/super-admin/kapa', 'sa-kapa', 'Kapa', SA),
+        comingSoon('/super-admin/reporting', 'sa-reporting', 'Reporting', SA),
+        {
+            path: '/super-admin/create-staff', name: 'create-staff', component: CreateStaff,
+            meta: { requiresAuth: true, roles: SA },
+        },
+
+        /* ---- branch manager ---- */
+        { path: '/branch-manager', redirect: '/branch-manager/overview' },
+        { path: '/branch-manager/dashboard', redirect: '/branch-manager/overview' },
+        {
+            path: '/branch-manager/overview', name: 'bm-overview',
+            component: () => import('@/views/BranchManager/Overview.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        comingSoon('/branch-manager/sessions', 'bm-sessions', 'Sessions', BM),
+        comingSoon('/branch-manager/participants', 'bm-participants', 'Participants', BM),
+        comingSoon('/branch-manager/instructors', 'bm-instructors', 'Instructors', BM),
+        comingSoon('/branch-manager/feedback', 'bm-feedback', 'Feedback', BM),
+        comingSoon('/branch-manager/reports', 'bm-reports', 'Reports', BM),
+        {
+            path: '/branch-manager/create-instructor', name: 'create-instructor', component: CreateInstructor,
+            meta: { requiresAuth: true, roles: BM },
+        },
+
+        /* ---- instructor ---- */
+        { path: '/instructor', redirect: '/instructor/home' },
+        { path: '/instructor/dashboard', redirect: '/instructor/home' },
+        {
+            path: '/instructor/home', name: 'in-home',
+            component: () => import('@/views/Instructor/Home.vue'),
+            meta: { requiresAuth: true, roles: IN },
+        },
+        {
+            path: '/instructor/sessions', name: 'in-sessions',
+            component: () => import('@/views/Instructor/Sessions.vue'),
+            meta: { requiresAuth: true, roles: IN },
+        },
+        comingSoon('/instructor/participants', 'in-participants', 'Participants', IN),
+        comingSoon('/instructor/feedback', 'in-feedback', 'Feedback', IN),
     ]
 })
 
 router.beforeEach(async (to) => {
     if (!to.meta.requiresAuth) return true
-  
-    try {
-      const me = await fetchMe()
-      if (to.meta.roles && !to.meta.roles.includes(me.role)) {
-        return '/login'  // logged in, but wrong role for this page
-      }
-      return true
-    } catch {
-      return '/login'  // no valid session at all
-    }
-  })
+
+    // main.js resolves the session before mount, so this is normally cached.
+    const user = auth.user ?? await loadUser()
+    if (!user) return '/login'
+
+    if (to.meta.roles && !to.meta.roles.includes(user.role)) return '/login'
+    return true
+})
 
 export default router

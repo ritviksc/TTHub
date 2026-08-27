@@ -7,12 +7,6 @@ export const auth = reactive({
   loaded: false,  // has a session check finished at least once?
 })
 
-// TEMPORARY: which dashboard tab is showing. Goes away once the tabs become
-// real routes and router-link-active tracks this for us.
-export const ui = reactive({
-  activeNav: '',
-})
-
 export async function loadUser() {
   try {
     auth.user = await fetchMe()

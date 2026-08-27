@@ -1,16 +1,34 @@
 <script setup>
-import { computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRouter, RouterLink } from 'vue-router'
 import logoSrc from '@/assets/logo.png'
-import { auth, ui, clearUser } from '@/stores/auth.js'
+import { auth, clearUser } from '@/stores/auth.js'
 import { logout } from '@/apis.js'
 
 const router = useRouter()
 
 const NAV_ITEMS = {
-  super_admin:    ['National overview', 'Kapa', 'Reporting', 'Users', 'Administration'],
-  branch_manager: ['Overview', 'Sessions', 'Participants', 'Instructors', 'Feedback', 'Reports'],
-  instructor:     ['Home', 'Sessions', 'Participants', 'Feedback'],
+  super_admin: [
+    { label: 'National overview', to: '/super-admin/overview' },
+    { label: 'Kapa',              to: '/super-admin/kapa' },
+    { label: 'Reporting',         to: '/super-admin/reporting' },
+    { label: 'Users',             to: '/super-admin/users' },
+    { label: 'Administration',    to: '/super-admin/administration' },
+  ],
+  branch_manager: [
+    { label: 'Overview',     to: '/branch-manager/overview' },
+    { label: 'Sessions',     to: '/branch-manager/sessions' },
+    { label: 'Participants', to: '/branch-manager/participants' },
+    { label: 'Instructors',  to: '/branch-manager/instructors' },
+    { label: 'Feedback',     to: '/branch-manager/feedback' },
+    { label: 'Reports',      to: '/branch-manager/reports' },
+  ],
+  instructor: [
+    { label: 'Home',         to: '/instructor/home' },
+    { label: 'Sessions',     to: '/instructor/sessions' },
+    { label: 'Participants', to: '/instructor/participants' },
+    { label: 'Feedback',     to: '/instructor/feedback' },
+  ],
 }
 
 const ROLE_LABELS = {
@@ -35,11 +53,6 @@ const userName = computed(() => {
   return `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || u.email
 })
 
-// Keep the active tab valid when the signed-in user changes.
-watch(navItems, (items) => {
-  if (!items.includes(ui.activeNav)) ui.activeNav = items[0] ?? ''
-}, { immediate: true })
-
 async function handleLogout() {
   try { await logout() } catch (e) {}
   clearUser()
@@ -56,14 +69,14 @@ async function handleLogout() {
     </div>
 
     <div class="nav-links">
-      <button
+      <RouterLink
         v-for="item in navItems"
-        :key="item"
-        :class="['nav-link', { active: ui.activeNav === item }]"
-        @click="ui.activeNav = item"
+        :key="item.to"
+        :to="item.to"
+        class="nav-link"
       >
-        {{ item }}
-      </button>
+        {{ item.label }}
+      </RouterLink>
     </div>
 
     <div class="nav-right">
@@ -86,11 +99,12 @@ async function handleLogout() {
 
 .nav-links { display: flex; gap: 4px; }
 .nav-link {
-  background: none; border: none; color: rgba(255,255,255,0.7);
+  color: rgba(255,255,255,0.7); text-decoration: none;
   padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
+  white-space: nowrap;
 }
-.nav-link:hover { color: white; background: none; }
-.nav-link.active { background: #333; color: white; }
+.nav-link:hover { color: white; text-decoration: none; }
+.nav-link.router-link-active { background: #333; color: white; }
 
 .nav-right {
   display: flex; align-items: center; gap: 12px;
