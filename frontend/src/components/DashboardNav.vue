@@ -10,9 +10,10 @@ const router = useRouter()
 const NAV_ITEMS = {
   super_admin: [
     { label: 'National overview', to: '/super-admin/overview' },
-    { label: 'Kapa',              to: '/super-admin/kapa' },
-    { label: 'Reporting',         to: '/super-admin/reporting' },
+    { label: 'Branch',            to: '/super-admin/branches' },
+    { label: 'Participants',      to: '/super-admin/participants' },
     { label: 'Users',             to: '/super-admin/users' },
+    { label: 'Reporting',         to: '/super-admin/reporting' },
     { label: 'Administration',    to: '/super-admin/administration' },
   ],
   branch_manager: [
@@ -40,11 +41,11 @@ const ROLE_LABELS = {
 const navItems  = computed(() => NAV_ITEMS[auth.user?.role] ?? [])
 const roleLabel = computed(() => ROLE_LABELS[auth.user?.role] ?? '')
 
-// Super Admin works nationally; the other two are scoped to their kapa.
+// Super Admin works nationally; the other two are scoped to their branch.
 const scope = computed(() =>
   auth.user?.role === 'super_admin'
     ? 'National'
-    : `Kapa: ${auth.user?.branch?.name ?? '—'}`
+    : `Branch: ${auth.user?.branch?.name ?? '—'}`
 )
 
 const userName = computed(() => {

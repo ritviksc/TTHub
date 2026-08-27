@@ -1,37 +1,64 @@
 /* Shared shell for the public (signed-out) pages.
    Namespaced under .public-page, mirroring how .dash-page works for the
-   signed-in side. All values come from theme.css. */
+   signed-in side. All values come from theme.css.
+
+   These pages open with a centred .page-head (eyebrow, headline, lead) sitting
+   straight on the cream background, with body copy following in .prose at
+   reading width. No card: the cream is the page. */
 
 .public-page {
   min-height: calc(100vh - var(--nav-height));
   background: var(--bg);
-  padding: 60px 24px 80px;
+  padding: 88px 24px 96px;
 }
 
-/* Centred white card holding body copy */
-.public-page .panel {
-  max-width: var(--prose-width);
-  width: 100%;
+/* ---- page head ---- */
+
+.public-page .page-head {
+  max-width: 720px;
   margin: 0 auto;
-  background: var(--surface);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-panel);
-  padding: 48px 56px;
+  text-align: center;
+}
+
+.public-page .eyebrow {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin: 0 0 14px;
 }
 
 .public-page h1 {
-  font-size: var(--text-3xl);
+  font-size: 52px;
   font-weight: 700;
-  line-height: 1.2;
-  color: var(--teal);
-  margin: 0 0 24px;
+  line-height: 1.15;
+  color: var(--text);
+  margin: 0 0 20px;
+}
+
+.public-page .lead {
+  font-size: 19px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0 0 18px;
+}
+
+/* ---- body copy ---- */
+
+/* Long-form copy reads left-aligned even though the head above it is centred,
+   so .prose sets its own alignment rather than inheriting the head's. */
+.public-page .prose {
+  max-width: var(--prose-width);
+  margin: 64px auto 0;
+  text-align: left;
 }
 
 .public-page h2 {
   font-size: 24px;
   font-weight: 700;
   color: var(--text);
-  margin: 40px 0 16px;
+  margin: 44px 0 16px;
 }
 
 .public-page p {
@@ -41,10 +68,12 @@
   margin: 0 0 18px;
 }
 
-.public-page .lead {
-  font-size: 19px;
-  color: var(--text);
-  font-weight: 500;
+/* A rule to break the page up where copy runs long. */
+.public-page .divider {
+  height: 1px;
+  border: 0;
+  background: var(--border);
+  margin: 56px 0 0;
 }
 
 /* Actions */
@@ -91,7 +120,9 @@
 }
 
 @media (max-width: 640px) {
-  .public-page { padding: 32px 16px 56px; }
-  .public-page .panel { padding: 32px 24px; }
-  .public-page h1 { font-size: 32px; }
+  .public-page { padding: 56px 16px 64px; }
+  .public-page h1 { font-size: 34px; }
+  .public-page .lead { font-size: 17px; }
+  .public-page .prose { margin-top: 44px; }
+  .public-page h2 { font-size: 21px; margin: 36px 0 14px; }
 }

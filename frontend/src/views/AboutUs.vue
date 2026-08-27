@@ -1,13 +1,15 @@
 <template>
   <div class="public-page">
-    <article class="panel">
-        <h1>What is Taurite Tū?</h1>
+    <header class="page-head">
+      <p class="eyebrow">About us</p>
+      <h1>What is Taurite Tū?</h1>
+      <p class="lead">
+        Taurite Tū is a strength and balance wellness programme designed by Māori for Māori
+        aged 50 plus and their whānau.
+      </p>
+    </header>
 
-        <p class="lead">
-          Taurite Tū is a strength and balance wellness programme designed by Māori for Māori
-          aged 50 plus and their whānau.
-        </p>
-
+    <article class="prose">
         <p>
           We use traditional Māori techniques to strengthen muscle, build balance and
           confidence, and prevent the risk of falling by focusing on posture, breathing,
@@ -59,6 +61,8 @@
           Te Ika a Māui. In 2023, phase 3 saw 13 more groups deliver Taurite Tū.
         </p>
 
+        <hr class="divider" />
+
         <p class="cta-text">
           To find a Taurite Tū class near you, please email
           <a href="mailto:tauritetu@tro.org.nz">tauritetu@tro.org.nz</a>
@@ -69,9 +73,7 @@
 
 <style scoped>
 .cta-text {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
+  margin-top: 24px;
   color: var(--text);
 }
 .cta-text a { color: var(--teal); font-weight: 600; }

@@ -75,14 +75,6 @@ export async function logout() {
   return response.data
 }
 
-export async function createStaffAccount(payload){
-  const response = await api.post(
-      "/auth/staff/", 
-      payload
-    )
-  return response.data
-}
-
 export async function fetchMe() {
   const response = await api.get(
     "/auth/me/",
@@ -90,8 +82,13 @@ export async function fetchMe() {
   return response.data
 }
 
-export async function listBranches() {
-  const response = await api.get("/auth/branches/")
+/* ---- staff ---- */
+
+export async function createStaffAccount(payload){
+  const response = await api.post(
+      "/auth/staff/", 
+      payload
+    )
   return response.data
 }
 
@@ -102,5 +99,85 @@ export async function listStaff() {
 
 export async function deactivateStaff(id) {
   const response = await api.post(`/auth/staff/${id}/deactivate/`)
+  return response.data
+}
+
+/* ---- branches ---- */
+
+// params: { search, no_manager } — both optional, both handled server side.
+// Returns id/name/region plus manager_name and participant_count, so the same
+// call serves both the Branch table and the branch pickers on the staff forms.
+export async function listBranches(params = {}) {
+  const response = await api.get("/branches/", { params })
+  return response.data
+}
+
+export async function createBranch(payload) {
+  const response = await api.post("/branches/", payload)
+  return response.data
+}
+
+export async function getBranch(id) {
+  const response = await api.get(`/branches/${id}/`)
+  return response.data
+}
+
+export async function updateBranch(id, payload) {
+  const response = await api.patch(`/branches/${id}/`, payload)
+  return response.data
+}
+
+/* ---- participants ---- */
+
+// params: { branch, is_active, search } — all optional.
+export async function listParticipants(params = {}) {
+  const response = await api.get("/participants/", { params })
+  return response.data
+}
+
+export async function getParticipant(id) {
+  const response = await api.get(`/participants/${id}/`)
+  return response.data
+}
+
+export async function createParticipant(payload) {
+  const response = await api.post("/participants/", payload)
+  return response.data
+}
+
+export async function updateParticipant(id, payload) {
+  const response = await api.patch(`/participants/${id}/`, payload)
+  return response.data
+}
+
+export async function deactivateParticipant(id) {
+  const response = await api.post(`/participants/${id}/deactivate/`)
+  return response.data
+}
+
+export async function deleteBranch(id) {
+  const response = await api.delete(`/branches/${id}/`)
+  return response.data
+}
+
+// Assigning also grants the Branch Manager role, and moves the person off any
+// branch they were on. The response reports both so the UI can say what happened.
+export async function assignBranchManager(branchId, userId) {
+  const response = await api.post(`/branches/${branchId}/managers/`, { user_id: userId })
+  return response.data
+}
+
+export async function removeBranchManager(branchId, userId) {
+  const response = await api.delete(`/branches/${branchId}/managers/${userId}/`)
+  return response.data
+}
+
+export async function assignBranchInstructor(branchId, userId) {
+  const response = await api.post(`/branches/${branchId}/instructors/`, { user_id: userId })
+  return response.data
+}
+
+export async function removeBranchInstructor(branchId, userId) {
+  const response = await api.delete(`/branches/${branchId}/instructors/${userId}/`)
   return response.data
 }

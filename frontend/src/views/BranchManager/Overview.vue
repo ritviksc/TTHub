@@ -122,7 +122,7 @@ const chartBars = Array.from({ length: 10 }, () => ({
 
       </div>
 
-      <p class="demo-note">Demonstration data only. All names, kapa and quotes are fictional.</p>
+      <p class="demo-note">Demonstration data only. All names, branches and quotes are fictional.</p>
     </main>
   </div>
 </template>

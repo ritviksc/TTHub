@@ -51,3 +51,62 @@ class StaffListSerializer(serializers.ModelSerializer):
 
     def get_branch_name(self, obj):
         return obj.branch.name if obj.branch else None
+
+
+class BranchListSerializer(serializers.ModelSerializer):
+    """A row in the Branch table. participant_count and the manager come from
+    annotations/prefetch on the view, so rendering the list stays a fixed
+    number of queries however many branches there are."""
+
+    manager_name = serializers.SerializerMethodField()
+    participant_count = serializers.IntegerField(read_only=True)
+    instructor_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Branch
+        fields = [
+            "id", "name", "region",
+            "manager_name", "instructor_count", "participant_count",
+        ]
+
+    def get_manager_name(self, obj):
+        # to_attr="managers" on the view already narrowed this to active
+        # branch managers, so there is nothing to filter here.
+        managers = getattr(obj, "managers", [])
+        if not managers:
+            return None
+        manager = managers[0]
+        return manager.get_full_name() or manager.username
+
+
+def _staff_rows(people):
+    """Shared shape for the manager and instructor lists on the branch page."""
+    return [
+        {
+            "id": str(person.id),
+            "name": person.get_full_name() or person.username,
+            "email": person.email,
+        }
+        for person in people
+    ]
+
+
+class BranchDetailSerializer(BranchListSerializer):
+    """The branch page. Same read-only extras as the table row, but name and
+    region are editable here (the view restricts who may write).
+
+    A branch can have more than one manager, so the page gets the full list
+    while the table keeps the single manager_name it has room for."""
+
+    managers = serializers.SerializerMethodField()
+    instructors = serializers.SerializerMethodField()
+
+    class Meta(BranchListSerializer.Meta):
+        fields = BranchListSerializer.Meta.fields + ["managers", "instructors"]
+        read_only_fields = ["id"]
+
+    def get_managers(self, obj):
+        return _staff_rows(getattr(obj, "managers", []))
+
+    def get_instructors(self, obj):
+        return _staff_rows(getattr(obj, "instructors", []))

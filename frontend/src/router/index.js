@@ -41,7 +41,21 @@ const router = createRouter({
             meta: { requiresAuth: true, roles: SA },
         },
         comingSoon('/super-admin/overview', 'sa-overview', 'National overview', SA),
-        comingSoon('/super-admin/kapa', 'sa-kapa', 'Kapa', SA),
+        {
+            path: '/super-admin/branches', name: 'sa-branches',
+            component: () => import('@/views/SuperAdmin/Branches.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
+            path: '/super-admin/branches/:id', name: 'sa-branch-detail',
+            component: () => import('@/views/SuperAdmin/BranchDetail.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
+            path: '/super-admin/participants', name: 'sa-participants',
+            component: () => import('@/views/SuperAdmin/Participants.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
         comingSoon('/super-admin/reporting', 'sa-reporting', 'Reporting', SA),
         {
             path: '/super-admin/create-staff', name: 'create-staff', component: CreateStaff,
