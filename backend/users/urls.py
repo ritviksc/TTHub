@@ -16,6 +16,8 @@ urlpatterns = [
     path("csrf/", views.csrf_view),
     path("logout/", views.logout_view),
     path("staff/", views.StaffCreateView.as_view()),
+    path("staff/list/", views.StaffListView.as_view()),
+    path("staff/<uuid:pk>/deactivate/", views.StaffDeactivateView.as_view()),
     path("me/", views.me_view),
     path("branches/", views.BranchListView.as_view())
 ]

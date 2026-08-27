@@ -41,3 +41,8 @@ class BranchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branch
         fields = ["id", "name", "region"]
+
+class StaffListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserAccount
+        fields = ["id", "email", "first_name", "last_name", "role", "branch", "is_active"]

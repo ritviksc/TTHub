@@ -6,13 +6,11 @@ from rest_framework import generics
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .models import Branch
-from .serializers import BranchSerializer
- 
+from .models import Branch, UserAccount
+from .serializers import BranchSerializer, StaffCreateSerializer, StaffListSerializer
+from django.shortcuts import get_object_or_404
 from django.contrib.auth import logout
- 
 from .permissions import IsSuperAdmin, IsBranchManager, IsInstructor
-from .serializers import StaffCreateSerializer
  
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -73,3 +71,25 @@ class BranchListView(generics.ListAPIView):
 class StaffCreateView(generics.CreateAPIView):
     serializer_class = StaffCreateSerializer
     permission_classes = [IsSuperAdmin | IsBranchManager]
+
+def staff_queryset_for(user):
+    qs = UserAccount.objects.exclude(id=user.id)
+    if user.role == UserAccount.Role.BRANCH_MANAGER:
+        qs = qs.filter(branch=user.branch, role=UserAccount.Role.INSTRUCTOR)
+    return qs
+
+class StaffListView(generics.ListAPIView):
+    serializer_class = StaffListSerializer
+    permission_classes = [IsSuperAdmin | IsBranchManager]
+
+    def get_queryset(self):
+        return staff_queryset_for(self.request.user)
+
+class StaffDeactivateView(generics.GenericAPIView):
+    permission_classes = [IsSuperAdmin | IsBranchManager]
+
+    def post(self, request, pk):
+        staff = get_object_or_404(staff_queryset_for(request.user), pk=pk)
+        staff.is_active = False
+        staff.save()
+        return Response({"id": str(staff.id), "is_active": staff.is_active})
