@@ -1,19 +1,25 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import logoSrc from '@/assets/logo.png'
-import { logout } from '@/apis.js'
+import { logout, fetchMe } from '@/apis.js'
  
 const router = useRouter()
+
+const managerName = ref('')
+const branchName = ref('')
+
+onMounted(async () => {
+    const me = await fetchMe()
+    managerName.value = `${me.first_name ?? ''} ${me.last_name ?? ''}`.trim() || me.email
+    branchName.value = me.branch?.name ?? ''
+})
  
 async function handleLogout() {
   try { await logout() } catch (e) {}
   router.push('/login')
 }
- 
-const branchName = ref('Ngā Hau e Whā')
-const managerName = ref('Materoa N.')
- 
+
 const stats = ref({
   participants: 24,
   attendance: 88,

@@ -61,7 +61,13 @@ def logout_view(request) -> Response:
 @permission_classes([IsAuthenticated])
 def me_view(request):
     user = request.user
-    return Response({"email": user.email, "role": user.role})
+    return Response({
+        "email": user.email,
+        "role": user.role,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "branch": {"id": str(user.branch.id), "name": user.branch.name} if user.branch else None,
+    })
  
 class BranchListView(generics.ListAPIView):
     queryset = Branch.objects.all()
