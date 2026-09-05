@@ -4,8 +4,18 @@ django-cors-headers==4.9.0
 djangorestframework==3.18.0
 sqlparse==0.6.0
 tzdata==2026.3
+celery==5.6.3
 
-# we will need celery,redis and LLM provider after system stabilization
-# celery==5.6.3
-# redis==8.1.0
+# Read environment variables from .env file (if present)
+python-dotenv
+
+#NOTE
+#The Redis backend requires the https://pypi.org/project/redis/ library.
+#To install this package use pip:
+#pip install celery[redis]
+
+# Use docker to run redis server. The default configuration is to run on localhost:6379.
+# If you want to change the configuration, you can do so in the config/celery.py file.
+# docker run --name redis -p 6379:6379 -d redis 
+
 # LLM_PROVIDER==X.X.X
