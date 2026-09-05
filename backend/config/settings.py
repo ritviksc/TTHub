@@ -10,11 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv(BASE_DIR/".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
@@ -40,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'users',
     'participants',
+    'llm'
 ]
 
 # Send credentials with request
@@ -49,6 +54,12 @@ CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
 CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
 
 
+# Celery configuration
+CELERY_BROKER_URL = os.getenv(
+    "CELERY_BROKER_URL",
+    "redis://localhost:6379/0",
+)
+CELERY_TIMEZONE = 'Pacific/Auckland'
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
