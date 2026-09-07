@@ -18,4 +18,5 @@ python-dotenv
 # If you want to change the configuration, you can do so in the config/celery.py file.
 # docker run --name redis -p 6379:6379 -d redis 
 
-# LLM_PROVIDER==X.X.X
+# LLM Provider API client library
+openai
