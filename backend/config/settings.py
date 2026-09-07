@@ -29,6 +29,7 @@ SECRET_KEY = 'django-insecure-pbxm-#iwl5pa9&mm3sa0b_zhc19q4_-1)_p@dmde+ei#%ese25
 # LLM variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Load it once, and use it in apps that need it.
 LLM_API_ENDPOINT = os.getenv("LLM_API_ENDPOINT")  # Load the API endpoint once, and use it in apps that need it.
+DEFAULT_LLM_MODEL = os.getenv("DEFAULT_LLM_MODEL")  # Load the default LLM model once, and use it in apps that need it.
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
