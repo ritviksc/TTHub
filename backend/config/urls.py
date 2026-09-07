@@ -16,4 +16,7 @@ urlpatterns = [
     path("api/auth/", include("users.urls")),
     path("api/participants/", include("participants.urls")),
     path("api/branches/", include("users.branch_urls")),
+
+    # LLM API endpoint for generating responses from the language model
+    path("api/llm/", include("llm.urls")),
 ]
