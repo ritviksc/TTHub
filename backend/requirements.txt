@@ -11,8 +11,8 @@ python-dotenv
 
 #NOTE
 #The Redis backend requires the https://pypi.org/project/redis/ library.
-#To install this package use pip:
-#pip install celery[redis]
+#To install celery and the dependencies to use redis as the broker use:
+pip install celery[redis]
 
 # Use docker to run redis server. The default configuration is to run on localhost:6379.
 # If you want to change the configuration, you can do so in the config/celery.py file.
