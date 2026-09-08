@@ -15,6 +15,15 @@ load_dotenv(".env")
 LLM_API_ENDPOINT = os.getenv("LLM_API_ENDPOINT")
 print(f"LLM API Endpoint: {LLM_API_ENDPOINT}")
 
+"""
+Models:
+
+ONCAMPUS/Qwen3.6-27B-FP8 
+ONCAMPUS/gemma-4-12B-it 
+ONCAMPUS/Qwen3.5-9B 
+ONCAMPUS/BAAI/bge-m3
+"""
+
 # OpenAI automatically uses the OPENAI_API_KEY from the environment variable, so we don't need to pass it explicitly here.
 client = OpenAI(
     base_url=LLM_API_ENDPOINT
