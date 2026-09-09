@@ -93,7 +93,12 @@ const router = createRouter({
             component: () => import('@/views/Instructor/Sessions.vue'),
             meta: { requiresAuth: true, roles: IN },
         },
-        comingSoon('/instructor/participants', 'in-participants', 'Participants', IN),
+       {
+            path: '/instructor/participants',
+            name: 'in-participants',
+            component: () => import('@/views/Instructor/Participants.vue'),
+            meta: { requiresAuth: true, roles: IN },
+        },
         comingSoon('/instructor/feedback', 'in-feedback', 'Feedback', IN),
     ]
 })
