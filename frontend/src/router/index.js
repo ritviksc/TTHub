@@ -95,6 +95,12 @@ const router = createRouter({
         },
         comingSoon('/instructor/participants', 'in-participants', 'Participants', IN),
         comingSoon('/instructor/feedback', 'in-feedback', 'Feedback', IN),
+
+        {
+            path: '/participants/:id', name: 'participant-detail',
+            component: () => import('@/views/ParticipantConsent.vue'),
+            meta: { requiresAuth: true, roles: SA, BM, IN},
+        },
     ]
 })
 
