@@ -196,3 +196,9 @@ CACHES = {
         "LOCATION": DJANGO_CACHE,
     }
 }
+
+
+# Images
+MEDA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "backend" / "media"
+
