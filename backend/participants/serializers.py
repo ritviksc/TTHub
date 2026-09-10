@@ -32,7 +32,7 @@ class ParticipantSerializer(serializers.ModelSerializer):
             "is_active",
             "notes",
             "gp_consent_given",
-            "gp_consent_date"
+            "gp_consent_date",
             "photo",
             "photo_consent_given",
             "photo_consent_date",
