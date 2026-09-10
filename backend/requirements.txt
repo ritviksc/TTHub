@@ -5,6 +5,7 @@ djangorestframework==3.18.0
 sqlparse==0.6.0
 tzdata==2026.3
 celery==5.6.3
+Pillow==11.0.0
 
 # Read environment variables from .env file (if present)
 python-dotenv
