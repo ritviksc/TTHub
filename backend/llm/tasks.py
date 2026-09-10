@@ -2,6 +2,9 @@
 # responses from the language model
 # Make sure tasks use @shared_task decorator to register them with Celery
 
+# We need to run this command so the workers are created
+# celery -A config worker -c 4 (create 4 celery workers - change if workload grows)
+
 from celery import shared_task
 from .services.client import get_available_models
 from django.core import cache
