@@ -44,7 +44,7 @@ def get_models() -> None:
     # Can run this at regular intervals to update models avaliable to users
     if (get_available_models()):
         cache.set("models", json.dumps())
-    elif:
+    else: 
         print("Error getting models")
     
     
