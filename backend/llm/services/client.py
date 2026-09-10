@@ -20,7 +20,6 @@ client = OpenAI(api_key=settings.OPENAI_API_KEY, base_url=settings.LLM_API_ENDPO
 def generate(prompt: str, model: str = settings.DEFAULT_LLM_MODEL, max_tokens: int = 100, temperature: float = 0.2) -> str:
     """
     Generate a response from the LLM provider API based on the provided messages.
-    
     Arguments:
         prompt (str): The input prompt for the LLM. Will be created using data in the database.
 
@@ -28,13 +27,13 @@ def generate(prompt: str, model: str = settings.DEFAULT_LLM_MODEL, max_tokens: i
         Default is set to the DEFAULT_LLM_MODEL from settings.py.
 
         max_tokens (int): The maximum number of tokens to generate in the response.
-        Default is set to 100 tokens. Change as required based on lenght/processing time of the response.
+        Default is set to 100 tokens. Change as required based on length/processing time of the response.
 
         temperature (float): Sampling temperature for randomness in the response.
-        Default is set to 0.2. The range of sampling temperatures is between 0 and 2. Higher values like 0.8 will make the output more random, 
+        Default is set to 0.2. The range of sampling temperatures is between 0 and 2.
+        Higher values like 0.8 will make the output more random,
         while lower values like 0.2 will make it more focused and deterministic.
         Change as required based on the desired randomness of the response.
-        
     Returns:
         str: The generated response content from the LLM.
     """
@@ -42,7 +41,10 @@ def generate(prompt: str, model: str = settings.DEFAULT_LLM_MODEL, max_tokens: i
         response = client.chat.completions.create(
             model=model,
             messages=[
-                {'role': 'system', 'content': 'You are a helpful and concise AI assistant that will summarise data and generate a report like a professional.'},
+                {'role': 'system', 'content':
+                 'You are a helpful and concise AI \
+                 assistant that will summarise data and \
+                 generate a report like a professional.'},
                 {'role': 'user', 'content': prompt}
             ],
             max_tokens=max_tokens,
@@ -56,10 +58,8 @@ def generate(prompt: str, model: str = settings.DEFAULT_LLM_MODEL, max_tokens: i
 def get_available_models() -> list:
     """
     Get the list of available LLM models from the LLM provider API.
-
     Arguments:
-        None
-    
+        None   
     Returns:
         list: A list of available LLM models.
     """
@@ -68,4 +68,4 @@ def get_available_models() -> list:
         return [model.id for model in models.data]
     except Exception as e:
         print(f"Error fetching available models: {e}")
-        return []
+        return None
