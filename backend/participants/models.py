@@ -43,6 +43,15 @@ class Participant(models.Model):
         blank=True,
         help_text="General notes only. Not a clinical record.",
     )
+    
+    # Medical clearance to take part in activities
+    gp_consent_given = models.BooleanField(default=False)
+    gp_consent_date = models.DateField(null=True, blank=True)
+
+    # Consent to allow use of their photos for attendance marking
+    photo = models.ImageField(upload_to="participant_photos/", null=True, blank=True)
+    photo_consent_given = models.BooleanField(default=False)
+    photo_consent_date = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ["last_name", "first_name"]
