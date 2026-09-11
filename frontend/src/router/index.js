@@ -99,7 +99,7 @@ const router = createRouter({
         {
             path: '/participants/:id', name: 'participant-detail',
             component: () => import('@/views/ParticipantConsent.vue'),
-            meta: { requiresAuth: true, roles: SA, BM, IN},
+            meta: { requiresAuth: true, roles: [...SA, ...BM, ...IN]},
         },
     ]
 })
