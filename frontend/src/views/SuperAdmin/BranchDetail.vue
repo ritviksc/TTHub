@@ -420,17 +420,6 @@ const panels = [
 <style scoped>
 /* Every colour here is a theme.css token — nothing hardcoded. */
 
-.back-link {
-  display: inline-block;
-  margin-bottom: 16px;
-  font-size: var(--text-base);
-  font-weight: 600;
-  color: var(--text-muted);
-}
-.back-link:hover { color: var(--text); text-decoration: none; }
-
-.loading-note { color: var(--text-faint); font-size: var(--text-base); }
-
 .panel {
   background: var(--surface);
   border-radius: var(--radius-lg);

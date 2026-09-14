@@ -126,6 +126,35 @@
 .dash-page .form-success a { color: var(--success); font-weight: 600; }
 .dash-page .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 
+/* Detail pages */
+.dash-page .back-link {
+  display: inline-block; margin-bottom: 16px;
+  font-size: var(--text-base); font-weight: 600; color: var(--text-muted);
+}
+.dash-page .back-link:hover { color: var(--text); text-decoration: none; }
+.dash-page .loading-note { color: var(--text-faint); font-size: var(--text-base); }
+
+/* Stat tiles. Named stat-tile-* so they don't collide with Overview.vue's own stat-* classes. */
+.dash-page .stat-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px; margin-bottom: 24px;
+}
+.dash-page .stat-tile {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: 20px; box-shadow: var(--shadow-card);
+}
+.dash-page .stat-tile-value { font-size: var(--text-2xl); font-weight: 700; color: var(--text); }
+.dash-page .stat-tile-label { font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px; }
+
+/* Initials avatar for participants (there are no photos yet) */
+.dash-page .initials-avatar {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--teal-tint); color: var(--teal-dark);
+  font-size: var(--text-base); font-weight: 700;
+}
+.dash-page .initials-avatar.lg { width: 96px; height: 96px; font-size: var(--text-2xl); }
+
 /* Misc */
 .dash-page .demo-note {
   text-align: center; font-size: var(--text-sm); color: var(--text-faint); margin-top: 48px;
