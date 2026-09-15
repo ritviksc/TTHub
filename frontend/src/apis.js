@@ -186,7 +186,9 @@ export async function removeBranchInstructor(branchId, userId) {
 
 /* ---- sessions ----
    TEMPORARY: there is no sessions backend yet, so these read and write localStorage.
-   Signatures match the planned endpoints; swap the bodies for api calls when it lands. */
+   Signatures match the planned endpoints, once backend implemented swap the bodies 
+   for api calls. 
+*/
 
 const SESSIONS_KEY = "taurite_sessions_v1"
 
