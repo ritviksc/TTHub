@@ -25,6 +25,8 @@ function sleep(ms) {
 // Follows exponential backoff principle
 // NOTE: Retrying GET requests is recommended, but be careful when retrying 
 // POST requests 
+
+// IMPORTANT: Should wrap read-only (GET) calls broadly, be optional but reasonable on idempotent updates (PATCH)
 export async function withRetry(maxRetries, axiosFunction, ...args) {
   // Set default value manually if not provided
   if (maxRetries === undefined || maxRetries === null)
@@ -180,4 +182,97 @@ export async function assignBranchInstructor(branchId, userId) {
 export async function removeBranchInstructor(branchId, userId) {
   const response = await api.delete(`/branches/${branchId}/instructors/${userId}/`)
   return response.data
+}
+
+/* ---- sessions ----
+   TEMPORARY: there is no sessions backend yet, so these read and write localStorage.
+   Signatures match the planned endpoints, once backend implemented swap the bodies 
+   for api calls. 
+*/
+
+const SESSIONS_KEY = "taurite_sessions_v1"
+
+function readSessions() {
+  try {
+    return JSON.parse(localStorage.getItem(SESSIONS_KEY)) ?? []
+  } catch {
+    return []
+  }
+}
+
+function writeSessions(sessions) {
+  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
+}
+
+// Shaped like an axios error so pages can check e.response?.status either way.
+function sessionNotFound() {
+  return { response: { status: 404, data: { detail: "Session not found." } } }
+}
+
+function findSession(sessions, id) {
+  const session = sessions.find(s => s.id === id)
+  if (!session) throw sessionNotFound()
+  return session
+}
+
+// GET /sessions/ — newest first, with counts instead of the full roster.
+export async function listSessions() {
+  return readSessions()
+    .map(({ attendance, ...session }) => ({
+      ...session,
+      present_count: attendance.filter(a => a.status === "present").length,
+      roster_count: attendance.length,
+    }))
+    .sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`))
+}
+
+// GET /sessions/:id/
+export async function getSession(id) {
+  return findSession(readSessions(), id)
+}
+
+// POST /sessions/ — payload: { name, date, time, activity }.
+// The roster is built from the branch's active participants, as the server will do.
+export async function createSession({ name, date, time, activity }) {
+  const participants = await listParticipants({ is_active: true })
+
+  const session = {
+    id: crypto.randomUUID(),
+    name,
+    date,
+    time,
+    activity,
+    created_at: new Date().toISOString(),
+    attendance: participants.map(p => ({
+      participant_id: p.id,
+      name: p.preferred_name || p.full_name,
+      status: "absent",
+      absence_reason: "",
+    })),
+  }
+
+  writeSessions([session, ...readSessions()])
+  return session
+}
+
+// PATCH /sessions/:id/attendance/:participantId/ — changes: { status, absence_reason }.
+export async function updateAttendance(sessionId, participantId, changes) {
+  const sessions = readSessions()
+  const record = findSession(sessions, sessionId).attendance
+    .find(a => a.participant_id === participantId)
+  if (!record) throw sessionNotFound()
+
+  Object.assign(record, changes)
+  // A reason only makes sense for an absence.
+  if (record.status !== "absent") record.absence_reason = ""
+
+  writeSessions(sessions)
+  return { ...record }
+}
+
+// DELETE /sessions/:id/
+export async function deleteSession(id) {
+  const sessions = readSessions()
+  findSession(sessions, id)
+  writeSessions(sessions.filter(s => s.id !== id))
 }

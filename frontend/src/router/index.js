@@ -93,7 +93,22 @@ const router = createRouter({
             component: () => import('@/views/Instructor/Sessions.vue'),
             meta: { requiresAuth: true, roles: IN },
         },
-        comingSoon('/instructor/participants', 'in-participants', 'Participants', IN),
+        {
+            path: '/instructor/sessions/:id', name: 'in-session-detail',
+            component: () => import('@/views/Instructor/SessionDetail.vue'),
+            meta: { requiresAuth: true, roles: IN },
+        },
+        {
+            path: '/instructor/sessions/:id/attendance', name: 'in-attendance-mode',
+            component: () => import('@/views/Instructor/AttendanceMode.vue'),
+            meta: { requiresAuth: true, roles: IN },
+        },
+       {
+            path: '/instructor/participants',
+            name: 'in-participants',
+            component: () => import('@/views/Instructor/Participants.vue'),
+            meta: { requiresAuth: true, roles: IN },
+        },
         comingSoon('/instructor/feedback', 'in-feedback', 'Feedback', IN),
     ]
 })

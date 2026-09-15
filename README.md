@@ -3,7 +3,7 @@
 ## Backend setup
 
 ```powershell
-# from repo root, with .venv already created (see venv_setup.txt) and activated
+# from repo root, with .venv already created (see docs/backend/venv-setup.md) and activated
 cd backend
 python manage.py migrate
 python manage.py runserver
