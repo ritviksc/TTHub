@@ -40,7 +40,11 @@ const router = createRouter({
             component: () => import('@/views/SuperAdmin/Administration.vue'),
             meta: { requiresAuth: true, roles: SA },
         },
-        comingSoon('/super-admin/overview', 'sa-overview', 'National overview', SA),
+        {
+            path: '/super-admin/overview', name: 'sa-overview',
+            component: () => import('@/views/SuperAdmin/Overview.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
         {
             path: '/super-admin/branches', name: 'sa-branches',
             component: () => import('@/views/SuperAdmin/Branches.vue'),
