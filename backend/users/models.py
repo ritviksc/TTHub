@@ -22,6 +22,10 @@ class UserAccount(AbstractUser): # Default fields for user come from AbstractUse
         INSTRUCTOR = "instructor", "Instructor"
  
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Email is the credential staff use to sign in.  `username` remains in
+    # place for Django compatibility and is kept equal to this value when an
+    # account is created.
+    email = models.EmailField(unique=True)
     role = models.CharField(max_length=20, choices=Role.choices)
     branch = models.ForeignKey(
         Branch,

@@ -11,7 +11,10 @@ class StaffCreateSerializer(serializers.ModelSerializer):
         extra_kwargs = {"branch": {"required": False}}
 
     def validate(self, attrs):
-        if UserAccount.objects.filter(email=attrs["email"]).exists():
+        email = attrs["email"].strip().lower()
+        attrs["email"] = email
+
+        if UserAccount.objects.filter(email__iexact=email).exists():
             raise serializers.ValidationError({"email": "An account with this email already exists."})
 
         requesting_user = self.context["request"].user

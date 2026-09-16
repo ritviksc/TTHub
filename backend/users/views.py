@@ -23,19 +23,20 @@ from .permissions import IsSuperAdmin, IsBranchManager, IsInstructor
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login_view(request) -> Response:
-    # Get username and password from POST request
-    username = request.data.get("username")
+    # Staff sign in with their email address. UserAccount.username is retained
+    # for Django compatibility and mirrors the normalized email value.
+    email = request.data.get("email", "").strip().lower()
     password = request.data.get("password")
  
     user = authenticate(
         request,
-        username=username,
+        username=email,
         password=password,
     )
  
     if user is None: # No user found
         return Response(
-            {"error": "Invalid username or password"},
+            {"error": "Invalid email or password"},
             status = status.HTTP_401_UNAUTHORIZED,
         )
  
