@@ -3,15 +3,13 @@
 export const ATTENDANCE_STATUSES = [
   { value: 'present', label: 'Present' },
   { value: 'absent', label: 'Absent' },
-  { value: 'excused', label: 'Excused' },
 ]
 
 export const ABSENCE_REASONS = [
-  'Sick',
-  'Family commitment',
-  'Transport issue',
-  'Work commitment',
-  'Other',
+  { value: 'no_show', label: 'No show' },
+  { value: 'medical_appointment', label: 'Medical appointment' },
+  { value: 'transport_issue', label: 'Transport issue' },
+  { value: 'other', label: 'Other' },
 ]
 
 export const SESSION_PERIODS = ['This month', 'This quarter', 'All']
@@ -49,7 +47,7 @@ export function isInPeriod(date, period) {
 }
 
 export function countByStatus(attendance = []) {
-  const counts = { present: 0, absent: 0, excused: 0 }
+  const counts = { present: 0, absent: 0 }
   for (const record of attendance) counts[record.status]++
 
   const total = attendance.length

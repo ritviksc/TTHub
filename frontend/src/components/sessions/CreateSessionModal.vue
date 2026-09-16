@@ -4,9 +4,10 @@ import { createSession } from '@/apis.js'
 
 const emit = defineEmits(['close', 'created'])
 
-const form = ref({ name: '', date: '', time: '', activity: '' })
+const form = ref({ date: '', time: '', activity: '' })
 const error = ref('')
 const saving = ref(false)
+const ACTIVITIES = ['Standard strength and mobility training', 'Fitness test']
 
 // Blank fields are caught by the inputs' `required`, so this only handles save failures.
 async function submit() {
@@ -28,11 +29,6 @@ async function submit() {
     <form class="modal" @submit.prevent="submit">
       <h2>Create new session</h2>
 
-      <div class="form-group">
-        <label for="session-name">Session name</label>
-        <input id="session-name" v-model.trim="form.name" placeholder="Thursday morning class" required />
-      </div>
-
       <div class="form-row">
         <div class="form-group">
           <label for="session-date">Date</label>
@@ -46,7 +42,10 @@ async function submit() {
 
       <div class="form-group">
         <label for="session-activity">Activity</label>
-        <input id="session-activity" v-model.trim="form.activity" placeholder="Strength and mobility" required />
+        <select id="session-activity" v-model="form.activity" required>
+          <option value="" disabled>Select an activity</option>
+          <option v-for="activity in ACTIVITIES" :key="activity" :value="activity">{{ activity }}</option>
+        </select>
       </div>
 
       <div v-if="error" class="form-error">{{ error }}</div>
