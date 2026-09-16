@@ -31,6 +31,11 @@ class ParticipantSerializer(serializers.ModelSerializer):
             "joined_on",
             "is_active",
             "notes",
+            "gp_consent_given",
+            "gp_consent_date",
+            "photo",
+            "photo_consent_given",
+            "photo_consent_date",
         ]
         # is_active is read-only here on purpose: it changes through the
         # deactivate endpoint, the same way staff accounts do.
@@ -52,6 +57,14 @@ class ParticipantSerializer(serializers.ModelSerializer):
             attrs["branch"] = user.branch
         elif self.instance is None and not attrs.get("branch"):
             raise serializers.ValidationError({"branch": "Branch is required."})
+        
+        photo = attrs.get("photo")
+        existing_consent = getattr(self.instance, "photo_consent_given", False)
+        consent = attrs.get("photo_consent_given", existing_consent)
+        if photo and not consent:
+            raise serializers.ValidationError(
+                {"photo_consent_given": "Consent must be recorded before attaching a photo."}
+            )
 
         return attrs
 

@@ -178,15 +178,24 @@ async function submitCreateParticipant() {
             <th>Branch</th>
             <th>Phone</th>
             <th>Status</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
+          <tr v-if="loading">
+            <td colspan="5" class="empty-row">Loading participants…</td>
+          </tr>
+          <tr v-else-if="!visibleParticipants.length">
+            <td colspan="5" class="empty-row">
+              {{ participants.length
+                ? 'No participants match this search.'
+                : 'No participants yet. Add the first one.' }}
+            </td>
+          </tr>
           <tr v-for="p in visibleParticipants" :key="p.id">
             <td>
               <span class="participant-name">{{ p.full_name }}</span>
-              <span v-if="p.preferred_name" class="participant-preferred">
-                {{ p.preferred_name }}
-              </span>
+              <span v-if="p.preferred_name" class="participant-preferred">{{ p.preferred_name }}</span>
             </td>
             <td>{{ p.branch_name ?? '—' }}</td>
             <td>{{ p.phone || '—' }}</td>
@@ -195,17 +204,7 @@ async function submitCreateParticipant() {
                 {{ p.is_active ? 'Active' : 'Inactive' }}
               </span>
             </td>
-          </tr>
-
-          <tr v-if="loading">
-            <td colspan="4" class="empty-row">Loading participants…</td>
-          </tr>
-          <tr v-else-if="!visibleParticipants.length">
-            <td colspan="4" class="empty-row">
-              {{ participants.length
-                ? 'No participants match this search.'
-                : 'No participants yet. Add the first one.' }}
-            </td>
+            <td><RouterLink :to="`/participants/${p.id}`">Consent / photo →</RouterLink></td>
           </tr>
         </tbody>
       </table>

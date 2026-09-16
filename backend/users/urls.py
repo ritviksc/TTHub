@@ -19,5 +19,4 @@ urlpatterns = [
     path("staff/list/", views.StaffListView.as_view()),
     path("staff/<uuid:pk>/deactivate/", views.StaffDeactivateView.as_view()),
     path("me/", views.me_view),
-    path("branches/", views.BranchListView.as_view())
 ]
