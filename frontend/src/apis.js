@@ -58,11 +58,11 @@ export async function fetchCsrfCookie() {
   await api.get("/auth/csrf/")
 }
 
-export async function login(username, password) {
+export async function login(email, password) {
   const response = await api.post(
     "/auth/login/",
     {
-      username,
+      email,
       password,
     }
   )

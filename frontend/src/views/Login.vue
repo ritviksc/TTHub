@@ -12,7 +12,7 @@ import { loadUser } from '@/stores/auth.js'
 
 const router = useRouter()
 
-const username = ref('')
+const email = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -37,14 +37,14 @@ async function handleSubmit() {
   error.value = ''
 
   try {
-    const data = await login(username.value, password.value)
+    const data = await login(email.value, password.value)
     await loadUser()
     router.push(roleRoutes[data.role] ?? '/')
   } catch (err) {
     if (err.code === TIMEOUT_ERROR) {
       error.value = 'The server took too long to respond.'
     } else if (err.response?.status === 401) {
-      error.value = 'Incorrect username or password.'
+      error.value = 'Incorrect email or password.'
     } else if (err.response?.status === 403) {
       error.value = 'Request was rejected. Please refresh and try again.'
     } else {
@@ -69,7 +69,7 @@ async function handleSubmit() {
         <form @submit.prevent="handleSubmit">
 
           <div class="field">
-            <label for="username">Username</label>
+            <label for="email">Email</label>
             <div class="input-wrap">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -77,11 +77,11 @@ async function handleSubmit() {
                 <path d="M4 21a8 8 0 0 1 16 0"></path>
               </svg>
               <input
-                id="username"
-                v-model="username"
-                type="text"
-                placeholder="Enter your username"
-                autocomplete="username"
+                id="email"
+                v-model="email"
+                type="email"
+                placeholder="Enter your email"
+                autocomplete="email"
                 required
               />
             </div>
