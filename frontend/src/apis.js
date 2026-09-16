@@ -104,6 +104,22 @@ export async function deactivateStaff(id) {
   return response.data
 }
 
+export async function getStaff(id) {
+  const response = await api.get(`/auth/staff/${id}/`)
+  return response.data
+}
+
+export async function updateStaff(id, payload) {
+  const response = await api.patch(
+    `/auth/staff/${id}/`,
+    payload
+  )
+
+  return response.data
+}
+
+
+
 /* ---- branches ---- */
 
 // params: { search, no_manager } — both optional, both handled server side.

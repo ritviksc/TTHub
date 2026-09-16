@@ -7,6 +7,7 @@ import ComingSoon from '@/views/ComingSoon.vue'
 import CreateStaff from '@/views/SuperAdmin/CreateStaff.vue'
 import CreateInstructor from '@/views/BranchManager/CreateInstructor.vue'
 import { auth, loadUser } from '@/stores/auth.js'
+import StaffDetail from '@/views/StaffDetail.vue'
 
 // Not-yet-built pages all share one placeholder; meta.title is what it renders.
 const comingSoon = (path, name, title, roles) => ({
@@ -36,6 +37,15 @@ const router = createRouter({
             meta: { requiresAuth: true, roles: SA },
         },
         {
+        path: '/staff/:id',
+        name: 'staff-detail',
+        component: StaffDetail,
+        meta: {
+        requiresAuth: true,
+        roles: ['super_admin', 'branch_manager']
+        }
+        },
+        {
             path: '/super-admin/administration', name: 'sa-administration',
             component: () => import('@/views/SuperAdmin/Administration.vue'),
             meta: { requiresAuth: true, roles: SA },
@@ -58,6 +68,11 @@ const router = createRouter({
         {
             path: '/super-admin/participants', name: 'sa-participants',
             component: () => import('@/views/SuperAdmin/Participants.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
+            path: '/super-admin/participants/:id', name: 'sa-participant-detail',
+            component: () => import('@/views/SuperAdmin/ParticipantDetail.vue'),
             meta: { requiresAuth: true, roles: SA },
         },
         comingSoon('/super-admin/reporting', 'sa-reporting', 'Reporting', SA),
