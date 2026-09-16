@@ -39,7 +39,7 @@ async function toggle(record) {
   const status = record.status === 'present' ? 'absent' : 'present'
   saveError.value = null
   try {
-    Object.assign(record, await updateAttendance(sessionId, record.participant_id, { status }))
+    Object.assign(record, await updateAttendance(sessionId, record.id, { status }))
   } catch (e) {
     saveError.value = `Could not update ${record.name}.`
   }
@@ -47,8 +47,11 @@ async function toggle(record) {
 
 function cardLabel(record) {
   if (record.status === 'present') return '✓ Present'
-  if (record.status === 'excused') return 'Excused'
   return 'Tap to mark present'
+}
+
+function participantName(record) {
+  return `${record.first_name ?? ''} ${record.last_name ?? ''}`.trim() || record.name
 }
 </script>
 
@@ -65,7 +68,7 @@ function cardLabel(record) {
         <div class="page-header">
           <div>
             <h1>Attendance mode</h1>
-            <p class="page-subtitle">{{ session.name }} · {{ formatSessionDate(session.date) }}</p>
+            <p class="page-subtitle">{{ session.activity }} · {{ formatSessionDate(session.date) }}</p>
           </div>
           <button class="btn-primary" @click="router.push(detailRoute)">Done</button>
         </div>
@@ -74,18 +77,18 @@ function cardLabel(record) {
 
         <div v-if="saveError" class="form-error">{{ saveError }}</div>
 
-        <div class="person-grid">
-          <!-- Excused is set on purpose from the detail page, so it can't be tapped away here. -->
+        <div class="person-list">
           <button
             v-for="record in session.attendance"
             :key="record.participant_id"
             type="button"
-            :class="['person-card', record.status]"
-            :disabled="record.status === 'excused'"
+            :class="['person-row', record.status]"
+            :aria-pressed="record.status === 'present'"
             @click="toggle(record)"
           >
-            <span class="initials-avatar lg">{{ initials(record.name) }}</span>
-            <span class="person-name">{{ record.name }}</span>
+            <img v-if="record.photo" :src="record.photo" class="participant-photo" alt="" />
+            <span v-else class="initials-avatar">{{ initials(participantName(record)) }}</span>
+            <span class="person-name">{{ participantName(record) }}</span>
             <span class="person-status">{{ cardLabel(record) }}</span>
           </button>
         </div>
@@ -104,31 +107,28 @@ function cardLabel(record) {
 }
 .counter strong { color: var(--text); }
 
-.person-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
-}
+.person-list { display: flex; flex-direction: column; gap: 10px; }
 
-.person-card {
+.person-row {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 24px 16px;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 16px;
   background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: var(--radius-xl);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
   color: var(--text);
   font: inherit;
+  text-align: left;
   cursor: pointer;
 }
-.person-card:hover:not(:disabled) { border-color: var(--maroon); }
+.person-row:hover { border-color: var(--maroon); }
 
-.person-card.present { border-color: var(--success); background: var(--success-bg); }
-.person-card.excused { opacity: 0.6; cursor: default; }
+.person-row.present { border-color: var(--success); background: var(--success-bg); }
+.participant-photo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
 
-.person-name { font-weight: 600; }
+.person-name { flex: 1; font-weight: 600; }
 .person-status { font-size: var(--text-sm); color: var(--text-muted); }
-.person-card.present .person-status { color: var(--success); font-weight: 600; }
+.person-row.present .person-status { color: var(--success); font-weight: 600; }
 </style>

@@ -115,6 +115,7 @@ async function submit() {
 <style scoped>
 .consent-card {
   max-width: 620px;
+  margin: 0 auto;
   padding: 28px;
   border-radius: var(--radius-lg);
   background: var(--surface);

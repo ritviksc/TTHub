@@ -4,6 +4,7 @@ import { useRouter, RouterLink } from 'vue-router'
 import { listSessions } from '@/apis.js'
 import { SESSION_PERIODS, formatSessionDate, isInPeriod } from '@/utils/sessions.js'
 import CreateSessionModal from '@/components/sessions/CreateSessionModal.vue'
+import { auth } from '@/stores/auth.js'
 
 const router = useRouter()
 
@@ -12,6 +13,8 @@ const loading = ref(true)
 const loadError = ref(null)
 const period = ref('All')
 const showCreate = ref(false)
+const isInstructor = computed(() => auth.user?.role === 'instructor')
+const detailRouteName = computed(() => isInstructor.value ? 'in-session-detail' : 'bm-session-detail')
 
 const visibleSessions = computed(() =>
   sessions.value.filter(s => isInPeriod(s.date, period.value))
@@ -34,7 +37,7 @@ onMounted(load)
 /* ---- navigation ---- */
 
 function sessionRoute(id) {
-  return { name: 'in-session-detail', params: { id } }
+  return { name: detailRouteName.value, params: { id } }
 }
 
 // A new session has nobody marked yet, so take the instructor straight to it.
@@ -53,7 +56,7 @@ function onCreated(session) {
           <h1>Sessions</h1>
           <p class="page-subtitle">Create sessions and record participant attendance.</p>
         </div>
-        <button class="btn-primary" @click="showCreate = true">+ New session</button>
+        <button v-if="isInstructor" class="btn-primary" @click="showCreate = true">+ New session</button>
       </div>
 
       <div class="pills">
@@ -78,17 +81,16 @@ function onCreated(session) {
         <template v-else>
           <h2>No sessions yet</h2>
           <p>Create your first session to start recording attendance.</p>
-          <button class="btn-primary" @click="showCreate = true">+ Create session</button>
+          <button v-if="isInstructor" class="btn-primary" @click="showCreate = true">+ Create session</button>
         </template>
       </div>
 
       <table v-else class="data-table">
         <thead>
           <tr>
-            <th>Session</th>
+            <th>Activity</th>
             <th>Date</th>
             <th>Time</th>
-            <th>Activity</th>
             <th>Attendance</th>
             <th></th>
           </tr>
@@ -101,18 +103,17 @@ function onCreated(session) {
             @click="router.push(sessionRoute(session.id))"
           >
             <td>
-              <RouterLink :to="sessionRoute(session.id)" class="session-name">{{ session.name }}</RouterLink>
+              <RouterLink :to="sessionRoute(session.id)" class="session-name">{{ session.activity }}</RouterLink>
             </td>
             <td>{{ formatSessionDate(session.date) }}</td>
             <td>{{ session.time }}</td>
-            <td>{{ session.activity }}</td>
             <td class="attendance-count">✓ {{ session.present_count }} / {{ session.roster_count }} present</td>
             <td class="arrow-cell">›</td>
           </tr>
         </tbody>
       </table>
 
-      <CreateSessionModal v-if="showCreate" @close="showCreate = false" @created="onCreated" />
+      <CreateSessionModal v-if="isInstructor && showCreate" @close="showCreate = false" @created="onCreated" />
     </main>
   </div>
 </template>
