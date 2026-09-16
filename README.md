@@ -19,7 +19,8 @@ python manage.py shell
 ```python
 from users.models import UserAccount
 UserAccount.objects.create_user(
-    username="testuser",
+    username="testuser@example.com",
+    email="testuser@example.com",
     password="TestPass123!",
     role=UserAccount.Role.SUPER_ADMIN,
 )
