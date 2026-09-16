@@ -13,6 +13,14 @@ class ParticipantSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
     branch_name = serializers.CharField(source="branch.name", read_only=True)
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # A file may remain in storage after consent is withdrawn. It must not
+        # be exposed to attendance screens unless current consent permits it.
+        if not instance.photo_consent_given:
+            data["photo"] = None
+        return data
+
     class Meta:
         model = Participant
         fields = [
@@ -47,8 +55,19 @@ class ParticipantSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Date of birth cannot be in the future.")
         return value
 
+    def _consent_value(self, attrs, field):
+        if field in attrs:
+            return attrs[field]
+        return getattr(self.instance, field, None)
+
     def validate(self, attrs):
         user = self.context["request"].user
+
+        gp_consent_fields = {"gp_consent_given", "gp_consent_date"}
+        if user.role == UserAccount.Role.INSTRUCTOR and gp_consent_fields.intersection(attrs):
+            raise serializers.ValidationError(
+                {"gp_consent_given": "Only a Branch Manager or Super Admin can record GP consent."}
+            )
 
         # Only a Super Admin picks the branch. For everyone else it is forced to
         # their own, so a branch manager cannot create a participant in, or move
@@ -58,12 +77,26 @@ class ParticipantSerializer(serializers.ModelSerializer):
         elif self.instance is None and not attrs.get("branch"):
             raise serializers.ValidationError({"branch": "Branch is required."})
         
-        photo = attrs.get("photo")
-        existing_consent = getattr(self.instance, "photo_consent_given", False)
-        consent = attrs.get("photo_consent_given", existing_consent)
-        if photo and not consent:
+        gp_consent_given = self._consent_value(attrs, "gp_consent_given")
+        gp_consent_date = self._consent_value(attrs, "gp_consent_date")
+        photo_consent_given = self._consent_value(attrs, "photo_consent_given")
+        photo_consent_date = self._consent_value(attrs, "photo_consent_date")
+
+        errors = {}
+        if gp_consent_given and not gp_consent_date:
+            errors["gp_consent_date"] = "Record the date GP consent was given."
+        if gp_consent_date and gp_consent_date > date.today():
+            errors["gp_consent_date"] = "GP consent date cannot be in the future."
+        if photo_consent_given and not photo_consent_date:
+            errors["photo_consent_date"] = "Record the date photo consent was given."
+        if photo_consent_date and photo_consent_date > date.today():
+            errors["photo_consent_date"] = "Photo consent date cannot be in the future."
+        if attrs.get("photo") and not photo_consent_given:
+            errors["photo_consent_given"] = "Consent must be recorded before attaching a photo."
+
+        if errors:
             raise serializers.ValidationError(
-                {"photo_consent_given": "Consent must be recorded before attaching a photo."}
+                errors
             )
 
         return attrs
@@ -74,6 +107,15 @@ class ParticipantListSerializer(serializers.ModelSerializer):
 
     full_name = serializers.CharField(read_only=True)
     branch_name = serializers.CharField(source="branch.name", read_only=True)
+    photo = serializers.SerializerMethodField()
+
+    def get_photo(self, obj):
+        if not obj.photo or not obj.photo_consent_given:
+            return None
+
+        url = obj.photo.url
+        request = self.context.get("request")
+        return request.build_absolute_uri(url) if request else url
 
     class Meta:
         model = Participant
@@ -85,4 +127,5 @@ class ParticipantListSerializer(serializers.ModelSerializer):
             "branch_name",
             "phone",
             "is_active",
+            "photo",
         ]
