@@ -7,16 +7,20 @@ from .models import AttendanceRecord, ProgrammeSession
 
 class AttendanceRecordSerializer(serializers.ModelSerializer):
     participant_id = serializers.UUIDField(source="participant.id", read_only=True)
+    first_name = serializers.CharField(source="participant.first_name", read_only=True)
+    last_name = serializers.CharField(source="participant.last_name", read_only=True)
     name = serializers.SerializerMethodField()
     photo = serializers.SerializerMethodField()
 
     class Meta:
         model = AttendanceRecord
         fields = [
-            "id", "participant_id", "name", "photo", "status",
+            "id", "participant_id", "first_name", "last_name", "name", "photo", "status",
             "absence_reason", "absence_reason_other", "updated_at",
         ]
-        read_only_fields = ["id", "participant_id", "name", "photo", "updated_at"]
+        read_only_fields = [
+            "id", "participant_id", "first_name", "last_name", "name", "photo", "updated_at",
+        ]
 
     def get_name(self, obj):
         return obj.participant.preferred_name or obj.participant.full_name
