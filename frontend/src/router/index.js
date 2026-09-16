@@ -70,7 +70,16 @@ const router = createRouter({
             component: () => import('@/views/BranchManager/Overview.vue'),
             meta: { requiresAuth: true, roles: BM },
         },
-        comingSoon('/branch-manager/sessions', 'bm-sessions', 'Sessions', BM),
+        {
+            path: '/branch-manager/sessions', name: 'bm-sessions',
+            component: () => import('@/views/Instructor/Sessions.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        {
+            path: '/branch-manager/sessions/:id', name: 'bm-session-detail',
+            component: () => import('@/views/Instructor/SessionDetail.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
         comingSoon('/branch-manager/participants', 'bm-participants', 'Participants', BM),
         comingSoon('/branch-manager/instructors', 'bm-instructors', 'Instructors', BM),
         comingSoon('/branch-manager/feedback', 'bm-feedback', 'Feedback', BM),

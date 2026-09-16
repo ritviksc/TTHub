@@ -184,95 +184,28 @@ export async function removeBranchInstructor(branchId, userId) {
   return response.data
 }
 
-/* ---- sessions ----
-   TEMPORARY: there is no sessions backend yet, so these read and write localStorage.
-   Signatures match the planned endpoints, once backend implemented swap the bodies 
-   for api calls. 
-*/
+/* ---- sessions ---- */
 
-const SESSIONS_KEY = "taurite_sessions_v1"
-
-function readSessions() {
-  try {
-    return JSON.parse(localStorage.getItem(SESSIONS_KEY)) ?? []
-  } catch {
-    return []
-  }
+export async function listSessions(params = {}) {
+  const response = await api.get("/sessions/", { params })
+  return response.data
 }
 
-function writeSessions(sessions) {
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
-}
-
-// Shaped like an axios error so pages can check e.response?.status either way.
-function sessionNotFound() {
-  return { response: { status: 404, data: { detail: "Session not found." } } }
-}
-
-function findSession(sessions, id) {
-  const session = sessions.find(s => s.id === id)
-  if (!session) throw sessionNotFound()
-  return session
-}
-
-// GET /sessions/ — newest first, with counts instead of the full roster.
-export async function listSessions() {
-  return readSessions()
-    .map(({ attendance, ...session }) => ({
-      ...session,
-      present_count: attendance.filter(a => a.status === "present").length,
-      roster_count: attendance.length,
-    }))
-    .sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`))
-}
-
-// GET /sessions/:id/
 export async function getSession(id) {
-  return findSession(readSessions(), id)
+  const response = await api.get(`/sessions/${id}/`)
+  return response.data
 }
 
-// POST /sessions/ — payload: { name, date, time, activity }.
-// The roster is built from the branch's active participants, as the server will do.
-export async function createSession({ name, date, time, activity }) {
-  const participants = await listParticipants({ is_active: true })
-
-  const session = {
-    id: crypto.randomUUID(),
-    name,
-    date,
-    time,
-    activity,
-    created_at: new Date().toISOString(),
-    attendance: participants.map(p => ({
-      participant_id: p.id,
-      name: p.preferred_name || p.full_name,
-      status: "absent",
-      absence_reason: "",
-    })),
-  }
-
-  writeSessions([session, ...readSessions()])
-  return session
+export async function createSession(payload) {
+  const response = await api.post("/sessions/", payload)
+  return response.data
 }
 
-// PATCH /sessions/:id/attendance/:participantId/ — changes: { status, absence_reason }.
-export async function updateAttendance(sessionId, participantId, changes) {
-  const sessions = readSessions()
-  const record = findSession(sessions, sessionId).attendance
-    .find(a => a.participant_id === participantId)
-  if (!record) throw sessionNotFound()
-
-  Object.assign(record, changes)
-  // A reason only makes sense for an absence.
-  if (record.status !== "absent") record.absence_reason = ""
-
-  writeSessions(sessions)
-  return { ...record }
+export async function updateAttendance(sessionId, attendanceId, changes) {
+  const response = await api.patch(`/sessions/${sessionId}/attendance/${attendanceId}/`, changes)
+  return response.data
 }
 
-// DELETE /sessions/:id/
 export async function deleteSession(id) {
-  const sessions = readSessions()
-  findSession(sessions, id)
-  writeSessions(sessions.filter(s => s.id !== id))
+  await api.delete(`/sessions/${id}/`)
 }
