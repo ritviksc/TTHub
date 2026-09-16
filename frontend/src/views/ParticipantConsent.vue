@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getParticipant, updateParticipant } from '@/apis.js'
+import { auth } from '@/stores/auth.js'
 
 const route = useRoute()
 const participantId = route.params.id
@@ -9,16 +10,28 @@ const participantId = route.params.id
 const participant = ref(null)
 const photoFile = ref(null)
 const photoConsentGiven = ref(false)
+const photoConsentDate = ref('')
 const gpConsentGiven = ref(false)
 const gpConsentDate = ref('')
+const loading = ref(true)
+const loadError = ref('')
 const error = ref('')
 const success = ref('')
 
+const canRecordGpConsent = computed(() => auth.user?.role !== 'instructor')
+
 onMounted(async () => {
-  participant.value = await getParticipant(participantId)
-  photoConsentGiven.value = participant.value.photo_consent_given
-  gpConsentGiven.value = participant.value.gp_consent_given
-  gpConsentDate.value = participant.value.gp_consent_date ?? ''
+  try {
+    participant.value = await getParticipant(participantId)
+    photoConsentGiven.value = participant.value.photo_consent_given
+    photoConsentDate.value = participant.value.photo_consent_date ?? ''
+    gpConsentGiven.value = participant.value.gp_consent_given
+    gpConsentDate.value = participant.value.gp_consent_date ?? ''
+  } catch (e) {
+    loadError.value = 'Could not load this participant.'
+  } finally {
+    loading.value = false
+  }
 })
 
 function onFileChange(e) {
@@ -31,12 +44,17 @@ async function submit() {
 
   const formData = new FormData()
   formData.append('photo_consent_given', photoConsentGiven.value)
-  formData.append('gp_consent_given', gpConsentGiven.value)
-  if (gpConsentDate.value) formData.append('gp_consent_date', gpConsentDate.value)
+  if (photoConsentGiven.value) formData.append('photo_consent_date', photoConsentDate.value)
+  if (canRecordGpConsent.value) {
+    formData.append('gp_consent_given', gpConsentGiven.value)
+    if (gpConsentGiven.value) formData.append('gp_consent_date', gpConsentDate.value)
+  }
   if (photoFile.value) formData.append('photo', photoFile.value)
 
   try {
     participant.value = await updateParticipant(participantId, formData)
+    photoConsentDate.value = participant.value.photo_consent_date ?? ''
+    gpConsentDate.value = participant.value.gp_consent_date ?? ''
     success.value = 'Saved.'
     photoFile.value = null
   } catch (e) {
@@ -47,27 +65,73 @@ async function submit() {
 </script>
 
 <template>
-  <div v-if="participant">
-    <h2>{{ participant.full_name }}</h2>
+  <div class="dash-page">
+    <main class="content">
+      <p v-if="loading" class="loading-note">Loading participant…</p>
+      <p v-else-if="loadError" class="form-error">{{ loadError }}</p>
 
-    <img v-if="participant.photo" :src="participant.photo" alt="" style="max-width: 150px" />
+      <div v-else-if="participant" class="consent-card">
+        <div class="consent-header">
+          <img v-if="participant.photo" :src="participant.photo" class="participant-photo" alt="" />
+          <div>
+            <h1>{{ participant.full_name }}</h1>
+            <p class="page-subtitle">Record the consents needed for their participation.</p>
+          </div>
+        </div>
 
-    <form @submit.prevent="submit">
-      <fieldset>
-        <legend>GP consent</legend>
-        <label><input type="checkbox" v-model="gpConsentGiven" /> Consent given</label>
-        <label>Date: <input type="date" v-model="gpConsentDate" /></label>
-      </fieldset>
+        <form @submit.prevent="submit">
+          <fieldset v-if="canRecordGpConsent" class="consent-group">
+            <legend>GP consent</legend>
+            <label><input type="checkbox" v-model="gpConsentGiven" /> Consent given</label>
+            <label v-if="gpConsentGiven" class="date-field">
+              Date given
+              <input v-model="gpConsentDate" type="date" required />
+            </label>
+          </fieldset>
 
-      <fieldset>
-        <legend>Photo consent</legend>
-        <label><input type="checkbox" v-model="photoConsentGiven" /> Consent given</label>
-        <input type="file" accept="image/*" @change="onFileChange" />
-      </fieldset>
+          <fieldset class="consent-group">
+            <legend>Photo consent</legend>
+            <label><input type="checkbox" v-model="photoConsentGiven" /> Consent given</label>
+            <label v-if="photoConsentGiven" class="date-field">
+              Date given
+              <input v-model="photoConsentDate" type="date" required />
+            </label>
+            <label class="file-field">
+              Photo
+              <input type="file" accept="image/*" @change="onFileChange" />
+            </label>
+          </fieldset>
 
-      <p v-if="error">{{ error }}</p>
-      <p v-if="success">{{ success }}</p>
-      <button type="submit">Save</button>
-    </form>
+          <p v-if="error" class="form-error">{{ error }}</p>
+          <p v-if="success" class="form-success">{{ success }}</p>
+          <button type="submit" class="btn-primary">Save</button>
+        </form>
+      </div>
+    </main>
   </div>
 </template>
+
+    <!-- This is just css for the participant card, showing fields for consent and the photo. Can't inherit from main css since nowhere else has used a card -->
+<style scoped>
+.consent-card {
+  max-width: 620px;
+  padding: 28px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.consent-header { display: flex; align-items: center; gap: 18px; margin-bottom: 24px; }
+.consent-header .page-subtitle { margin: 6px 0 0; }
+.participant-photo { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; }
+.consent-group { margin: 0 0 20px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.consent-group legend { padding: 0 6px; font-weight: 600; color: var(--text); }
+.consent-group label { display: block; color: var(--text-secondary); margin: 8px 0; }
+.date-field input, .file-field input { display: block; margin-top: 6px; }
+
+@media (max-width: 560px) {
+  .consent-card { padding: 20px; }
+  .consent-header { align-items: flex-start; }
+  .participant-photo { width: 64px; height: 64px; }
+}
+</style>
