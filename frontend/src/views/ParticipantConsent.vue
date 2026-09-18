@@ -1,10 +1,11 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getParticipant, updateParticipant } from '@/apis.js'
 import { auth } from '@/stores/auth.js'
 
 const route = useRoute()
+const router = useRouter()
 const participantId = route.params.id
 
 const participant = ref(null)
@@ -67,18 +68,48 @@ async function submit() {
 <template>
   <div class="dash-page">
     <main class="content">
+      <!--backk button: router.back() works regardless of which role is viewing-->
+      <a class=""back-link" href="#" @click.prevent="router.back()">&lsaquo; Back</a>
       <p v-if="loading" class="loading-note">Loading participant…</p>
       <p v-else-if="loadError" class="form-error">{{ loadError }}</p>
 
       <div v-else-if="participant" class="consent-card">
         <div class="consent-header">
+          <!--show photo if uploaded and consent given, otherwise show first initialas fallback-->
           <img v-if="participant.photo" :src="participant.photo" class="participant-photo" alt="" />
+          <div v-else class="initials-avatar lg">{{ (participant.full_name || '?')[0] }}</div>
           <div>
             <h1>{{ participant.full_name }}</h1>
-            <p class="page-subtitle">Record the consents needed for their participation.</p>
-          </div>
+            <p v-if="participant.preferred_name" class="page-subtitle">Goes by {{ participant.preferred_name }}</p>
+            <span :class="['status-badge', participant.is_active ? 'active' : 'inactive']">
+              {{ participant.is_active ? 'Active' : 'Inactive' }}
+            </span>          </div>
         </div>
 
+        <!--profile info:all fields return by getParticipant() from backend
+        v-if hides it cleanly if data is missing-->
+        <section class="info-section">
+          <h2>Details</h2>
+          <dl class="info-grid">
+          <div v-if="participant.date_of_birth"><dt>Date of birth</dt><dd>{{ participant.date_of_birth }}</dd></div>
+          <div v-if="participant.phone"><dt>Phone</dt><dd>{{ participant.phone }}</dd></div>
+          <div v-if="participant.email"><dt>Email</dt><dd>{{ participant.email }}</dd></div>
+          <div><dt>Branch</dt><dd>{{ participant.branch_name }}</dd></div>
+         </dl>
+        </section>
+        <!-- Only shown if an emergency contact name has been recorded -->
+        <section v-if="participant.emergency_contact_name" class="info-section">
+          <h2>Emergency contact</h2>
+          <dl class="info-grid">
+            <div><dt>Name</dt><dd>{{ participant.emergency_contact_name }}</dd></div>
+            <div v-if="participant.emergency_contact_phone"><dt>Phone</dt><dd>{{ participant.emergency_contact_phone }}</dd></div>
+          </dl>
+        </section>
+
+        <!-- Consent form: Instructors cannot record GP consent (enforced by canRecordGpConsent below) -->
+        <section class="info-section">
+          <h2>Consents</h2>
+        
         <form @submit.prevent="submit">
           <fieldset v-if="canRecordGpConsent" class="consent-group">
             <legend>GP consent</legend>
@@ -106,6 +137,7 @@ async function submit() {
           <p v-if="success" class="form-success">{{ success }}</p>
           <button type="submit" class="btn-primary">Save</button>
         </form>
+        </section>section>
       </div>
     </main>
   </div>
@@ -113,6 +145,17 @@ async function submit() {
 
     <!-- This is just css for the participant card, showing fields for consent and the photo. Can't inherit from main css since nowhere else has used a card -->
 <style scoped>
+/* Particpant detail sections:
+info-grid uses autofit columns so it wraps nicely on smaller screens.
+all colors come from theme.css tokens: nothing hardcoded.*/
+.info-section { margin-bottom: 24px; }
+.info-section h2 { font-size: var(--text-md); margin-bottom: 12px; }
+.info-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px 24px; margin: 0;
+}
+.info-grid dt { font-size: var(--text-sm); font-weight: 600; color: var(--text-muted); margin-bottom: 2px; }
+.info-grid dd { margin: 0; font-size: var(--text-base); color: var(--text); }
 .consent-card {
   max-width: 620px;
   margin: 0 auto;
