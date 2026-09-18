@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import { listParticipants } from '@/apis.js'
 
 const participants = ref([])
@@ -15,23 +16,14 @@ const filteredParticipants = computed(() => {
   }
 
   return participants.value.filter(p => {
-    const name =
-      p.preferred_name ||
-      p.preferredName ||
-      p.name ||
-      `${p.first_name || ''} ${p.last_name || ''}`
-
-    return name.toLowerCase().includes(query)
+    return [p.preferred_name, p.full_name]
+      .filter(Boolean)
+      .some(name => name.toLowerCase().includes(query))
   })
 })
 
 function getName(participant) {
-  return (
-    participant.preferred_name ||
-    participant.preferredName ||
-    participant.name ||
-    `${participant.first_name || ''} ${participant.last_name || ''}`
-  ).trim()
+  return participant.preferred_name || participant.full_name
 }
 
 function getInitial(participant) {
@@ -55,9 +47,7 @@ async function loadParticipants() {
       participants.value = []
     }
 
-    console.log('Participants:', participants.value)
   } catch (e) {
-    console.error(e)
     error.value = 'Unable to load participants.'
   } finally {
     loading.value = false
@@ -159,12 +149,12 @@ onMounted(loadParticipants)
 
           <div class="participant-details">
 
-            <strong>
+            <RouterLink :to="{ name: 'participant-detail', params: { id: participant.id } }" class="participant-name">
               {{ getName(participant) }}
-            </strong>
+            </RouterLink>
 
-            <span>
-              ID: {{ participant.id }}
+            <span v-if="participant.preferred_name && participant.preferred_name !== participant.full_name">
+              {{ participant.full_name }}
             </span>
 
           </div>
@@ -260,8 +250,11 @@ onMounted(loadParticipants)
 
 .participant-details span {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
+
+.participant-name { color: var(--text); font-weight: 600; }
+.participant-name:hover { color: var(--maroon); }
 
 .status {
   color: var(--success);
