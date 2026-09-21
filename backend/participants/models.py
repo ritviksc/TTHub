@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from .storage import consent_storage, consent_upload_path
 
 
 class Participant(models.Model):
@@ -47,6 +48,14 @@ class Participant(models.Model):
     # Medical clearance to take part in activities
     gp_consent_given = models.BooleanField(default=False)
     gp_consent_date = models.DateField(null=True, blank=True)
+    gp_consent_document = models.FileField(
+        storage=consent_storage, upload_to=consent_upload_path, blank=True,
+    )
+    gp_document_uploaded_at = models.DateTimeField(null=True, blank=True)
+    gp_document_uploaded_by = models.ForeignKey(
+        "users.UserAccount", null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="uploaded_gp_documents",
+    )
 
     # Consent to allow use of their photos for attendance marking
     photo = models.ImageField(upload_to="participant_photos/", null=True, blank=True)

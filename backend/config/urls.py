@@ -22,3 +22,4 @@ urlpatterns = [
     path("api/llm/", include("llm.urls")),
 ]
 
+# Participant files are served by authenticated views, never a public media route.
