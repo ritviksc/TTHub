@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.http import FileResponse, Http404
 from rest_framework import generics
 from rest_framework.response import Response
 
@@ -80,3 +81,52 @@ class ParticipantDeactivateView(generics.GenericAPIView):
         participant.is_active = False
         participant.save()
         return Response({"id": str(participant.id), "is_active": participant.is_active})
+
+
+class ParticipantFileView(generics.GenericAPIView):
+    permission_classes = ANY_STAFF
+    document = False
+
+    def get_permissions(self):
+        if self.document:
+            return [(IsSuperAdmin | IsBranchManager)()]
+        return super().get_permissions()
+
+    def get(self, request, pk):
+        participant = get_object_or_404(participants_for(request.user), pk=pk)
+        file = participant.gp_consent_document if self.document else participant.photo
+        if not file or (not self.document and not participant.photo_consent_given):
+            raise Http404
+        try:
+            opened = file.open("rb")
+        except FileNotFoundError:
+            raise Http404
+        extension = file.name.rsplit(".", 1)[-1].lower()
+        response = FileResponse(
+            opened, as_attachment=self.document,
+            filename=f"gp-consent.{extension}" if self.document else f"photo.{extension}",
+        )
+        response["Cache-Control"] = "private, no-store"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
+
+
+class ParticipantAttendanceView(generics.GenericAPIView):
+    permission_classes = ANY_STAFF
+
+    def get(self, request, pk):
+        participant = get_object_or_404(participants_for(request.user), pk=pk)
+        records = participant.attendance_records.select_related("session")
+        # Transferring a participant must not expose another branch's sessions.
+        if request.user.role != UserAccount.Role.SUPER_ADMIN:
+            records = records.filter(session__branch=request.user.branch)
+        return Response([
+            {
+                "id": str(record.pk), "session_id": str(record.session_id),
+                "date": record.session.date, "time": record.session.time,
+                "activity": record.session.activity, "status": record.status,
+                "absence_reason": record.get_absence_reason_display(),
+                "absence_reason_other": record.absence_reason_other,
+            }
+            for record in records.order_by("-session__date", "-session__time")
+        ])
