@@ -17,6 +17,7 @@ build/
 db.sqlite3
 db.sqlite3-journal
 backend/private_media/
+backend/media/
 
 # Environment/secrets
 .env
