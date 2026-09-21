@@ -147,6 +147,17 @@ export async function createParticipant(payload) {
   return response.data
 }
 
+export async function getParticipantAttendance(id) {
+  const response = await api.get(`/participants/${id}/attendance/`)
+  return response.data
+}
+
+// Fetch through the authenticated API; no permanent document URL is exposed.
+export async function downloadGpDocument(id) {
+  const response = await api.get(`/participants/${id}/gp-document/`, { responseType: 'blob' })
+  return response.data
+}
+
 export async function updateParticipant(id, payload) {
   const response = await api.patch(`/participants/${id}/`, payload)
   return response.data

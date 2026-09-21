@@ -1,22 +1,29 @@
 <script setup>
 import { ref } from 'vue'
 import { createSession } from '@/apis.js'
+import { programmeToday } from '@/utils/sessions.js'
 
 const emit = defineEmits(['close', 'created'])
 
 const form = ref({ date: '', time: '', activity: '' })
 const error = ref('')
 const saving = ref(false)
+const minimumDate = ref(programmeToday())
 const ACTIVITIES = ['Standard strength and mobility training', 'Fitness test']
 
-// Blank fields are caught by the inputs' `required`, so this only handles save failures.
+// Recheck at submission in case the modal has stayed open across midnight.
 async function submit() {
-  saving.value = true
   error.value = ''
+  minimumDate.value = programmeToday()
+  if (form.value.date < minimumDate.value) {
+    error.value = 'Session date cannot be in the past.'
+    return
+  }
+  saving.value = true
   try {
     emit('created', await createSession(form.value))
   } catch (e) {
-    error.value = e.response?.data?.detail
+    error.value = e.response?.data?.date?.[0] ?? e.response?.data?.detail
       ?? 'Could not create this session. Check the server is running and try again.'
   } finally {
     saving.value = false
@@ -32,7 +39,7 @@ async function submit() {
       <div class="form-row">
         <div class="form-group">
           <label for="session-date">Date</label>
-          <input id="session-date" v-model="form.date" type="date" required />
+          <input id="session-date" v-model="form.date" type="date" :min="minimumDate" required @focus="minimumDate = programmeToday()" />
         </div>
         <div class="form-group">
           <label for="session-time">Time</label>

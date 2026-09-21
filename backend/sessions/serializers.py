@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from django.utils import timezone
 
 from users.models import UserAccount
+from participants.serializers import participant_photo_url
 
 from .models import AttendanceRecord, ProgrammeSession
 
@@ -26,12 +28,7 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
         return obj.participant.preferred_name or obj.participant.full_name
 
     def get_photo(self, obj):
-        participant = obj.participant
-        if not participant.photo or not participant.photo_consent_given:
-            return None
-        url = participant.photo.url
-        request = self.context.get("request")
-        return request.build_absolute_uri(url) if request else url
+        return participant_photo_url(obj.participant, self.context.get("request"))
 
     def validate(self, attrs):
         status = attrs.get(
@@ -82,6 +79,12 @@ class SessionCreateSerializer(serializers.ModelSerializer):
         model = ProgrammeSession
         fields = ["id", "date", "time", "activity"]
         read_only_fields = ["id"]
+
+    def validate_date(self, value):
+        # The programme's local day can be one day ahead of UTC.
+        if value < timezone.localdate():
+            raise serializers.ValidationError("Session date cannot be in the past.")
+        return value
 
     def validate(self, attrs):
         user = self.context["request"].user

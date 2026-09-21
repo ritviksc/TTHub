@@ -58,6 +58,16 @@ const router = createRouter({
         },
         comingSoon('/super-admin/reporting', 'sa-reporting', 'Reporting', SA),
         {
+            path: '/super-admin/participants/:id', name: 'sa-participant-detail',
+            component: () => import('@/views/SuperAdmin/ParticipantDetail.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
+            path: '/super-admin/participants/:id/attendance', name: 'sa-participant-attendance',
+            component: () => import('@/views/SuperAdmin/ParticipantAttendance.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
             path: '/super-admin/create-staff', name: 'create-staff', component: CreateStaff,
             meta: { requiresAuth: true, roles: SA },
         },
@@ -119,6 +129,16 @@ const router = createRouter({
             meta: { requiresAuth: true, roles: IN },
         },
         comingSoon('/instructor/feedback', 'in-feedback', 'Feedback', IN),
+        {
+            path: '/instructor/participants/:id', name: 'in-participant-detail',
+            component: () => import('@/views/Instructor/ParticipantDetail.vue'),
+            meta: { requiresAuth: true, roles: IN },
+        },
+        {
+            path: '/instructor/participants/:id/attendance', name: 'in-participant-attendance',
+            component: () => import('@/views/Instructor/ParticipantAttendance.vue'),
+            meta: { requiresAuth: true, roles: IN },
+        },
 
         {
             path: '/participants/:id', name: 'participant-detail',
@@ -136,6 +156,11 @@ router.beforeEach(async (to) => {
     if (!user) return '/login'
 
     if (to.meta.roles && !to.meta.roles.includes(user.role)) return '/login'
+    // Existing participant links and bookmarks open the appropriate details page.
+    const participantRoute = { super_admin: 'sa-participant-detail', instructor: 'in-participant-detail' }[user.role]
+    if (to.name === 'participant-detail' && participantRoute) {
+        return { name: participantRoute, params: to.params, replace: true }
+    }
     return true
 })
 

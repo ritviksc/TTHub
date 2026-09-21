@@ -14,6 +14,15 @@ export const ABSENCE_REASONS = [
 
 export const SESSION_PERIODS = ['This month', 'This quarter', 'All']
 
+// Match Django's Pacific/Auckland day, even when the browser is abroad.
+export function programmeToday(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-NZ', {
+    timeZone: 'Pacific/Auckland', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(now)
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]))
+  return `${values.year}-${values.month}-${values.day}`
+}
+
 export function initials(name = '') {
   return name.trim().charAt(0).toUpperCase()
 }
