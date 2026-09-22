@@ -7,8 +7,7 @@
 
 from celery import shared_task
 from .services.client import get_available_models
-from django.core import cache
-import json
+from django.core.cache import cache
 
 """"
 @shared_task
@@ -20,7 +19,8 @@ def test_task() -> str:
 """
 For now store them in a cache and fetch them from the LLM
 provider API when the system starts up.
-At a regular interval, fetch the list of available
+
+TODO: At a regular interval, fetch the list of available
 models from the LLM provider API and update the list.
 This is done using a Celery task that runs at a regular interval
 to fetch the list of available models and update the list in memory.
@@ -29,6 +29,8 @@ fetching them from the LLM provider API every time they are needed, or a
 database table.
 
 """
+
+
 @shared_task
 def get_models() -> None:
     """
@@ -39,13 +41,9 @@ def get_models() -> None:
     Returns:
         None
     """
-     
+    
     # Cache the models avaliable
     # Can run this at regular intervals to update models avaliable to users
-    if (get_available_models()):
-        cache.set("models", json.dumps())
-    else: 
-        print("Error getting models")
-    
-    
+    models = get_available_models()
+    cache.set("llm:models", models, timeout=None)
     
