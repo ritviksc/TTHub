@@ -1,5 +1,13 @@
 # Group_4
 
+## Frontend setup
+
+Run npm commands as shown:
+```
+npm run build    /* Build the project */
+npm run dev
+```
+
 ## Backend setup
 
 ```powershell
