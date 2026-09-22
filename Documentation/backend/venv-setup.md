@@ -1,0 +1,21 @@
+It is recommended to work in a virtual environment while working on the system
+
+# Creates a virtual environment within Group_4/
+python -m venv .venv or py -m venv .venv
+
+# Activate venv 
+
+## Linux/macOS
+source .venv/bin/activate
+
+## Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+
+## Git bash
+.venv/Scripts/Activate.ps1
+
+# install dependencies
+pip install -r backend/requirements.txt
+
+To exit venv, use deactivate command
+Aim to use only .venv as our main virtual environment 
