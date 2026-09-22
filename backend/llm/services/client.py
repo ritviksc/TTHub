@@ -13,18 +13,45 @@
 """
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from openai import OpenAI
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY, base_url=settings.LLM_API_ENDPOINT)  
+_client = None
 
-def generate(prompt: str, model: str = settings.DEFAULT_LLM_MODEL, max_tokens: int = 100, temperature: float = 0.2) -> str:
+
+def get_client():
+    """
+    Create client on the first use, then reuse it for
+    subsequent requests (lazy initialisation)
+    """
+    global _client
+
+    if _client is None:
+        if not settings.LLM_API_ENDPOINT:
+            raise ImproperlyConfigured("LLM_API_ENDPOINT must be configured.")
+
+        if not settings.OPENAI_API_KEY:
+            raise ImproperlyConfigured("OPENAI_API_KEY must be configured.")
+        _client = OpenAI(
+            api_key=settings.OPENAI_API_KEY,
+            base_url=settings.LLM_API_ENDPOINT,
+            timeout=30.0,
+            max_retries=2
+        )
+
+    return _client   
+
+
+def generate(client: OpenAI, prompt: str, sys_prompt: str, model: str | None = None, max_tokens: int = 100, temperature: float = 0.2) -> str:
     """
     Generate a response from the LLM provider API based on the provided messages.
     Arguments:
+        client (OpenAI): Pass client that will generate request
         prompt (str): The input prompt for the LLM. Will be created using data in the database.
 
         model (str): The model to use for generating the response.
         Default is set to the DEFAULT_LLM_MODEL from settings.py.
+        sys_prompt (str) : The fixed instructions for the LLM to operate on.
 
         max_tokens (int): The maximum number of tokens to generate in the response.
         Default is set to 100 tokens. Change as required based on length/processing time of the response.
@@ -37,23 +64,45 @@ def generate(prompt: str, model: str = settings.DEFAULT_LLM_MODEL, max_tokens: i
     Returns:
         str: The generated response content from the LLM.
     """
-    try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {'role': 'system', 'content':
-                 'You are a helpful and concise AI \
-                 assistant that will summarise data and \
-                 generate a report like a professional.'},
-                {'role': 'user', 'content': prompt}
-            ],
-            max_tokens=max_tokens,
-            temperature=temperature
+    
+    if model is None:
+        model = settings.DEFAULT_LLM_MODEL
+
+    if not model or not model.strip():
+        raise ImproperlyConfigured(
+            "Pass a model or configure DEFAULT_LLM_MODEL."
         )
-        return response.choices[0].message.content
-    except Exception as e:
-        print(f"Error generating response: {e}")
-        return None
+    
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {'role': 'system', 'content': sys_prompt},
+            {'role': 'user', 'content': prompt}
+        ],
+        max_tokens=max_tokens,
+        temperature=temperature
+    )
+   
+    if not response.choices:
+        raise ValueError("LLM returned no response choices.")
+
+    choice = response.choices[0]
+
+    if choice.finish_reason == "length":
+        raise ValueError("LLM response reached the token limit.")
+
+    if choice.finish_reason != "stop":
+        raise ValueError(
+            f"LLM response did not finish normally: {choice.finish_reason}"
+        )
+        
+    message_content = response.choices[0].message.content
+    
+    if message_content is None or not message_content.strip():
+        raise ValueError("LLM returned no usable text.")
+
+    return message_content
+    
 
 def get_available_models() -> list:
     """
@@ -63,9 +112,6 @@ def get_available_models() -> list:
     Returns:
         list: A list of available LLM models.
     """
-    try:
-        models = client.models.list()
-        return [model.id for model in models.data]
-    except Exception as e:
-        print(f"Error fetching available models: {e}")
-        return None
+    client = get_client()
+    models = client.models.list()
+    return [model.id for model in models.data]
