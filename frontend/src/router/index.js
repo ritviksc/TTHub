@@ -56,7 +56,11 @@ const router = createRouter({
             component: () => import('@/views/SuperAdmin/Participants.vue'),
             meta: { requiresAuth: true, roles: SA },
         },
-        comingSoon('/super-admin/reporting', 'sa-reporting', 'Reporting', SA),
+        {
+            path: '/super-admin/reporting', name: 'sa-reporting',
+            component: () => import('@/views/SuperAdmin/Reporting.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
         {
             path: '/super-admin/create-staff', name: 'create-staff', component: CreateStaff,
             meta: { requiresAuth: true, roles: SA },
@@ -83,7 +87,11 @@ const router = createRouter({
         comingSoon('/branch-manager/participants', 'bm-participants', 'Participants', BM),
         comingSoon('/branch-manager/instructors', 'bm-instructors', 'Instructors', BM),
         comingSoon('/branch-manager/feedback', 'bm-feedback', 'Feedback', BM),
-        comingSoon('/branch-manager/reports', 'bm-reports', 'Reports', BM),
+        {
+            path: '/branch-manager/reports', name: 'bm-reports',
+            component: () => import('@/views/BranchManager/Reports.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
         {
             path: '/branch-manager/create-instructor', name: 'create-instructor', component: CreateInstructor,
             meta: { requiresAuth: true, roles: BM },

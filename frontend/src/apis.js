@@ -216,3 +216,17 @@ export async function setAttendanceFinalised(sessionId, finalised) {
   })
   return response.data
 }
+
+/* ---- reporting ---- */
+
+// scope: { start_date, end_date, branch_id? }; dates are inclusive YYYY-MM-DD.
+export async function getAttendanceReport(scope) {
+  const response = await api.get('/reporting/attendance/', { params: scope })
+  return response.data
+}
+
+export async function analyseAttendanceReport(scope) {
+  // Generation can outlast the normal five-second API timeout. Never retry POSTs automatically.
+  const response = await api.post('/reporting/attendance/analyse/', scope, { timeout: 240000 })
+  return response.data
+}
