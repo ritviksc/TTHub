@@ -66,7 +66,7 @@ class SessionListSerializer(serializers.ModelSerializer):
         model = ProgrammeSession
         fields = [
             "id", "branch", "branch_name", "date", "time", "activity",
-            "present_count", "roster_count", "created_at",
+            "present_count", "roster_count", "created_at", "attendance_finalised",
         ]
 
 
@@ -92,3 +92,7 @@ class SessionCreateSerializer(serializers.ModelSerializer):
         if not user.branch_id:
             raise serializers.ValidationError({"detail": "An Instructor must belong to a branch."})
         return attrs
+
+
+class AttendanceFinalisationSerializer(serializers.Serializer):
+    attendance_finalised = serializers.BooleanField(required=True)

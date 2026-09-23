@@ -12,6 +12,7 @@ from users.permissions import IsBranchManager, IsInstructor, IsSuperAdmin
 from .models import AttendanceRecord, ProgrammeSession
 from .serializers import (
     AttendanceRecordSerializer,
+    AttendanceFinalisationSerializer,
     SessionCreateSerializer,
     SessionDetailSerializer,
     SessionListSerializer,
@@ -83,12 +84,37 @@ class AttendanceRecordDetailView(generics.GenericAPIView):
             session_id=self.kwargs["pk"],
         )
 
+    @transaction.atomic
     def patch(self, request, *args, **kwargs):
         if request.user.role != UserAccount.Role.INSTRUCTOR:
             raise PermissionDenied("Only an Instructor can record attendance.")
 
+        # Serialise edits and finalisation against the same session row.
+        session = get_object_or_404(
+            ProgrammeSession.objects.select_for_update(),
+            pk=self.kwargs["pk"], branch=request.user.branch,
+        )
+        if session.attendance_finalised:
+            return Response({"detail": "Reopen attendance before editing."}, status=409)
         attendance = self.get_object()
         serializer = self.get_serializer(attendance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+class AttendanceFinalisationView(generics.GenericAPIView):
+    permission_classes = [IsInstructor]
+    serializer_class = AttendanceFinalisationSerializer
+
+    @transaction.atomic
+    def patch(self, request, pk):
+        session = get_object_or_404(
+            ProgrammeSession.objects.select_for_update(),
+            pk=pk, branch=request.user.branch,
+        )
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        session.attendance_finalised = serializer.validated_data["attendance_finalised"]
+        session.save(update_fields=["attendance_finalised"])
+        return Response({"attendance_finalised": session.attendance_finalised})
