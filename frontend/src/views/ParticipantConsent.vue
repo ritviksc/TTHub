@@ -69,8 +69,7 @@ async function submit() {
   <div class="dash-page">
     <main class="content">
       <!--backk button: router.back() works regardless of which role is viewing-->
-      <a class=""back-link" href="#" @click.prevent="router.back()">&lsaquo; Back</a>
-      <p v-if="loading" class="loading-note">Loading participant…</p>
+<a class="back-link" href="#" @click.prevent="router.back()">&lsaquo; Back</a>      <p v-if="loading" class="loading-note">Loading participant…</p>
       <p v-else-if="loadError" class="form-error">{{ loadError }}</p>
 
       <div v-else-if="participant" class="consent-card">
@@ -137,7 +136,7 @@ async function submit() {
           <p v-if="success" class="form-success">{{ success }}</p>
           <button type="submit" class="btn-primary">Save</button>
         </form>
-        </section>section>
+        </section>
       </div>
     </main>
   </div>
