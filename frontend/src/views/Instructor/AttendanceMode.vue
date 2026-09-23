@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import { getSession, updateAttendance } from '@/apis.js'
+import { getSession, updateAttendance, setAttendanceFinalised } from '@/apis.js'
 import { countByStatus, formatSessionDate, initials } from '@/utils/sessions.js'
 
 const route = useRoute()
@@ -13,6 +13,7 @@ const session = ref(null)
 const loading = ref(true)
 const loadError = ref(null)
 const saveError = ref(null)
+const saving = ref(false)
 
 const counts = computed(() => countByStatus(session.value?.attendance))
 
@@ -36,18 +37,40 @@ onMounted(load)
 
 // Tapping flips present <-> absent, so a mis-tap is undone by tapping again.
 async function toggle(record) {
+  if (saving.value || session.value.attendance_finalised) return
+  saving.value = true
   const status = record.status === 'present' ? 'absent' : 'present'
   saveError.value = null
   try {
     Object.assign(record, await updateAttendance(sessionId, record.id, { status }))
   } catch (e) {
     saveError.value = `Could not update ${record.name}.`
+  } finally {
+    saving.value = false
+  }
+}
+
+async function setFinalised(finalised) {
+  if (saving.value) return
+  if (finalised && !counts.value.present &&
+      !confirm('Nobody is marked present. Finalise this as an empty session?')) return
+  saving.value = true
+  saveError.value = null
+  try {
+    Object.assign(session.value, await setAttendanceFinalised(sessionId, finalised))
+    if (finalised) await router.push(detailRoute)
+  } catch {
+    saveError.value = finalised
+      ? 'Could not finalise attendance. Please try again.'
+      : 'Could not reopen attendance. Please try again.'
+  } finally {
+    saving.value = false
   }
 }
 
 function cardLabel(record) {
   if (record.status === 'present') return '✓ Present'
-  return 'Tap to mark present'
+  return session.value.attendance_finalised ? 'Absent' : 'Tap to mark present'
 }
 
 function participantName(record) {
@@ -70,9 +93,15 @@ function participantName(record) {
             <h1>Attendance mode</h1>
             <p class="page-subtitle">{{ session.activity }} · {{ formatSessionDate(session.date) }}</p>
           </div>
-          <button class="btn-primary" @click="router.push(detailRoute)">Done</button>
+          <button v-if="session.attendance_finalised" class="btn-primary" :disabled="saving" @click="setFinalised(false)">
+            {{ saving ? 'Reopening…' : 'Reopen attendance' }}
+          </button>
+          <button v-else class="btn-primary" :disabled="saving" @click="setFinalised(true)">
+            {{ saving ? 'Saving…' : 'Done' }}
+          </button>
         </div>
 
+        <p class="page-subtitle">{{ session.attendance_finalised ? 'Attendance finalised' : 'Attendance not finalised' }}</p>
         <p class="counter"><strong>{{ counts.present }}</strong> / {{ counts.total }} present</p>
 
         <div v-if="saveError" class="form-error">{{ saveError }}</div>
@@ -84,6 +113,7 @@ function participantName(record) {
             type="button"
             :class="['person-row', record.status]"
             :aria-pressed="record.status === 'present'"
+            :disabled="saving || session.attendance_finalised"
             @click="toggle(record)"
           >
             <img v-if="record.photo" :src="record.photo" class="participant-photo" alt="" />

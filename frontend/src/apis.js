@@ -209,3 +209,10 @@ export async function updateAttendance(sessionId, attendanceId, changes) {
 export async function deleteSession(id) {
   await api.delete(`/sessions/${id}/`)
 }
+
+export async function setAttendanceFinalised(sessionId, finalised) {
+  const response = await api.patch(`/sessions/${sessionId}/attendance-state/`, {
+    attendance_finalised: finalised,
+  })
+  return response.data
+}
