@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import MarkdownResponse from '@/components/MarkdownResponse.vue'
 import {
   getAttendanceReport, analyseAttendanceReport, listBranches,
 } from '@/apis.js'
@@ -187,7 +188,7 @@ onMounted(() => {
       </div>
       <p v-if="analysisError" class="form-error" role="alert">{{ analysisError }}</p>
       <p v-if="analysing" class="loading-note">Generating an explanation. This may take a few minutes.</p>
-      <p v-else-if="narrative" class="narrative">{{ narrative }}</p>
+      <MarkdownResponse v-else-if="narrative" :text="narrative" />
       <p v-else>Use the button to explain the recorded trends. Statistics are available without AI.</p>
       <p v-if="narrative && !demo" class="analysis-note">This explanation is AI-generated and may vary between requests, even with the same data. Check its accuracy before using it in a formal report. Statistics are calculated from recorded attendance.</p>
     </section>
@@ -203,7 +204,6 @@ fieldset { border: 0; padding: 0; margin: 0 0 24px; }
 legend { font-size: var(--text-sm); color: var(--text-muted); margin-bottom: 12px; }
 .report-section { margin-bottom: 24px; }
 .table-scroll { overflow-x: auto; }
-.narrative { white-space: pre-wrap; overflow-wrap: anywhere; }
 .card p.analysis-note { font-size: var(--text-sm); color: var(--text-muted); }
 .demo-banner { padding: 16px; background: var(--teal-tint); color: var(--teal-dark); border-radius: var(--radius-sm); }
 li { margin-bottom: 8px; color: var(--text-secondary); }
