@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import {
-  getAttendanceReport, analyseAttendanceReport, listBranches, withRetry,
+  getAttendanceReport, analyseAttendanceReport, listBranches,
 } from '@/apis.js'
 import {
   currentQuarter, demoAttendanceReport, DEMO_NARRATIVE, formatReportNumber,
@@ -64,7 +64,7 @@ async function loadReport() {
   }
   loading.value = true
   try {
-    report.value = await withRetry(null, getAttendanceReport, scope())
+    report.value = await getAttendanceReport(scope())
   } catch (e) {
     error.value = messageFor(e, 'Could not load attendance statistics. Please try again.')
   } finally {
@@ -106,7 +106,7 @@ function toggleDemo() {
 async function loadBranches() {
   if (!props.showBranchFilter) return
   try {
-    branches.value = await withRetry(null, listBranches)
+    branches.value = await listBranches()
   } catch {
     branchError.value = 'Branch options could not be loaded. You can still view all branches.'
   }

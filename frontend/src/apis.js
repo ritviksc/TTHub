@@ -21,41 +21,38 @@ function sleep(ms) {
   });
 }
 
-// Wrapper function to retry an axios request up to 'maxRetries' times
-// Follows exponential backoff principle
-// NOTE: Retrying GET requests is recommended, but be careful when retrying 
-// POST requests 
+// maxAttempts includes the initial request. Retry only timeouts; permission,
+// validation and other errors must reach the caller without repeated requests.
+export async function withRetry(maxAttempts, axiosFunction, ...args) {
+  maxAttempts ??= MAX_ATTEMPTS
+  if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
+    throw new RangeError("maxAttempts must be a positive integer")
+  }
 
-// IMPORTANT: Should wrap read-only (GET) calls broadly, be optional but reasonable on idempotent updates (PATCH)
-export async function withRetry(maxRetries, axiosFunction, ...args) {
-  // Set default value manually if not provided
-  if (maxRetries === undefined || maxRetries === null)
-    maxRetries = MAX_ATTEMPTS
-
-  for (let x = 1; x <= maxRetries; x++) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      return await axiosFunction(...args);
+      return await axiosFunction(...args)
     } catch (error) {
-      var isTimeout = error.code === TIMEOUT_ERROR
-
-      if (isTimeout && x < maxRetries) {
-        // jitter of upto 500ms to prevent multiple clients sending requests at same time
-        const jitter = Math.random() * 500
-        const dropOffTime = 100 * Math.pow(2, x - 1) + jitter
-        await sleep(dropOffTime)
-        console.log("Response Timeout. Retrying")
-        continue
+      if (error.code !== TIMEOUT_ERROR || attempt === maxAttempts) {
+        // Preserve Axios status and response data for the page's error handler.
+        throw error
       }
-      // different error
-      throw error
+      const jitter = Math.random() * 500
+      await sleep(100 * Math.pow(2, attempt - 1) + jitter)
     }
   }
+}
+
+// Centralise GET retries so callers cannot accidentally omit them. Do not wrap
+// exported GET functions in another withRetry call, which multiplies attempts.
+function getWithRetry(url, config) {
+  return withRetry(null, () => api.get(url, config))
 }
 
 // fetch Crsf token and store it as a cookie
 // for future requests
 export async function fetchCsrfCookie() {
-  await api.get("/auth/csrf/")
+  await getWithRetry("/auth/csrf/")
 }
 
 export async function login(email, password) {
@@ -78,7 +75,7 @@ export async function logout() {
 }
 
 export async function fetchMe() {
-  const response = await api.get(
+  const response = await getWithRetry(
     "/auth/me/",
   )
   return response.data
@@ -95,7 +92,7 @@ export async function createStaffAccount(payload){
 }
 
 export async function listStaff() {
-  const response = await api.get("/auth/staff/list/")
+  const response = await getWithRetry("/auth/staff/list/")
   return response.data
 }
 
@@ -110,7 +107,7 @@ export async function deactivateStaff(id) {
 // Returns id/name/region plus manager_name and participant_count, so the same
 // call serves both the Branch table and the branch pickers on the staff forms.
 export async function listBranches(params = {}) {
-  const response = await api.get("/branches/", { params })
+  const response = await getWithRetry("/branches/", { params })
   return response.data
 }
 
@@ -120,7 +117,7 @@ export async function createBranch(payload) {
 }
 
 export async function getBranch(id) {
-  const response = await api.get(`/branches/${id}/`)
+  const response = await getWithRetry(`/branches/${id}/`)
   return response.data
 }
 
@@ -133,12 +130,12 @@ export async function updateBranch(id, payload) {
 
 // params: { branch, is_active, search } — all optional.
 export async function listParticipants(params = {}) {
-  const response = await api.get("/participants/", { params })
+  const response = await getWithRetry("/participants/", { params })
   return response.data
 }
 
 export async function getParticipant(id) {
-  const response = await api.get(`/participants/${id}/`)
+  const response = await getWithRetry(`/participants/${id}/`)
   return response.data
 }
 
@@ -187,12 +184,12 @@ export async function removeBranchInstructor(branchId, userId) {
 /* ---- sessions ---- */
 
 export async function listSessions(params = {}) {
-  const response = await api.get("/sessions/", { params })
+  const response = await getWithRetry("/sessions/", { params })
   return response.data
 }
 
 export async function getSession(id) {
-  const response = await api.get(`/sessions/${id}/`)
+  const response = await getWithRetry(`/sessions/${id}/`)
   return response.data
 }
 
@@ -221,7 +218,7 @@ export async function setAttendanceFinalised(sessionId, finalised) {
 
 // scope: { start_date, end_date, branch_id? }; dates are inclusive YYYY-MM-DD.
 export async function getAttendanceReport(scope) {
-  const response = await api.get('/reporting/attendance/', { params: scope })
+  const response = await getWithRetry('/reporting/attendance/', { params: scope })
   return response.data
 }
 

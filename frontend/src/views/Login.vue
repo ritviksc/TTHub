@@ -3,8 +3,6 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   TIMEOUT_ERROR,
-  MAX_ATTEMPTS,
-  withRetry,
   login,
   fetchCsrfCookie
 } from '@/apis.js'
@@ -25,7 +23,7 @@ const roleRoutes = {
 
 onMounted(async () => {
   try {
-    await withRetry(MAX_ATTEMPTS, fetchCsrfCookie)
+    await fetchCsrfCookie()
   } catch (err) {
     console.error('Unable to get CSRF cookie:', err)
     error.value = 'Unable to connect to server. Try logging in later.'
