@@ -84,9 +84,13 @@ export async function fetchMe() {
 /* ---- staff ---- */
 
 export async function createStaffAccount(payload){
+  // Hidden branch pickers can retain an empty or previously selected value.
+  const data = { ...payload }
+  if (data.role === 'super_admin') data.branch = null
+  else if (data.branch === '') delete data.branch
   const response = await api.post(
       "/auth/staff/", 
-      payload
+      data
     )
   return response.data
 }

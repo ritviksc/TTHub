@@ -28,6 +28,9 @@ class StaffCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"role": "Branch Managers can only create Instructor accounts."})
             attrs["branch"] = requesting_user.branch
 
+        if role == UserAccount.Role.SUPER_ADMIN:
+            attrs["branch"] = None
+
         if role != UserAccount.Role.SUPER_ADMIN and not attrs.get("branch"):
             raise serializers.ValidationError({"branch": "Branch is required for this role."})
 

@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.http import FileResponse, Http404
+from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.response import Response
 
@@ -80,3 +82,22 @@ class ParticipantDeactivateView(generics.GenericAPIView):
         participant.is_active = False
         participant.save()
         return Response({"id": str(participant.id), "is_active": participant.is_active})
+
+
+class ParticipantPhotoView(APIView):
+    permission_classes = ANY_STAFF
+
+    def get(self, request, photo_path):
+        # The file URL must enforce the same branch and consent rules as JSON.
+        participant = get_object_or_404(
+            participants_for(request.user), photo=photo_path, photo_consent_given=True,
+        )
+        try:
+            photo = participant.photo.open("rb")
+        except OSError as exc:
+            raise Http404("Photo not found.") from exc
+        response = FileResponse(photo)
+        # Avoid continuing to show cached sensitive photos after consent is withdrawn.
+        response["Cache-Control"] = "private, no-store"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response

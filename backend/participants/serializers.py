@@ -73,6 +73,8 @@ class ParticipantSerializer(serializers.ModelSerializer):
         # their own, so a branch manager cannot create a participant in, or move
         # one to, a branch they do not run.
         if user.role != UserAccount.Role.SUPER_ADMIN:
+            if not user.branch_id:
+                raise serializers.ValidationError({"branch": "You must belong to a branch to manage participants."})
             attrs["branch"] = user.branch
         elif self.instance is None and not attrs.get("branch"):
             raise serializers.ValidationError({"branch": "Branch is required."})

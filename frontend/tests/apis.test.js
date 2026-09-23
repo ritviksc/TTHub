@@ -81,3 +81,21 @@ test('invalid retry limits fail instead of silently returning undefined', async 
     await assert.rejects(api.withRetry(limit, () => assert.fail('Must not run')), RangeError)
   }
 })
+
+test('super-admin creation sends no branch without mutating the form', async () => {
+  const payload = { email: 'admin@example.com', role: 'super_admin', branch: '' }
+  respond = async config => {
+    assert.equal(JSON.parse(config.data).branch, null)
+    return { data: { id: 'new-admin' }, status: 201, headers: {}, config }
+  }
+  await api.createStaffAccount(payload)
+  assert.equal(payload.branch, '')
+})
+
+test('empty branch selections are omitted so the server can validate or assign the branch', async () => {
+  respond = async config => {
+    assert.equal(Object.hasOwn(JSON.parse(config.data), 'branch'), false)
+    return { data: { id: 'new-instructor' }, status: 201, headers: {}, config }
+  }
+  await api.createStaffAccount({ role: 'instructor', branch: '' })
+})

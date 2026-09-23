@@ -161,13 +161,12 @@ async function handleDelete() {
           </thead>
           <tbody>
             <tr v-for="record in visibleAttendance" :key="record.participant_id">
-              <td v-if="isInstructor">
+              <td>
                 <span class="participant">
                   <span class="initials-avatar">{{ initials(record.name) }}</span>
                   {{ record.name }}
                 </span>
               </td>
-              <td v-else>{{ record.status === 'present' ? 'Present' : 'Absent' }}</td>
               <td>
                 <select
                   :disabled="!isInstructor || session.attendance_finalised"
