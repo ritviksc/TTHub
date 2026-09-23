@@ -7,6 +7,7 @@ import {
   fetchCsrfCookie
 } from '@/apis.js'
 import { loadUser } from '@/stores/auth.js'
+import { dashboardRoute } from '@/router/access.js'
 
 const router = useRouter()
 
@@ -14,12 +15,6 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
-
-const roleRoutes = {
-  super_admin: '/super-admin/dashboard',
-  branch_manager: '/branch-manager/dashboard',
-  instructor: '/instructor/dashboard'
-}
 
 onMounted(async () => {
   try {
@@ -35,9 +30,13 @@ async function handleSubmit() {
   error.value = ''
 
   try {
-    const data = await login(email.value, password.value)
-    await loadUser()
-    router.push(roleRoutes[data.role] ?? '/')
+    await login(email.value, password.value)
+    const user = await loadUser()
+    if (!user) {
+      error.value = 'Could not confirm your session. Please try signing in again.'
+      return
+    }
+    await router.replace(dashboardRoute(user.role))
   } catch (err) {
     if (err.code === TIMEOUT_ERROR) {
       error.value = 'The server took too long to respond.'

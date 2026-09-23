@@ -6,7 +6,8 @@ import ContactUs from '@/views/ContactUs.vue'
 import ComingSoon from '@/views/ComingSoon.vue'
 import CreateStaff from '@/views/SuperAdmin/CreateStaff.vue'
 import CreateInstructor from '@/views/BranchManager/CreateInstructor.vue'
-import { auth, loadUser } from '@/stores/auth.js'
+import { loadUser } from '@/stores/auth.js'
+import { createAccessGuard } from './access.js'
 
 // Not-yet-built pages all share one placeholder; meta.title is what it renders.
 const comingSoon = (path, name, title, roles) => ({
@@ -26,6 +27,11 @@ const router = createRouter({
         { path: '/about', name: 'about-us', component: AboutUs },
         { path: '/contact', name: 'contact-us', component: ContactUs },
         { path: '/login', name: 'login', component: Login },
+        {
+            path: '/not-authorised', name: 'not-authorised',
+            component: () => import('@/views/NotAuthorised.vue'),
+            meta: { requiresAuth: true },
+        },
 
         /* ---- super admin ---- */
         { path: '/super-admin', redirect: '/super-admin/users' },
@@ -133,18 +139,13 @@ const router = createRouter({
             component: () => import('@/views/ParticipantConsent.vue'),
             meta: { requiresAuth: true, roles: [...SA, ...BM, ...IN]},
         },
+        {
+            path: '/:pathMatch(.*)*', name: 'unknown-route',
+            component: () => import('@/views/NotAuthorised.vue'),
+        },
     ]
 })
 
-router.beforeEach(async (to) => {
-    if (!to.meta.requiresAuth) return true
-
-    // main.js resolves the session before mount, so this is normally cached.
-    const user = auth.user ?? await loadUser()
-    if (!user) return '/login'
-
-    if (to.meta.roles && !to.meta.roles.includes(user.role)) return '/login'
-    return true
-})
+router.beforeEach(createAccessGuard(loadUser))
 
 export default router
