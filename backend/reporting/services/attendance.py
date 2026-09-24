@@ -163,14 +163,21 @@ def analyse_attendance(*, user, start_date, end_date, branch_id=None, client=Non
     statistics = attendance_statistics(
         user=user, start_date=start_date, end_date=end_date, branch_id=branch_id,
     )
-    narrative = None
-    if statistics["totals"]["finalised_sessions"]:
-        narrative = generate(
-            client=client if client is not None else get_client(),
-            prompt=build_attendance_prompt(statistics),
-            sys_prompt=SYSTEM_PROMPT,
-            model=model,
-            max_tokens=1000,
-            temperature=0.2,
-        )
-    return {"statistics": statistics, "narrative": narrative}
+    return {
+        "statistics": statistics,
+        "narrative": explain_attendance(statistics, client=client, model=model),
+    }
+
+
+def explain_attendance(statistics, *, client=None, model=None):
+    """Explain a fixed statistics snapshot, whether called by a task or a test."""
+    if not statistics["totals"]["finalised_sessions"]:
+        return None
+    return generate(
+        client=client if client is not None else get_client(),
+        prompt=build_attendance_prompt(statistics),
+        sys_prompt=SYSTEM_PROMPT,
+        model=model,
+        max_tokens=1000,
+        temperature=0.2,
+    )

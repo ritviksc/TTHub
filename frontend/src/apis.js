@@ -227,7 +227,12 @@ export async function getAttendanceReport(scope) {
 }
 
 export async function analyseAttendanceReport(scope) {
-  // Generation can outlast the normal five-second API timeout. Never retry POSTs automatically.
-  const response = await api.post('/reporting/attendance/analyse/', scope, { timeout: 240000 })
+  // This only queues work. Never retry POSTs automatically: that could create two jobs.
+  const response = await api.post('/reporting/attendance/analyse/', scope)
+  return response.data
+}
+
+export async function getAttendanceAnalysisJob(jobId, signal) {
+  const response = await getWithRetry(`/reporting/attendance/jobs/${jobId}/`, { signal })
   return response.data
 }

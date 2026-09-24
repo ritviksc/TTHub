@@ -68,6 +68,16 @@ CELERY_BROKER_URL = os.getenv(
     "redis://localhost:6379/0",
 )
 CELERY_TIMEZONE = 'Pacific/Auckland'
+# Report results live in Django; Redis is the broker, not the report store.
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_PUBLISH_RETRY = False
+CELERY_BROKER_CONNECTION_TIMEOUT = 2
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'socket_connect_timeout': 2,
+    'socket_timeout': 2,
+}
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

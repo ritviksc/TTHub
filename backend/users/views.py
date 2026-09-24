@@ -224,6 +224,7 @@ class BranchDetailView(generics.RetrieveUpdateDestroyAPIView):
         staff_count = branch.staff.count()
         participant_count = branch.participants.count()
         session_count = branch.programme_sessions.count()
+        report_count = branch.attendanceanalysisjob_set.count()
         if staff_count:
             blockers.append(f"{staff_count} staff account{'s' if staff_count > 1 else ''}")
         if participant_count:
@@ -233,6 +234,9 @@ class BranchDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         if session_count:
             blockers.append(f"{session_count} programme session(s)")
+
+        if report_count:
+            blockers.append(f"{report_count} attendance report job(s)")
 
         if blockers:
             return Response(

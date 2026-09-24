@@ -11,6 +11,7 @@ after(() => { axios.defaults.adapter = originalAdapter })
 beforeEach(() => { respond = () => { throw new Error('Unexpected request') } })
 
 const reads = [
+  ['getAttendanceAnalysisJob', ['job-id'], '/reporting/attendance/jobs/job-id/'],
   ['fetchCsrfCookie', [], '/auth/csrf/'],
   ['fetchMe', [], '/auth/me/'],
   ['listStaff', [], '/auth/staff/list/'],

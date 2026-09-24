@@ -203,20 +203,28 @@ class AttendanceReportAPITests(TestCase):
             self.assertEqual(self.client.get(self.url, self.scope).status_code, 403)
             self.assertEqual(self.client.post(self.analysis_url, self.scope, format="json").status_code, 403)
 
-    @patch("reporting.services.attendance.get_client", return_value=Mock())
-    @patch("reporting.services.attendance.generate", return_value="One empty session.")
-    def test_post_returns_narrative_and_its_statistics(self, generate, get_client):
+    @patch("reporting.views.generate_attendance_analysis.apply_async")
+    @patch("reporting.services.attendance.generate")
+    def test_post_queues_without_calling_provider(self, generate, enqueue):
+        from .models import AttendanceAnalysisJob
         response = self.client.post(self.analysis_url, self.scope, format="json")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["narrative"], "One empty session.")
-        self.assertEqual(response.data["statistics"]["totals"]["finalised_sessions"], 1)
-        generate.assert_called_once()
+        self.assertEqual(response.status_code, 202)
+        job = AttendanceAnalysisJob.objects.get(pk=response.data["job_id"])
+        self.assertEqual(job.requested_by, self.user)
+        self.assertEqual(job.statistics["totals"]["finalised_sessions"], 1)
+        self.assertEqual(response.data["status"], "queued")
+        enqueue.assert_called_once()
+        generate.assert_not_called()
 
-    @patch("reporting.views.analyse_attendance", side_effect=ValueError("private provider response"))
-    def test_provider_failure_does_not_expose_details_or_break_statistics(self, analyse):
+    @patch("reporting.views.generate_attendance_analysis.apply_async")
+    def test_broker_failure_returns_safe_error(self, enqueue):
+        from kombu.exceptions import OperationalError
+        from .models import AttendanceAnalysisJob
+        enqueue.side_effect = OperationalError("private broker URL")
         response = self.client.post(self.analysis_url, self.scope, format="json")
-        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.status_code, 503)
         self.assertNotIn("private", str(response.data))
+        self.assertEqual(AttendanceAnalysisJob.objects.get().status, "failed")
         self.assertEqual(self.client.get(self.url, self.scope).status_code, 200)
 
     def test_super_admin_can_select_all_or_one_branch(self):
@@ -226,3 +234,101 @@ class AttendanceReportAPITests(TestCase):
         response = self.client.get(self.url, {**self.scope, "branch_id": str(self.other.pk)})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["totals"]["total_sessions"], 0)
+
+
+class AttendanceTaskTests(TestCase):
+    def setUp(self):
+        from rest_framework.test import APIClient
+        from .models import AttendanceAnalysisJob
+        self.branch = Branch.objects.create(name="Task branch")
+        self.user = UserAccount.objects.create_user(
+            username="task-manager", email="task@example.com", role="branch_manager", branch=self.branch,
+        )
+        self.job = AttendanceAnalysisJob.objects.create(
+            requested_by=self.user, branch=self.branch,
+            statistics={"totals": {"finalised_sessions": 1}},
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+        self.url = f"/api/reporting/attendance/jobs/{self.job.pk}/"
+
+    @patch("reporting.tasks.explain_attendance", return_value="A saved explanation")
+    def test_worker_saves_result_once_and_status_returns_snapshot(self, explain):
+        from .tasks import generate_attendance_analysis
+        generate_attendance_analysis.run(str(self.job.pk))
+        generate_attendance_analysis.run(str(self.job.pk))
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.status, "succeeded")
+        explain.assert_called_once_with(self.job.statistics)
+        response = self.client.get(self.url)
+        self.assertEqual(response.data["narrative"], "A saved explanation")
+        self.assertEqual(response.data["statistics"], self.job.statistics)
+
+    @patch("reporting.tasks.explain_attendance", side_effect=ValueError("secret provider details"))
+    def test_worker_failure_is_visible_without_leaking_details(self, explain):
+        from .tasks import generate_attendance_analysis
+        with self.assertRaises(ValueError):
+            generate_attendance_analysis.run(str(self.job.pk))
+        response = self.client.get(self.url)
+        self.assertEqual(response.data["status"], "failed")
+        self.assertNotIn("secret", str(response.data))
+
+    def test_another_user_cannot_read_job(self):
+        other = UserAccount.objects.create_user(username="another", email="another@example.com", role="super_admin")
+        self.client.force_authenticate(other)
+        self.assertEqual(self.client.get(self.url).status_code, 404)
+
+    @patch("reporting.tasks.explain_attendance")
+    def test_changed_branch_blocks_worker_and_status(self, explain):
+        from .tasks import generate_attendance_analysis
+        self.user.branch = Branch.objects.create(name="New branch")
+        self.user.save()
+        with self.assertRaises(PermissionDenied):
+            generate_attendance_analysis.run(str(self.job.pk))
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+        explain.assert_not_called()
+
+    @patch("reporting.tasks.explain_attendance")
+    def test_abandoned_job_expires_instead_of_polling_forever(self, explain):
+        from datetime import timedelta
+        from django.utils import timezone
+        from .tasks import generate_attendance_analysis
+        self.job.expires_at = timezone.now() - timedelta(seconds=1)
+        self.job.save()
+        self.assertEqual(self.client.get(self.url).data["status"], "failed")
+        generate_attendance_analysis.run(str(self.job.pk))
+        explain.assert_not_called()
+
+
+from django.test import TransactionTestCase
+
+
+class AttendanceWorkerIntegrationTests(TransactionTestCase):
+    @patch("reporting.tasks.explain_attendance", return_value="Worker generated narrative")
+    def test_real_worker_consumes_queued_job(self, explain):
+        import time
+        import os
+        from celery.contrib.testing.worker import start_worker
+        from config.celery import app
+        from .models import AttendanceAnalysisJob
+        from .tasks import generate_attendance_analysis
+
+        user = UserAccount.objects.create_user(
+            username="worker-admin", email="worker@example.com", role="super_admin",
+        )
+        job = AttendanceAnalysisJob.objects.create(
+            requested_by=user, statistics={"totals": {"finalised_sessions": 1}},
+        )
+        # Use a real worker with an isolated in-memory broker; no Redis or paid AI call.
+        with patch.dict(os.environ, {"CELERY_BROKER_URL": "memory://"}), self.settings(CELERY_TASK_ALWAYS_EAGER=False):
+            with start_worker(app, pool="solo", perform_ping_check=False, queues=["report-test"]):
+                generate_attendance_analysis.apply_async(args=[str(job.pk)], queue="report-test")
+                deadline = time.monotonic() + 8
+                while time.monotonic() < deadline:
+                    job.refresh_from_db()
+                    if job.status in ("succeeded", "failed"):
+                        break
+                    time.sleep(0.1)
+                self.assertEqual(job.status, "succeeded")
+                self.assertEqual(job.narrative, "Worker generated narrative")
+                explain.assert_called_once_with(job.statistics)

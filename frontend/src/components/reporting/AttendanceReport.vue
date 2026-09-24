@@ -1,12 +1,14 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import MarkdownResponse from '@/components/MarkdownResponse.vue'
 import {
-  getAttendanceReport, analyseAttendanceReport, listBranches,
+  getAttendanceReport, analyseAttendanceReport, getAttendanceAnalysisJob, listBranches,
 } from '@/apis.js'
 import {
   currentQuarter, demoAttendanceReport, DEMO_NARRATIVE, formatReportNumber,
 } from '@/utils/reporting.js'
+
+import { waitForAnalysis } from '@/utils/analysisJobs.js'
 
 const props = defineProps({ showBranchFilter: Boolean, branchName: { type: String, default: '' } })
 const dates = currentQuarter()
@@ -19,6 +21,9 @@ const report = ref(null)
 const narrative = ref(null)
 const loading = ref(false)
 const analysing = ref(false)
+const jobStatus = ref(null)
+let analysisController = null
+onBeforeUnmount(() => analysisController?.abort())
 const error = ref(null)
 const analysisError = ref(null)
 const demo = ref(false)
@@ -82,15 +87,26 @@ async function analyse() {
     return
   }
   analysing.value = true
+  jobStatus.value = 'queued'
+  analysisController = new AbortController()
+  const controller = analysisController
   try {
-    const result = await analyseAttendanceReport(scope())
+    const queued = await analyseAttendanceReport(scope())
+    if (controller.signal.aborted) return
+    const result = queued.status === 'succeeded' ? queued : await waitForAnalysis(
+      () => getAttendanceAnalysisJob(queued.job_id, controller.signal),
+      { signal: controller.signal, onStatus: status => { jobStatus.value = status } },
+    )
     // Display the exact statistics used for this narrative if records changed since loading.
     report.value = result.statistics
     narrative.value = result.narrative
   } catch (e) {
-    analysisError.value = messageFor(e, 'Analysis could not be completed. Your statistics are still available.')
+    if (!controller.signal.aborted) {
+      analysisError.value = messageFor(e, e.message || 'Analysis could not be completed. Your statistics are still available.')
+    }
   } finally {
     analysing.value = false
+    jobStatus.value = null
   }
 }
 
@@ -187,7 +203,7 @@ onMounted(() => {
         </button>
       </div>
       <p v-if="analysisError" class="form-error" role="alert">{{ analysisError }}</p>
-      <p v-if="analysing" class="loading-note">Generating an explanation. This may take a few minutes.</p>
+      <p v-if="analysing" class="loading-note">{{ jobStatus === 'queued' ? 'Analysis queued. Waiting for a worker…' : 'Generating an explanation. This may take a few minutes.' }}</p>
       <MarkdownResponse v-else-if="narrative" :text="narrative" />
       <p v-else>Use the button to explain the recorded trends. Statistics are available without AI.</p>
       <p v-if="narrative && !demo" class="analysis-note">This explanation is AI-generated and may vary between requests, even with the same data. Check its accuracy before using it in a formal report. Statistics are calculated from recorded attendance.</p>
