@@ -268,16 +268,12 @@ async function submitCreateParticipant() {
             <td class="chevron" aria-hidden="true">›</td>
           </tr>
 
-          <tr v-if="loading">
-            <td colspan="6" class="empty-row">Loading participants…</td>
-          </tr>
-          <tr v-else-if="!participants.length">
+          <tr v-if="!loading && !participants.length">
             <td colspan="6" class="empty-row">
               {{ search || activeFilter !== 'All' || branchFilter !== 'All'
                 ? 'No participants match these filters.'
                 : 'No participants yet. Add the first one.' }}
             </td>
-            <td><RouterLink :to="`/participants/${p.id}`">Consent / photo →</RouterLink></td>
           </tr>
         </tbody>
       </table>
