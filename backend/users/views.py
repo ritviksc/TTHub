@@ -8,11 +8,13 @@ from django.utils.decorators import method_decorator
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Branch, UserAccount
 from .serializers import (
+
     BranchSerializer,
     BranchDetailSerializer,
     BranchListSerializer,
     StaffCreateSerializer,
     StaffListSerializer,
+    StaffDetailSerializer,
 )
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, Prefetch, Q
@@ -99,6 +101,59 @@ class StaffListView(generics.ListAPIView):
 
     def get_queryset(self):
         return staff_queryset_for(self.request.user)
+
+def staff_queryset_for(user):
+    queryset = UserAccount.objects.exclude(
+        id=user.id
+    )
+
+    if user.role == UserAccount.Role.BRANCH_MANAGER:
+        queryset = queryset.filter(
+            role=UserAccount.Role.INSTRUCTOR,
+            branch=user.branch
+        )
+
+    return queryset
+
+
+class StaffDetailView(
+    generics.RetrieveUpdateAPIView
+):
+    serializer_class = StaffDetailSerializer
+
+    permission_classes = [
+        IsSuperAdmin | IsBranchManager
+    ]
+
+    def get_queryset(self):
+        return staff_queryset_for(
+            self.request.user
+        )
+
+
+class StaffDeactivateView(
+    generics.GenericAPIView
+):
+    permission_classes = [
+        IsSuperAdmin | IsBranchManager
+    ]
+
+    def post(self, request, pk):
+
+        staff = get_object_or_404(
+            staff_queryset_for(request.user),
+            pk=pk
+        )
+
+        staff.is_active = False
+        staff.save(
+            update_fields=["is_active"]
+        )
+
+        return Response({
+            "id": str(staff.id),
+            "is_active": staff.is_active
+        })
 
 class StaffDeactivateView(generics.GenericAPIView):
     permission_classes = [IsSuperAdmin | IsBranchManager]

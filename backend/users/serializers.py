@@ -55,6 +55,131 @@ class StaffListSerializer(serializers.ModelSerializer):
     def get_branch_name(self, obj):
         return obj.branch.name if obj.branch else None
 
+class StaffDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer used by the shared staff detail page.
+
+    Super Admin:
+        - Can edit identity
+        - Can edit email
+        - Can change role
+        - Can change branch
+
+    Branch Manager:
+        - Can edit instructor identity/contact details
+        - Cannot change role
+        - Cannot change branch
+    """
+
+    class Meta:
+        model = UserAccount
+
+        fields = [
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "role",
+            "branch",
+            "is_active",
+        ]
+
+        read_only_fields = [
+            "id",
+            "is_active",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        request = self.context.get("request")
+
+        if (
+            request
+            and request.user.role != UserAccount.Role.SUPER_ADMIN
+        ):
+            self.fields["role"].read_only = True
+            self.fields["branch"].read_only = True
+
+    def validate_email(self, value):
+        qs = UserAccount.objects.filter(
+            email__iexact=value
+        )
+
+        if self.instance:
+            qs = qs.exclude(
+                pk=self.instance.pk
+            )
+
+        if qs.exists():
+            raise serializers.ValidationError(
+                "An account with this email already exists."
+            )
+
+        return value
+
+    def validate(self, attrs):
+        request = self.context["request"]
+
+        role = attrs.get(
+            "role",
+            self.instance.role
+        )
+
+        branch = attrs.get(
+            "branch",
+            self.instance.branch
+        )
+
+        # Super Admins don't belong to a branch
+        if role == UserAccount.Role.SUPER_ADMIN:
+
+            if branch is not None:
+                raise serializers.ValidationError({
+                    "branch":
+                        "Super Admin accounts are not assigned to a branch."
+                })
+
+        # Other staff must have a branch
+        elif branch is None:
+
+            raise serializers.ValidationError({
+                "branch":
+                    "Branch is required for this role."
+            })
+
+        # Branch Manager restrictions
+        if (
+            request.user.role
+            == UserAccount.Role.BRANCH_MANAGER
+        ):
+
+            if (
+                self.instance.role
+                != UserAccount.Role.INSTRUCTOR
+                or
+                self.instance.branch_id
+                != request.user.branch_id
+            ):
+                raise serializers.ValidationError(
+                    "You can only edit instructors in your own branch."
+                )
+
+        return attrs
+
+    def update(self, instance, validated_data):
+
+        # Username is based on email.
+        if "email" in validated_data:
+            validated_data["username"] = (
+                validated_data["email"]
+            )
+
+        return super().update(
+            instance,
+            validated_data
+        )
+
 
 class BranchListSerializer(serializers.ModelSerializer):
     """A row in the Branch table. participant_count and the manager come from

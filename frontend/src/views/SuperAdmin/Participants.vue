@@ -1,38 +1,42 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { listParticipants, createParticipant, listBranches } from '@/apis.js'
 
+const router = useRouter()
+
 const participants = ref([])
+const branches = ref([])
 const loading = ref(true)
 const loadError = ref(null)
 
 const search = ref('')
 const activeFilter = ref('All')
+const branchFilter = ref('All')
 
 const filters = ['All', 'Active', 'Inactive']
 
-const visibleParticipants = computed(() => {
-  const query = search.value.trim().toLowerCase()
+// The initial the avatar falls back to when there is no photo on file yet.
+function initial(p) {
+  return (p.preferred_name || p.full_name || '?').charAt(0).toUpperCase()
+}
 
-  return participants.value.filter((p) => {
-    const matchesSearch =
-      !query ||
-      p.full_name.toLowerCase().includes(query) ||
-      (p.preferred_name ?? '').toLowerCase().includes(query) ||
-      (p.branch_name ?? '').toLowerCase().includes(query)
+// Every filter here maps straight onto a query param listParticipants
+// already supports (branch / is_active / search), so filtering happens on
+// the server instead of being redone in the browser.
+function currentParams() {
+  const params = {}
+  const query = search.value.trim()
+  if (query) params.search = query
+  if (activeFilter.value !== 'All') params.is_active = activeFilter.value === 'Active' ? 'true' : 'false'
+  if (branchFilter.value !== 'All') params.branch = branchFilter.value
+  return params
+}
 
-    const matchesFilter =
-      activeFilter.value === 'All' ||
-      (activeFilter.value === 'Active' ? p.is_active : !p.is_active)
-
-    return matchesSearch && matchesFilter
-  })
-})
-
-async function load() {
+async function loadParticipants() {
   loading.value = true
   try {
-    participants.value = await listParticipants()
+    participants.value = await listParticipants(currentParams())
     loadError.value = null
   } catch (e) {
     participants.value = []
@@ -42,7 +46,28 @@ async function load() {
   }
 }
 
-onMounted(load)
+async function loadBranches() {
+  try { branches.value = await listBranches() } catch (e) { branches.value = [] }
+}
+
+onMounted(async () => {
+  await loadBranches()
+  await loadParticipants()
+})
+
+// Typing re-queries after a short pause so every keystroke doesn't hit the
+// API; the pills and the branch picker re-query immediately since there is
+// no typing to debounce there.
+let searchDebounce = null
+watch(search, () => {
+  clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(loadParticipants, 300)
+})
+watch([activeFilter, branchFilter], loadParticipants)
+
+function openDetail(id) {
+  router.push(`/super-admin/participants/${id}`)
+}
 
 /* ---- add participant ---- */
 
@@ -52,18 +77,15 @@ const emptyParticipant = () => ({
 })
 
 const showModal = ref(false)
-const branches = ref([])
 const newParticipant = ref(emptyParticipant())
 const createError = ref(null)
 const saving = ref(false)
 
-async function openModal() {
+function openModal() {
   newParticipant.value = emptyParticipant()
   createError.value = null
   showModal.value = true
-  // A Super Admin has to say which branch, so the picker has to be populated
-  // before the form is usable.
-  try { branches.value = await listBranches() } catch (e) { branches.value = [] }
+  // branches are already loaded, so the picker is ready immediately
 }
 
 async function submitCreateParticipant() {
@@ -72,7 +94,7 @@ async function submitCreateParticipant() {
   try {
     await createParticipant(newParticipant.value)
     showModal.value = false
-    await load()
+    await loadParticipants()
   } catch (e) {
     const data = e.response?.data
     createError.value =
@@ -156,24 +178,36 @@ async function submitCreateParticipant() {
         aria-label="Search by participant or branch name"
       />
 
-      <div class="pills">
-        <button
-          v-for="f in filters"
-          :key="f"
-          :class="['pill', { active: activeFilter === f }]"
-          @click="activeFilter = f"
+      <div class="filter-row">
+        <div class="pills">
+          <button
+            v-for="f in filters"
+            :key="f"
+            :class="['pill', { active: activeFilter === f }]"
+            @click="activeFilter = f"
+          >
+            {{ f }}
+          </button>
+        </div>
+
+        <select
+          v-model="branchFilter"
+          class="branch-filter"
+          aria-label="Filter by branch"
         >
-          {{ f }}
-        </button>
+          <option value="All">All branches</option>
+          <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
+        </select>
       </div>
 
       <p class="result-count">
-        {{ visibleParticipants.length }} of {{ participants.length }} participants
+        {{ participants.length }} participant{{ participants.length === 1 ? '' : 's' }}
       </p>
 
       <table class="data-table">
         <thead>
           <tr>
+            <th></th>
             <th>Participant</th>
             <th>Branch</th>
             <th>Phone</th>
@@ -182,17 +216,23 @@ async function submitCreateParticipant() {
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading">
-            <td colspan="5" class="empty-row">Loading participants…</td>
-          </tr>
-          <tr v-else-if="!visibleParticipants.length">
-            <td colspan="5" class="empty-row">
-              {{ participants.length
-                ? 'No participants match this search.'
-                : 'No participants yet. Add the first one.' }}
+          <tr
+            v-for="p in participants"
+            :key="p.id"
+            class="participant-row"
+            tabindex="0"
+            @click="openDetail(p.id)"
+            @keydown.enter="openDetail(p.id)"
+          >
+            <td class="avatar-cell">
+              <img
+                v-if="p.photo || p.photo_url"
+                class="photo"
+                :src="p.photo || p.photo_url"
+                alt=""
+              />
+              <span v-else class="initials-avatar">{{ initial(p) }}</span>
             </td>
-          </tr>
-          <tr v-for="p in visibleParticipants" :key="p.id">
             <td>
               <span class="participant-name">{{ p.full_name }}</span>
               <span v-if="p.preferred_name" class="participant-preferred">{{ p.preferred_name }}</span>
@@ -203,6 +243,18 @@ async function submitCreateParticipant() {
               <span :class="['status-badge', p.is_active ? 'active' : 'inactive']">
                 {{ p.is_active ? 'Active' : 'Inactive' }}
               </span>
+            </td>
+            <td class="chevron" aria-hidden="true">›</td>
+          </tr>
+
+          <tr v-if="loading">
+            <td colspan="6" class="empty-row">Loading participants…</td>
+          </tr>
+          <tr v-else-if="!participants.length">
+            <td colspan="6" class="empty-row">
+              {{ search || activeFilter !== 'All' || branchFilter !== 'All'
+                ? 'No participants match these filters.'
+                : 'No participants yet. Add the first one.' }}
             </td>
             <td><RouterLink :to="`/participants/${p.id}`">Consent / photo →</RouterLink></td>
           </tr>
@@ -227,10 +279,40 @@ async function submitCreateParticipant() {
 }
 .participant-search:focus { border-color: var(--teal); }
 
+.filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.filter-row .pills { margin-bottom: 0; }
+
+.branch-filter {
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: var(--text-base);
+  background: var(--surface);
+  color: var(--text-secondary);
+  outline: none;
+  min-width: 180px;
+}
+.branch-filter:focus { border-color: var(--teal); }
+
 .result-count {
   font-size: var(--text-base);
   color: var(--text-muted);
   margin: 0 0 10px;
+}
+
+.avatar-cell { width: 52px; }
+.avatar-cell .photo {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 /* Legal name over what the branch actually calls them. */
@@ -240,6 +322,12 @@ async function submitCreateParticipant() {
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
+
+.participant-row { cursor: pointer; }
+.participant-row:hover td { background: var(--surface-sunken); }
+.participant-row:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
+
+.chevron { text-align: right; color: var(--text-faint); font-size: var(--text-md); }
 
 .empty-row { text-align: center; color: var(--text-faint); padding: 32px 16px; }
 </style>

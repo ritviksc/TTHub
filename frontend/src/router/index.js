@@ -8,6 +8,7 @@ import CreateStaff from '@/views/SuperAdmin/CreateStaff.vue'
 import CreateInstructor from '@/views/BranchManager/CreateInstructor.vue'
 import { auth, loadUser } from '@/stores/auth.js'
 import UserDetail from '@/views/SuperAdmin/UserDetail.vue'
+import StaffDetail from '@/views/StaffDetail.vue'
 
 // Not-yet-built pages all share one placeholder; meta.title is what it renders.
 const comingSoon = (path, name, title, roles) => ({
@@ -44,11 +45,24 @@ const router = createRouter({
         meta: { requiresAuth: true, roles: ['super_admin'] },
         },
         {
+        path: '/staff/:id',
+        name: 'staff-detail',
+        component: StaffDetail,
+        meta: {
+        requiresAuth: true,
+        roles: ['super_admin', 'branch_manager']
+        }
+        },
+        {
             path: '/super-admin/administration', name: 'sa-administration',
             component: () => import('@/views/SuperAdmin/Administration.vue'),
             meta: { requiresAuth: true, roles: SA },
         },
-        comingSoon('/super-admin/overview', 'sa-overview', 'National overview', SA),
+        {
+            path: '/super-admin/overview', name: 'sa-overview',
+            component: () => import('@/views/SuperAdmin/Overview.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
         {
             path: '/super-admin/branches', name: 'sa-branches',
             component: () => import('@/views/SuperAdmin/Branches.vue'),
@@ -62,6 +76,11 @@ const router = createRouter({
         {
             path: '/super-admin/participants', name: 'sa-participants',
             component: () => import('@/views/SuperAdmin/Participants.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
+            path: '/super-admin/participants/:id', name: 'sa-participant-detail',
+            component: () => import('@/views/SuperAdmin/ParticipantDetail.vue'),
             meta: { requiresAuth: true, roles: SA },
         },
         comingSoon('/super-admin/reporting', 'sa-reporting', 'Reporting', SA),

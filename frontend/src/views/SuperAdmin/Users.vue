@@ -1,19 +1,24 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from "vue";
 import { RouterLink } from 'vue-router'
-import { createStaffAccount, listBranches, listStaff, deactivateStaff } from '@/apis.js'
+import {
+  createStaffAccount,
+  listBranches,
+  listStaff,
+  deactivateStaff,
+} from "@/apis.js";
 
-const users = ref([])
-const loadError = ref(null)
+const users = ref([]);
+const loadError = ref(null);
 
-const activeFilter = ref('All')
-const filters = ['All', 'Branch Managers', 'Instructors', 'Super Admins']
+const activeFilter = ref("All");
+const filters = ["All", "Branch Managers", "Instructors", "Super Admins"];
 
 const ROLE_FOR_FILTER = {
-  'Branch Managers': 'branch_manager',
-  'Instructors': 'instructor',
-  'Super Admins': 'super_admin',
-}
+  "Branch Managers": "branch_manager",
+  Instructors: "instructor",
+  "Super Admins": "super_admin",
+};
 //Branch filter state:branchOptions is loadedon mount
 const selectedBranch = ref('')
 const branchOptions = ref([])
@@ -29,11 +34,11 @@ const filteredUsers = computed(() => {
 
 async function load() {
   try {
-    users.value = await listStaff()
-    loadError.value = null
+    users.value = await listStaff();
+    loadError.value = null;
   } catch (e) {
-    users.value = []
-    loadError.value = 'Could not load the user list.'
+    users.value = [];
+    loadError.value = "Could not load the user list.";
   }
 }
 
@@ -46,54 +51,65 @@ onMounted(async () => {
 /* ---- create ---- */
 
 const emptyStaff = () => ({
-  email: '', password: '', first_name: '', last_name: '',
-  role: 'branch_manager', branch: '',
-})
+  email: "",
+  password: "",
+  first_name: "",
+  last_name: "",
+  role: "branch_manager",
+  branch: "",
+});
 
-const showModal = ref(false)
-const branches = ref([])
-const createError = ref(null)
-const createSuccess = ref(false)
-const newStaff = ref(emptyStaff())
+const showModal = ref(false);
+const branches = ref([]);
+const createError = ref(null);
+const createSuccess = ref(false);
+const newStaff = ref(emptyStaff());
 
 async function openModal() {
-  showModal.value = true
-  createError.value = null
-  createSuccess.value = false
-  newStaff.value = emptyStaff()
-  try { branches.value = await listBranches() } catch (e) { branches.value = [] }
+  showModal.value = true;
+  createError.value = null;
+  createSuccess.value = false;
+  newStaff.value = emptyStaff();
+  try {
+    branches.value = await listBranches();
+  } catch (e) {
+    branches.value = [];
+  }
 }
 
 async function submitCreateStaff() {
-  createError.value = null
+  createError.value = null;
   try {
-    await createStaffAccount(newStaff.value)
-    createSuccess.value = true
-    newStaff.value = emptyStaff()
-    await load()
+    await createStaffAccount(newStaff.value);
+    createSuccess.value = true;
+    newStaff.value = emptyStaff();
+    await load();
   } catch (e) {
-    createError.value = e.response?.data?.detail ?? 'Failed to create account.'
+    createError.value = e.response?.data?.detail ?? "Failed to create account.";
   }
 }
 
 /* ---- deactivate ---- */
 
 async function handleDeactivate(id) {
-  if (!confirm('Deactivate this account?')) return
+  if (!confirm("Deactivate this account?")) return;
   try {
-    await deactivateStaff(id)
-    await load()
+    await deactivateStaff(id);
+    await load();
   } catch (e) {
-    loadError.value = 'Could not deactivate this account.'
+    loadError.value = "Could not deactivate this account.";
   }
 }
 </script>
 
 <template>
   <div class="dash-page">
-
     <!-- Create Staff Account Modal -->
-    <div v-if="showModal" class="modal-backdrop" @click.self="showModal = false">
+    <div
+      v-if="showModal"
+      class="modal-backdrop"
+      @click.self="showModal = false"
+    >
       <div class="modal">
         <h2>Create staff account</h2>
 
@@ -121,7 +137,12 @@ async function handleDeactivate(id) {
 
           <div class="form-group">
             <label>Password</label>
-            <input v-model="newStaff.password" type="password" minlength="8" required />
+            <input
+              v-model="newStaff.password"
+              type="password"
+              minlength="8"
+              required
+            />
           </div>
 
           <div class="form-group">
@@ -137,14 +158,18 @@ async function handleDeactivate(id) {
             <label>Branch</label>
             <select v-model="newStaff.branch" required>
               <option value="" disabled>Select a branch</option>
-              <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
+              <option v-for="b in branches" :key="b.id" :value="b.id">
+                {{ b.name }}
+              </option>
             </select>
           </div>
 
           <div v-if="createError" class="form-error">{{ createError }}</div>
 
           <div class="modal-actions">
-            <button type="button" class="btn-cancel" @click="showModal = false">Cancel</button>
+            <button type="button" class="btn-cancel" @click="showModal = false">
+              Cancel
+            </button>
             <button type="submit" class="btn-primary">Create account</button>
           </div>
         </form>
@@ -193,19 +218,35 @@ async function handleDeactivate(id) {
             <!-- Link to user detail page -->
             <td>
               <RouterLink :to="`/super-admin/users/${user.id}`" class="user-link">
+                
+              <RouterLink :to="`/staff/${user.id}`" class="user-link">
                 {{ user.first_name }} {{ user.last_name }}
+              </RouterLink>
+            
               </RouterLink>
             </td>            
             <td>{{ user.email }}</td>
-            <td><span class="role-badge">{{ user.role }}</span></td>
-            <td>{{ user.branch_name ?? '—' }}</td>
             <td>
-              <span :class="['status-badge', user.is_active ? 'active' : 'inactive']">
-                {{ user.is_active ? 'Active' : 'Inactive' }}
+              <span class="role-badge">{{ user.role }}</span>
+            </td>
+            <td>{{ user.branch_name ?? "—" }}</td>
+            <td>
+              <span
+                :class="[
+                  'status-badge',
+                  user.is_active ? 'active' : 'inactive',
+                ]"
+              >
+                {{ user.is_active ? "Active" : "Inactive" }}
               </span>
             </td>
             <td class="edit-cell">
-              <a v-if="user.is_active" href="#" @click.prevent="handleDeactivate(user.id)">Deactivate</a>
+              <a
+                v-if="user.is_active"
+                href="#"
+                @click.prevent="handleDeactivate(user.id)"
+                >Deactivate</a
+              >
             </td>
           </tr>
           <tr v-if="!filteredUsers.length">
@@ -228,4 +269,18 @@ async function handleDeactivate(id) {
 .user-link { font-weight: 600; color: var(--text); text-decoration: none; }
 .user-link:hover { color: var(--teal); }
 .empty-row { text-align: center; color: var(--text-faint); padding: 32px 16px; }
+.empty-row {
+  text-align: center;
+  color: var(--text-faint);
+  padding: 32px 16px;
+}
+.user-link {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.user-link:hover {
+  color: var(--maroon);
+  text-decoration: none;
+}
 </style>
