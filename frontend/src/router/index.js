@@ -60,7 +60,7 @@ const router = createRouter({
         },
         {
             path: '/super-admin/overview', name: 'sa-overview',
-            component: () => import('@/views/SuperAdmin/Overview.vue'),
+            component: () => import('@/views/SuperAdmin/overview.vue'),
             meta: { requiresAuth: true, roles: SA },
         },
         {
@@ -84,11 +84,6 @@ const router = createRouter({
             meta: { requiresAuth: true, roles: SA },
         },
         comingSoon('/super-admin/reporting', 'sa-reporting', 'Reporting', SA),
-        {
-            path: '/super-admin/participants/:id', name: 'sa-participant-detail',
-            component: () => import('@/views/SuperAdmin/ParticipantDetail.vue'),
-            meta: { requiresAuth: true, roles: SA },
-        },
         {
             path: '/super-admin/participants/:id/attendance', name: 'sa-participant-attendance',
             component: () => import('@/views/SuperAdmin/ParticipantAttendance.vue'),

@@ -102,6 +102,8 @@ class StaffDetailSerializer(serializers.ModelSerializer):
             self.fields["branch"].read_only = True
 
     def validate_email(self, value):
+        # Login normalizes the credential before matching it against username.
+        value = value.strip().lower()
         qs = UserAccount.objects.filter(
             email__iexact=value
         )

@@ -217,12 +217,8 @@ async function handleDeactivate(id) {
           <tr v-for="user in filteredUsers" :key="user.id">
             <!-- Link to user detail page -->
             <td>
-              <RouterLink :to="`/super-admin/users/${user.id}`" class="user-link">
-                
-              <RouterLink :to="`/staff/${user.id}`" class="user-link">
+              <RouterLink :to="{ name: 'staff-detail', params: { id: user.id } }" class="user-link">
                 {{ user.first_name }} {{ user.last_name }}
-              </RouterLink>
-            
               </RouterLink>
             </td>            
             <td>{{ user.email }}</td>

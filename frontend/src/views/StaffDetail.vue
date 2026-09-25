@@ -176,6 +176,9 @@ async function handleDeactivate() {
 
       <!-- Staff page -->
       <template v-else-if="staff">
+        <div v-if="saveError" class="form-error" role="alert">
+          {{ saveError }}
+        </div>
         <!-- Header -->
         <div class="page-header staff-header">
           <div class="identity">
@@ -305,10 +308,6 @@ async function handleDeactivate() {
               Branch Managers can edit instructor details, but role and branch
               assignments are managed by a Super Admin.
             </p>
-
-            <div v-if="saveError" class="form-error">
-              {{ saveError }}
-            </div>
 
             <div class="edit-actions">
               <button type="button" class="btn-cancel" @click="cancelEdit">

@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { listParticipants, createParticipant, listBranches } from '@/apis.js'
+import { listParticipants, createParticipant, listBranches, withRetry } from '@/apis.js'
 
 const router = useRouter()
 
@@ -33,16 +33,25 @@ function currentParams() {
   return params
 }
 
+let requestVersion = 0
+let disposed = false
 async function loadParticipants() {
+  if (disposed) return
+  const version = ++requestVersion
   loading.value = true
+  loadError.value = null
   try {
-    participants.value = await listParticipants(currentParams())
+    const result = await withRetry(null, listParticipants, currentParams())
+    // Slow responses from previous filters must not replace the current list.
+    if (version !== requestVersion) return
+    participants.value = result
     loadError.value = null
   } catch (e) {
+    if (version !== requestVersion) return
     participants.value = []
     loadError.value = 'Could not load the participant list.'
   } finally {
-    loading.value = false
+    if (version === requestVersion) loading.value = false
   }
 }
 
@@ -61,9 +70,21 @@ onMounted(async () => {
 let searchDebounce = null
 watch(search, () => {
   clearTimeout(searchDebounce)
+  // Invalidate immediately, including the debounce window before the next GET.
+  requestVersion++
+  loading.value = true
+  loadError.value = null
   searchDebounce = setTimeout(loadParticipants, 300)
+}, { flush: 'sync' })
+watch([activeFilter, branchFilter], () => {
+  clearTimeout(searchDebounce)
+  loadParticipants()
+}, { flush: 'sync' })
+onUnmounted(() => {
+  disposed = true
+  requestVersion++
+  clearTimeout(searchDebounce)
 })
-watch([activeFilter, branchFilter], loadParticipants)
 
 function openDetail(id) {
   router.push(`/super-admin/participants/${id}`)
