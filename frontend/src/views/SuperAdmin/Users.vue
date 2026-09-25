@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import { createStaffAccount, listBranches, listStaff, deactivateStaff } from '@/apis.js'
 
 const users = ref([])
@@ -13,10 +14,17 @@ const ROLE_FOR_FILTER = {
   'Instructors': 'instructor',
   'Super Admins': 'super_admin',
 }
-
+//Branch filter state:branchOptions is loadedon mount
+const selectedBranch = ref('')
+const branchOptions = ref([])
 const filteredUsers = computed(() => {
   const role = ROLE_FOR_FILTER[activeFilter.value]
-  return role ? users.value.filter(u => u.role === role) : users.value
+  // Filter by role and branch: empty string means "show all"
+  return users.value.filter(u => {
+    const matchesRole = !role || u.role === role
+    const matchesBranch = !selectedBranch.value || u.branch_name === selectedBranch.value
+    return matchesRole && matchesBranch
+  })
 })
 
 async function load() {
@@ -29,7 +37,11 @@ async function load() {
   }
 }
 
-onMounted(load)
+// Also fetch branches on mount so the branch filter dropdown has options
+onMounted(async () => {
+  await load()
+  try { branchOptions.value = await listBranches() } catch (e) {}
+})
 
 /* ---- create ---- */
 
@@ -147,15 +159,22 @@ async function handleDeactivate(id) {
 
       <div v-if="loadError" class="form-error">{{ loadError }}</div>
 
-      <div class="pills">
-        <button
-          v-for="f in filters"
-          :key="f"
-          :class="['pill', { active: activeFilter === f }]"
-          @click="activeFilter = f"
-        >
-          {{ f }}
-        </button>
+       <!-- Role pills + branch dropdown sit in one row -->
+      <div class="filter-bar">
+        <div class="pills">
+          <button
+            v-for="f in filters"
+            :key="f"
+            :class="['pill', { active: activeFilter === f }]"
+            @click="activeFilter = f"
+          >
+            {{ f }}
+          </button>
+        </div>
+        <select v-model="selectedBranch" class="branch-select">
+          <option value="">All branches</option>
+          <option v-for="b in branchOptions" :key="b.id" :value="b.name">{{ b.name }}</option>
+        </select>
       </div>
 
       <table class="data-table">
@@ -171,7 +190,12 @@ async function handleDeactivate(id) {
         </thead>
         <tbody>
           <tr v-for="user in filteredUsers" :key="user.id">
-            <td>{{ user.first_name }} {{ user.last_name }}</td>
+            <!-- Link to user detail page -->
+            <td>
+              <RouterLink :to="`/super-admin/users/${user.id}`" class="user-link">
+                {{ user.first_name }} {{ user.last_name }}
+              </RouterLink>
+            </td>            
             <td>{{ user.email }}</td>
             <td><span class="role-badge">{{ user.role }}</span></td>
             <td>{{ user.branch_name ?? '—' }}</td>
@@ -194,5 +218,14 @@ async function handleDeactivate(id) {
 </template>
 
 <style scoped>
+/* Filter bar holds role pills and branch dropdown side by side */
+.filter-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-bar .pills { margin-bottom: 0; }
+.branch-select {
+  border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm);
+  padding: 6px 12px; font-size: var(--text-base); background: var(--surface); color: var(--text);
+}
+.user-link { font-weight: 600; color: var(--text); text-decoration: none; }
+.user-link:hover { color: var(--teal); }
 .empty-row { text-align: center; color: var(--text-faint); padding: 32px 16px; }
 </style>
