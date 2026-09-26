@@ -10,7 +10,10 @@ def job_deadline():
     return timezone.now() + timedelta(minutes=15)
 
 
-class AttendanceAnalysisJob(models.Model):
+class AnalysisJob(models.Model):
+    class Meta:
+        abstract = True
+
     class Status(models.TextChoices):
         QUEUED = "queued", "Queued"
         RUNNING = "running", "Running"
@@ -42,3 +45,11 @@ class AttendanceAnalysisJob(models.Model):
                 pk=self.pk, status__in=[self.Status.QUEUED, self.Status.RUNNING],
             ).update(status=self.Status.FAILED, error="Analysis timed out. Please try again.")
             self.refresh_from_db()
+
+
+class AttendanceAnalysisJob(AnalysisJob):
+    pass
+
+
+class PhysicalAnalysisJob(AnalysisJob):
+    pass

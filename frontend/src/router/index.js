@@ -22,6 +22,33 @@ const IN = ['instructor']
 const router = createRouter({
     history: createWebHistory(),
     routes: [
+        {
+            path: '/super-admin/physical-assessments/:id', name: 'sa-physical-assessment',
+            component: () => import('@/views/SuperAdmin/PhysicalAssessment.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
+            path: '/branch-manager/physical-assessments/:id', name: 'bm-physical-assessment',
+            component: () => import('@/views/BranchManager/PhysicalAssessment.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        {
+            path: '/instructor/physical-assessments/:id', name: 'in-physical-assessment',
+            component: () => import('@/views/Instructor/PhysicalAssessment.vue'),
+            meta: { requiresAuth: true, roles: IN },
+        },
+        { path: '/super-admin/reporting/attendance', name: 'sa-attendance-report',
+          component: () => import('@/views/SuperAdmin/AttendanceReporting.vue'),
+          meta: { requiresAuth: true, roles: SA } },
+        { path: '/super-admin/reporting/physical', name: 'sa-physical-report',
+          component: () => import('@/views/SuperAdmin/PhysicalReporting.vue'),
+          meta: { requiresAuth: true, roles: SA } },
+        { path: '/branch-manager/reports/attendance', name: 'bm-attendance-report',
+          component: () => import('@/views/BranchManager/AttendanceReporting.vue'),
+          meta: { requiresAuth: true, roles: BM } },
+        { path: '/branch-manager/reports/physical', name: 'bm-physical-report',
+          component: () => import('@/views/BranchManager/PhysicalReporting.vue'),
+          meta: { requiresAuth: true, roles: BM } },
         /* ---- public ---- */
         { path: '/', name: 'home', component: LandingPage },
         { path: '/about', name: 'about-us', component: AboutUs },
@@ -90,7 +117,7 @@ const router = createRouter({
             component: () => import('@/views/Instructor/SessionDetail.vue'),
             meta: { requiresAuth: true, roles: BM },
         },
-        comingSoon('/branch-manager/participants', 'bm-participants', 'Participants', BM),
+        { path: '/branch-manager/participants', name: 'bm-participants', component: () => import('@/views/BranchManager/Participants.vue'), meta: { requiresAuth: true, roles: BM } },
         comingSoon('/branch-manager/instructors', 'bm-instructors', 'Instructors', BM),
         comingSoon('/branch-manager/feedback', 'bm-feedback', 'Feedback', BM),
         {

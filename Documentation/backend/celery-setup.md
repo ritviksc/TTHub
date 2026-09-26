@@ -1,6 +1,6 @@
 # AI reporting worker
 
-Attendance statistics are calculated by Django. AI explanations run in a separate Celery worker so the web request does not wait for the model.
+Attendance and physical-testing statistics are calculated by Django. AI explanations run in a separate Celery worker so the web request does not wait for the model.
 
 ## One-command development startup
 
@@ -51,3 +51,8 @@ Job snapshots and explanations are stored in the database, not the Django cache 
 Log in as a super admin or branch manager. Open Reporting, select a period with finalised attendance, and click the AI analysis button. The page should show queued/running progress and then a Markdown explanation. Check the worker terminal for the completed task. Stop Redis and request another analysis to verify a queue error while ordinary statistics still load.
 
 Automated tests use a real Celery worker with an in-memory broker and a stubbed LLM, plus tests for permissions, failures, duplicate delivery and frontend polling. This does not verify a deployed Redis service or a live model response.
+
+
+## Physical-testing analysis
+
+Physical reporting uses the same worker and job lifecycle. Its endpoints are `/api/reporting/physical/`, `/api/reporting/physical/analyse/` and `/api/reporting/physical/jobs/<job_id>/`. The task is `reporting.tasks.generate_physical_analysis`; results are saved in `PhysicalAnalysisJob`. Restart existing workers to register the new task. Only aggregate statistics are sent to the model. See [physical-reporting.md](physical-reporting.md) for reporting rules and demo accounts.

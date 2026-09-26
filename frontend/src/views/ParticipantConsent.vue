@@ -2,6 +2,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getParticipant, updateParticipant } from '@/apis.js'
+import AssessmentHistory from '@/components/physicalTests/AssessmentHistory.vue'
 import { auth } from '@/stores/auth.js'
 
 const route = useRoute()
@@ -75,10 +76,13 @@ async function submit() {
           <img v-if="participant.photo" :src="participant.photo" class="participant-photo" alt="" />
           <div>
             <h1>{{ participant.full_name }}</h1>
-            <p class="page-subtitle">Record the consents needed for their participation.</p>
+            <p class="page-subtitle">Participant profile — assessments and consent.</p>
           </div>
         </div>
 
+        <p class="page-subtitle">Date of birth: {{ participant.date_of_birth || 'Not recorded' }} · {{ participant.branch_name }}</p>
+        <AssessmentHistory :participant="participant" />
+        <h2>Participation consent</h2>
         <form @submit.prevent="submit">
           <fieldset v-if="canRecordGpConsent" class="consent-group">
             <legend>GP consent</legend>
@@ -114,7 +118,7 @@ async function submit() {
     <!-- This is just css for the participant card, showing fields for consent and the photo. Can't inherit from main css since nowhere else has used a card -->
 <style scoped>
 .consent-card {
-  max-width: 620px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 28px;
   border-radius: var(--radius-lg);

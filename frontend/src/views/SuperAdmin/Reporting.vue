@@ -1,9 +1,5 @@
 <script setup>
-import AttendanceReport from '@/components/reporting/AttendanceReport.vue'
+import ReportingOptions from '@/components/reporting/ReportingOptions.vue'
 </script>
 
-<template>
-  <div class="dash-page"><main class="content">
-    <AttendanceReport show-branch-filter />
-  </main></div>
-</template>
+<template><ReportingOptions attendance-route="sa-attendance-report" physical-route="sa-physical-report" /></template>

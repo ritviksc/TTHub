@@ -236,3 +236,36 @@ export async function getAttendanceAnalysisJob(jobId, signal) {
   const response = await getWithRetry(`/reporting/attendance/jobs/${jobId}/`, { signal })
   return response.data
 }
+
+/* ---- physical assessments ---- */
+export async function listPhysicalAssessments(participantId) {
+  return (await getWithRetry(`/physical-tests/participants/${participantId}/`)).data
+}
+// Starting is idempotent: the backend resumes the participant's existing draft.
+export async function startPhysicalAssessment(participantId) {
+  return (await api.post(`/physical-tests/participants/${participantId}/`)).data
+}
+export async function getPhysicalAssessment(id) {
+  return (await getWithRetry(`/physical-tests/${id}/`)).data
+}
+export async function updatePhysicalAssessmentDate(id, assessed_on, version) {
+  return (await api.patch(`/physical-tests/${id}/`, { assessed_on, version })).data
+}
+export async function savePhysicalResults(id, group, results, version) {
+  return (await api.put(`/physical-tests/${id}/results/${group}/`, { results, version })).data
+}
+export async function completePhysicalAssessment(id, version) {
+  return (await api.post(`/physical-tests/${id}/complete/`, { version })).data
+}
+
+
+/* ---- physical reporting ---- */
+export async function getPhysicalReport(scope) {
+  return (await getWithRetry('/reporting/physical/', { params: scope })).data
+}
+export async function analysePhysicalReport(scope) {
+  return (await api.post('/reporting/physical/analyse/', scope)).data
+}
+export async function getPhysicalAnalysisJob(jobId, signal) {
+  return (await getWithRetry(`/reporting/physical/jobs/${jobId}/`, { signal })).data
+}

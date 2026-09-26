@@ -194,7 +194,7 @@ async function submitCreateParticipant() {
           </tr>
           <tr v-for="p in visibleParticipants" :key="p.id">
             <td>
-              <span class="participant-name">{{ p.full_name }}</span>
+              <RouterLink :to="{ name: 'participant-detail', params: { id: p.id } }" class="participant-name">{{ p.full_name }}</RouterLink>
               <span v-if="p.preferred_name" class="participant-preferred">{{ p.preferred_name }}</span>
             </td>
             <td>{{ p.branch_name ?? '—' }}</td>
@@ -204,7 +204,7 @@ async function submitCreateParticipant() {
                 {{ p.is_active ? 'Active' : 'Inactive' }}
               </span>
             </td>
-            <td><RouterLink :to="`/participants/${p.id}`">Consent / photo →</RouterLink></td>
+            <td><RouterLink :to="{ name: 'participant-detail', params: { id: p.id } }">View profile →</RouterLink></td>
           </tr>
         </tbody>
       </table>

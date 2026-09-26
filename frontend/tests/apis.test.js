@@ -11,6 +11,10 @@ after(() => { axios.defaults.adapter = originalAdapter })
 beforeEach(() => { respond = () => { throw new Error('Unexpected request') } })
 
 const reads = [
+  ['getPhysicalReport', [{ start_date: '2026-01-01', end_date: '2026-03-31' }], '/reporting/physical/'],
+  ['getPhysicalAnalysisJob', ['job-id'], '/reporting/physical/jobs/job-id/'],
+  ['listPhysicalAssessments', ['participant-id'], '/physical-tests/participants/participant-id/'],
+  ['getPhysicalAssessment', ['assessment-id'], '/physical-tests/assessment-id/'],
   ['getAttendanceAnalysisJob', ['job-id'], '/reporting/attendance/jobs/job-id/'],
   ['fetchCsrfCookie', [], '/auth/csrf/'],
   ['fetchMe', [], '/auth/me/'],
@@ -63,6 +67,11 @@ test('GET permission errors reach the caller without retrying', async () => {
 })
 
 for (const [name, args] of [
+  ['analysePhysicalReport', [{ start_date: '2026-01-01', end_date: '2026-03-31' }]],
+  ['startPhysicalAssessment', ['participant-id']],
+  ['savePhysicalResults', ['assessment-id', 'tug', [], 0]],
+  ['updatePhysicalAssessmentDate', ['assessment-id', '2026-01-01', 0]],
+  ['completePhysicalAssessment', ['assessment-id', 0]],
   ['createSession', [{ activity: 'Class' }]],
   ['updateAttendance', ['session-id', 'record-id', { status: 'present' }]],
   ['deleteSession', ['session-id']],

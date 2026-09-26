@@ -1,5 +1,7 @@
 # Seeding test data
 
+For the complete staff-to-reporting demo, use **`seed_reporting_demo`** instead. It includes a super admin, adult participants, sessions and assessments, and preserves existing records on reruns. See [physical-reporting.md](physical-reporting.md). The older command below is retained unchanged.
+
 `seed_test_data` is a Django management command that populates the database
 with fixed test data for local testing / demoing. It always creates the same
 shape of data — no options to tweak counts:

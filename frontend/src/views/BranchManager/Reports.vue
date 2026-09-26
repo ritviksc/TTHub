@@ -1,10 +1,5 @@
 <script setup>
-import AttendanceReport from '@/components/reporting/AttendanceReport.vue'
-import { auth } from '@/stores/auth.js'
+import ReportingOptions from '@/components/reporting/ReportingOptions.vue'
 </script>
 
-<template>
-  <div class="dash-page"><main class="content">
-    <AttendanceReport :branch-name="auth.user?.branch?.name ?? 'Your branch'" />
-  </main></div>
-</template>
+<template><ReportingOptions attendance-route="bm-attendance-report" physical-route="bm-physical-report" /></template>
