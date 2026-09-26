@@ -17,6 +17,17 @@ python manage.py migrate
 python manage.py runserver
 ```
 
+## Redis Setup
+
+```redis
+docker run --name taurite-redis -p 127.0.0.1:6379:6379 -d redis:7-alpine
+```
+
+## Celery Setup
+```
+celery -A config worker --loglevel=info --concurrency=1
+```
+
 ## Create a temp user
 
 `role` is required on `UserAccount`, so use the shell instead of `createsuperuser`:
