@@ -65,7 +65,8 @@ async function handleLogout() {
   <nav class="app-nav">
     <div class="nav-left">
       <img :src="logoSrc" class="nav-logo" alt="" />
-<RouterLink to="/" class="nav-brand">Taurite Tū</RouterLink>      <span class="nav-scope">{{ scope }}</span>
+<RouterLink :to="navItems[0]?.to ?? '/'" class="nav-brand">Taurite Tū</RouterLink>
+ <span class="nav-scope">{{ scope }}</span>
     </div>
 
     <div class="nav-links">
