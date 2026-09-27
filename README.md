@@ -62,3 +62,18 @@ UserAccount.objects.create_user(
 )
 exit()
 ```
+
+## Testing
+
+To run tests for system components (in their directory) use:
+
+###### Frontend
+```
+node --test tests/*.test.js
+
+```
+
+###### Backend
+```
+python manage.py test
+```
