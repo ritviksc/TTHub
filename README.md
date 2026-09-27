@@ -1,5 +1,13 @@
 # Group_4
 
+## Frontend setup
+
+Run npm commands as shown:
+```
+npm run build    /* Build the project */
+npm run dev
+```
+
 ## Backend setup
 
 ```powershell
@@ -24,6 +32,17 @@ UserAccount.objects.create_superuser(
     password=getpass("Admin password: "),
     role=UserAccount.Role.SUPER_ADMIN,
 )
+```
+
+## Redis Setup
+
+```redis
+docker run --name taurite-redis -p 127.0.0.1:6379:6379 -d redis:7-alpine
+```
+
+## Celery Setup
+```
+celery -A config worker --loglevel=info --concurrency=1
 ```
 
 ## Create a temp user

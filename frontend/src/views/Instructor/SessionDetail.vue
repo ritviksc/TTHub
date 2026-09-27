@@ -123,9 +123,13 @@ async function handleDelete() {
             class="btn-primary"
             @click="router.push({ name: 'in-attendance-mode', params: { id: sessionId } })"
           >
-            Attendance mode
+            {{ session.attendance_finalised ? 'Review attendance' : 'Attendance mode' }}
           </button>
         </div>
+
+        <p class="page-subtitle">
+          {{ session.attendance_finalised ? 'Attendance finalised. Reopen in attendance mode to make corrections.' : 'Attendance not finalised. Use Done in attendance mode to finalise.' }}
+        </p>
 
         <div class="stat-grid">
           <div v-for="stat in stats" :key="stat.label" class="stat-tile">
@@ -157,15 +161,15 @@ async function handleDelete() {
           </thead>
           <tbody>
             <tr v-for="record in visibleAttendance" :key="record.participant_id">
-              <td v-if="isInstructor">
+              <td>
                 <span class="participant">
                   <span class="initials-avatar">{{ initials(record.name) }}</span>
                   {{ record.name }}
                 </span>
               </td>
-              <td v-else>{{ record.status === 'present' ? 'Present' : 'Absent' }}</td>
               <td>
                 <select
+                  :disabled="!isInstructor || session.attendance_finalised"
                   :value="record.status"
                   :class="['status-select', record.status]"
                   :aria-label="`Status for ${record.name}`"
@@ -177,6 +181,7 @@ async function handleDelete() {
               <td>
                 <select
                   v-if="record.status === 'absent' && isInstructor"
+                  :disabled="session.attendance_finalised"
                   :value="record.absence_reason"
                   :aria-label="`Absence reason for ${record.name}`"
                   @change="changeAbsenceReason(record, $event.target.value)"
@@ -186,6 +191,7 @@ async function handleDelete() {
                 </select>
                 <input
                   v-if="record.absence_reason === 'other'"
+                  :disabled="!isInstructor || session.attendance_finalised"
                   :value="record.absence_reason_other"
                   class="other-reason"
                   type="text"

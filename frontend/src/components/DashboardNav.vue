@@ -1,11 +1,13 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import logoSrc from '@/assets/logo-mark.png'
 import { auth, clearUser } from '@/stores/auth.js'
 import { logout } from '@/apis.js'
 
 const router = useRouter()
+const loggingOut = ref(false)
+const logoutError = ref(null)
 
 const NAV_ITEMS = {
   super_admin: [
@@ -55,9 +57,18 @@ const userName = computed(() => {
 })
 
 async function handleLogout() {
-  try { await logout() } catch (e) {}
-  clearUser()
-  router.push('/login')
+  if (loggingOut.value) return
+  loggingOut.value = true
+  logoutError.value = null
+  try {
+    await logout()
+    clearUser()
+    await router.replace({ name: 'home' })
+  } catch {
+    logoutError.value = 'Could not log out. Please try again.'
+  } finally {
+    loggingOut.value = false
+  }
 }
 </script>
 
@@ -82,7 +93,8 @@ async function handleLogout() {
 
     <div class="nav-right">
       <span class="nav-user">{{ userName }} · {{ roleLabel }}</span>
-      <button class="nav-btn" @click="handleLogout">Log out</button>
+      <span v-if="logoutError" role="alert">{{ logoutError }}</span>
+      <button class="nav-btn" :disabled="loggingOut" @click="handleLogout">{{ loggingOut ? 'Logging out…' : 'Log out' }}</button>
     </div>
   </nav>
 </template>

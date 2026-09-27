@@ -6,9 +6,10 @@ import ContactUs from '@/views/ContactUs.vue'
 import ComingSoon from '@/views/ComingSoon.vue'
 import CreateStaff from '@/views/SuperAdmin/CreateStaff.vue'
 import CreateInstructor from '@/views/BranchManager/CreateInstructor.vue'
-import { auth, loadUser } from '@/stores/auth.js'
+import { loadUser } from '@/stores/auth.js'
 import UserDetail from '@/views/SuperAdmin/UserDetail.vue'
 import StaffDetail from '@/views/StaffDetail.vue'
+import { createAccessGuard } from './access.js'
 
 // Not-yet-built pages all share one placeholder; meta.title is what it renders.
 const comingSoon = (path, name, title, roles) => ({
@@ -23,11 +24,43 @@ const IN = ['instructor']
 const router = createRouter({
     history: createWebHistory(),
     routes: [
+        {
+            path: '/super-admin/physical-assessments/:id', name: 'sa-physical-assessment',
+            component: () => import('@/views/SuperAdmin/PhysicalAssessment.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
+            path: '/branch-manager/physical-assessments/:id', name: 'bm-physical-assessment',
+            component: () => import('@/views/BranchManager/PhysicalAssessment.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        {
+            path: '/instructor/physical-assessments/:id', name: 'in-physical-assessment',
+            component: () => import('@/views/Instructor/PhysicalAssessment.vue'),
+            meta: { requiresAuth: true, roles: IN },
+        },
+        { path: '/super-admin/reporting/attendance', name: 'sa-attendance-report',
+          component: () => import('@/views/SuperAdmin/AttendanceReporting.vue'),
+          meta: { requiresAuth: true, roles: SA } },
+        { path: '/super-admin/reporting/physical', name: 'sa-physical-report',
+          component: () => import('@/views/SuperAdmin/PhysicalReporting.vue'),
+          meta: { requiresAuth: true, roles: SA } },
+        { path: '/branch-manager/reports/attendance', name: 'bm-attendance-report',
+          component: () => import('@/views/BranchManager/AttendanceReporting.vue'),
+          meta: { requiresAuth: true, roles: BM } },
+        { path: '/branch-manager/reports/physical', name: 'bm-physical-report',
+          component: () => import('@/views/BranchManager/PhysicalReporting.vue'),
+          meta: { requiresAuth: true, roles: BM } },
         /* ---- public ---- */
         { path: '/', name: 'home', component: LandingPage },
         { path: '/about', name: 'about-us', component: AboutUs },
         { path: '/contact', name: 'contact-us', component: ContactUs },
         { path: '/login', name: 'login', component: Login },
+        {
+            path: '/not-authorised', name: 'not-authorised',
+            component: () => import('@/views/NotAuthorised.vue'),
+            meta: { requiresAuth: true },
+        },
 
         /* ---- super admin ---- */
         { path: '/super-admin', redirect: '/super-admin/users' },
@@ -83,7 +116,11 @@ const router = createRouter({
             component: () => import('@/views/SuperAdmin/ParticipantDetail.vue'),
             meta: { requiresAuth: true, roles: SA },
         },
-        comingSoon('/super-admin/reporting', 'sa-reporting', 'Reporting', SA),
+        {
+            path: '/super-admin/reporting', name: 'sa-reporting',
+            component: () => import('@/views/SuperAdmin/Reporting.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
         {
             path: '/super-admin/participants/:id/attendance', name: 'sa-participant-attendance',
             component: () => import('@/views/SuperAdmin/ParticipantAttendance.vue'),
@@ -112,10 +149,14 @@ const router = createRouter({
             component: () => import('@/views/Instructor/SessionDetail.vue'),
             meta: { requiresAuth: true, roles: BM },
         },
-        comingSoon('/branch-manager/participants', 'bm-participants', 'Participants', BM),
+        { path: '/branch-manager/participants', name: 'bm-participants', component: () => import('@/views/BranchManager/Participants.vue'), meta: { requiresAuth: true, roles: BM } },
         comingSoon('/branch-manager/instructors', 'bm-instructors', 'Instructors', BM),
         comingSoon('/branch-manager/feedback', 'bm-feedback', 'Feedback', BM),
-        comingSoon('/branch-manager/reports', 'bm-reports', 'Reports', BM),
+        {
+            path: '/branch-manager/reports', name: 'bm-reports',
+            component: () => import('@/views/BranchManager/Reports.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
         {
             path: '/branch-manager/create-instructor', name: 'create-instructor', component: CreateInstructor,
             meta: { requiresAuth: true, roles: BM },
@@ -167,23 +208,13 @@ const router = createRouter({
             component: () => import('@/views/ParticipantConsent.vue'),
             meta: { requiresAuth: true, roles: [...SA, ...BM, ...IN]},
         },
+        {
+            path: '/:pathMatch(.*)*', name: 'unknown-route',
+            component: () => import('@/views/NotAuthorised.vue'),
+        },
     ]
 })
 
-router.beforeEach(async (to) => {
-    if (!to.meta.requiresAuth) return true
-
-    // main.js resolves the session before mount, so this is normally cached.
-    const user = auth.user ?? await loadUser()
-    if (!user) return '/login'
-
-    if (to.meta.roles && !to.meta.roles.includes(user.role)) return '/login'
-    // Existing participant links and bookmarks open the appropriate details page.
-    const participantRoute = { super_admin: 'sa-participant-detail', instructor: 'in-participant-detail' }[user.role]
-    if (to.name === 'participant-detail' && participantRoute) {
-        return { name: participantRoute, params: to.params, replace: true }
-    }
-    return true
-})
+router.beforeEach(createAccessGuard(loadUser))
 
 export default router

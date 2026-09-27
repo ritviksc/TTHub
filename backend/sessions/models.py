@@ -18,6 +18,7 @@ class ProgrammeSession(models.Model):
     time = models.TimeField()
     activity = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
+    attendance_finalised = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-date", "-time"]
