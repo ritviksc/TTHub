@@ -112,3 +112,14 @@ test('empty branch selections are omitted so the server can validate or assign t
   }
   await api.createStaffAccount({ role: 'instructor', branch: '' })
 })
+
+test('staff promotion clears the hidden branch without mutating the edit form', async () => {
+  const payload = { role: 'super_admin', branch: 'old-branch-id' }
+  respond = async config => {
+    assert.equal(config.method, 'patch')
+    assert.equal(JSON.parse(config.data).branch, null)
+    return { data: { id: 'staff-id' }, status: 200, headers: {}, config }
+  }
+  await api.updateStaff('staff-id', payload)
+  assert.equal(payload.branch, 'old-branch-id')
+})

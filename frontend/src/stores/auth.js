@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import { fetchMe } from '@/apis.js'
+import { createSessionActions } from '@/utils/sessionState.js'
 
 // Who is signed in. Shared so the navbar and the router guard read the same thing.
 export const auth = reactive({
@@ -7,16 +8,4 @@ export const auth = reactive({
   loaded: false,  // has a session check finished at least once?
 })
 
-export async function loadUser() {
-  try {
-    auth.user = await fetchMe()
-  } catch {
-    auth.user = null
-  }
-  auth.loaded = true
-  return auth.user
-}
-
-export function clearUser() {
-  auth.user = null
-}
+export const { loadUser, clearUser } = createSessionActions(auth, fetchMe)

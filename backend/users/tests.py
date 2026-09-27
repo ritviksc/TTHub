@@ -129,3 +129,37 @@ class AccountBoundaryTests(TestCase):
         }, format="json")
         self.assertEqual(response.status_code, 201)
         self.assertIsNone(UserAccount.objects.get(email="new-admin@example.com").branch_id)
+
+
+class StaffMutationRegressionTests(TestCase):
+    def setUp(self):
+        self.branch = Branch.objects.create(name="Mutation test")
+        self.admin = UserAccount.objects.create_user(username="mutation-admin", email="mutation-admin@example.com", role="super_admin")
+        self.staff = UserAccount.objects.create_user(username="mutation-staff", email="mutation-staff@example.com", role="instructor", branch=self.branch)
+        self.client = APIClient()
+        self.client.force_authenticate(self.admin)
+
+    def test_non_object_assignments_return_400_instead_of_crashing(self):
+        for endpoint in ("managers", "instructors"):
+            for payload in (["wrong"], "wrong", 123):
+                with self.subTest(endpoint=endpoint, payload=payload):
+                    response = self.client.post(f"/api/branches/{self.branch.pk}/{endpoint}/", payload, format="json")
+                    self.assertEqual(response.status_code, 400)
+        self.staff.refresh_from_db()
+        self.assertEqual(self.staff.role, "instructor")
+
+    def test_promotion_removes_previous_branch_even_when_not_in_payload(self):
+        response = self.client.patch(f"/api/auth/staff/{self.staff.pk}/", {"role": "super_admin"}, format="json")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.staff.refresh_from_db()
+        self.assertEqual(self.staff.role, "super_admin")
+        self.assertIsNone(self.staff.branch_id)
+
+    def test_manager_cannot_promote_an_instructor(self):
+        self.admin.role = "branch_manager"
+        self.admin.branch = self.branch
+        self.admin.save()
+        self.client.patch(f"/api/auth/staff/{self.staff.pk}/", {"role": "super_admin", "branch": None}, format="json")
+        self.staff.refresh_from_db()
+        self.assertEqual(self.staff.role, "instructor")
+        self.assertEqual(self.staff.branch_id, self.branch.pk)

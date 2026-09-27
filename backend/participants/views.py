@@ -125,6 +125,7 @@ class ParticipantAttendanceView(generics.GenericAPIView):
                 "id": str(record.pk), "session_id": str(record.session_id),
                 "date": record.session.date, "time": record.session.time,
                 "activity": record.session.activity, "status": record.status,
+                "attendance_finalised": record.session.attendance_finalised,
                 "absence_reason": record.get_absence_reason_display(),
                 "absence_reason_other": record.absence_reason_other,
             }

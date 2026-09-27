@@ -136,14 +136,9 @@ class StaffDetailSerializer(serializers.ModelSerializer):
             self.instance.branch
         )
 
-        # Super Admins don't belong to a branch
+        # Promotion also removes the previous branch, matching account creation.
         if role == UserAccount.Role.SUPER_ADMIN:
-
-            if branch is not None:
-                raise serializers.ValidationError({
-                    "branch":
-                        "Super Admin accounts are not assigned to a branch."
-                })
+            attrs["branch"] = None
 
         # Other staff must have a branch
         elif branch is None:

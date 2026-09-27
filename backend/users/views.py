@@ -291,6 +291,8 @@ class BranchStaffView(generics.GenericAPIView):
 
     def post(self, request, pk):
         branch = get_object_or_404(Branch, pk=pk)
+        if not isinstance(request.data, Mapping):
+            return Response({"detail": "Provide an object containing user_id."}, status=status.HTTP_400_BAD_REQUEST)
         user_id = request.data.get("user_id")
 
         if not user_id:

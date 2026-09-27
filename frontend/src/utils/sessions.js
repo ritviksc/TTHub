@@ -43,11 +43,11 @@ export function formatSessionDate(date) {
   })
 }
 
-export function isInPeriod(date, period) {
+export function isInPeriod(date, period, now = new Date()) {
   if (period === 'All') return true
 
   const day = toLocalDate(date)
-  const today = new Date()
+  const today = toLocalDate(programmeToday(now))
   if (day.getFullYear() !== today.getFullYear()) return false
 
   if (period === 'This month') return day.getMonth() === today.getMonth()
@@ -63,4 +63,10 @@ export function countByStatus(attendance = []) {
   const rate = total ? Math.round((counts.present / total) * 100) : 0
 
   return { ...counts, total, rate }
+}
+
+
+// An unfinished register defaults to absent; it is not evidence of nonattendance.
+export function finalisedAttendance(records = []) {
+  return records.filter(record => record.attendance_finalised === true)
 }

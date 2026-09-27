@@ -273,3 +273,28 @@ class ParticipantAccessTests(TestCase):
         }, format="json")
         self.assertEqual(response.status_code, 400)
         self.assertIn("branch", response.data)
+
+
+class ParticipantHistoryRegressionTests(TestCase):
+    def setUp(self):
+        self.branch = Branch.objects.create(name="History regressions")
+        self.user = UserAccount.objects.create_user(username="history-user", email="history-user@example.com", role="instructor", branch=self.branch)
+        self.participant = Participant.objects.create(first_name="History", last_name="Person", branch=self.branch)
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+        self.url = f"/api/participants/{self.participant.pk}/"
+
+    def test_history_exposes_finalisation_to_distinguish_default_absences(self):
+        from sessions.models import AttendanceRecord, ProgrammeSession
+        for finalised in (True, False):
+            session = ProgrammeSession.objects.create(branch=self.branch, created_by=self.user, date=date(2026, 1, 1), time="10:00", activity="Class", attendance_finalised=finalised)
+            AttendanceRecord.objects.create(session=session, participant=self.participant, status="absent")
+        response = self.client.get(self.url + "attendance/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(sorted(row["attendance_finalised"] for row in response.data), [False, True])
+
+    @patch("participants.serializers.timezone.localdate", return_value=date(2030, 1, 2))
+    def test_birth_date_uses_programme_today(self, localdate):
+        for value, expected in [("2030-01-02", 200), ("2030-01-03", 400)]:
+            response = self.client.patch(self.url, {"date_of_birth": value}, format="json")
+            self.assertEqual(response.status_code, expected, response.data)

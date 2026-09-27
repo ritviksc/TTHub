@@ -1,13 +1,16 @@
+import { programmeToday } from './sessions.js'
+
 function dateString(date) {
   // Keep local dates; UTC conversion can shift a New Zealand calendar date.
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 export function currentQuarter(today = new Date()) {
-  const month = Math.floor(today.getMonth() / 3) * 3
+  const [year, calendarMonth] = programmeToday(today).split('-').map(Number)
+  const month = Math.floor((calendarMonth - 1) / 3) * 3
   return {
-    start_date: dateString(new Date(today.getFullYear(), month, 1)),
-    end_date: dateString(new Date(today.getFullYear(), month + 3, 0)),
+    start_date: dateString(new Date(year, month, 1)),
+    end_date: dateString(new Date(year, month + 3, 0)),
   }
 }
 

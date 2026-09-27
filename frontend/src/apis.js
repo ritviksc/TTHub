@@ -111,9 +111,12 @@ export async function getStaff(id) {
 }
 
 export async function updateStaff(id, payload) {
+  const data = { ...payload }
+  if (data.role === 'super_admin') data.branch = null
+  else if (data.branch === '') delete data.branch
   const response = await api.patch(
     `/auth/staff/${id}/`,
-    payload
+    data
   )
 
   return response.data

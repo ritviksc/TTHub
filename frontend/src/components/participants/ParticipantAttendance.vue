@@ -1,14 +1,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getParticipantAttendance } from '@/apis.js'
-import { countByStatus, formatSessionDate } from '@/utils/sessions.js'
+import { countByStatus, formatSessionDate, finalisedAttendance } from '@/utils/sessions.js'
 
 const props = defineProps({ participantId: { type: String, required: true } })
 const records = ref([])
 const loading = ref(true)
 const error = ref('')
-// Future rosters already default to absent; exclude them from historical totals.
-const completed = computed(() => records.value.filter(record => new Date(`${record.date}T${record.time}`) <= new Date()))
+// Match reporting: only explicit finalisation establishes a completed register.
+const completed = computed(() => finalisedAttendance(records.value))
+const incomplete = computed(() => records.value.length - completed.value.length)
 const summary = computed(() => countByStatus(completed.value))
 onMounted(async () => {
   try {
@@ -27,9 +28,10 @@ onMounted(async () => {
     <p v-if="loading" class="loading-note">Loading attendance…</p>
     <p v-else-if="error" class="form-error" role="alert">{{ error }}</p>
     <template v-else>
-      <p v-if="!completed.length" class="loading-note">No past sessions recorded.</p>
+      <p v-if="incomplete" class="loading-note">{{ incomplete }} unfinished register entries excluded from attendance totals.</p>
+      <p v-if="!completed.length" class="loading-note">No finalised attendance recorded.</p>
       <template v-else>
-        <p>Recorded attendance for sessions that have started. Rosters default to absent until updated.</p>
+        <p>Attendance totals include only finalised registers.</p>
         <div class="stat-grid">
           <div v-for="status in ['present', 'absent']" :key="status" class="stat-tile">
             <div class="stat-tile-value">{{ summary[status] }}</div>
