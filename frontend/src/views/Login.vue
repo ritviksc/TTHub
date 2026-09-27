@@ -3,12 +3,11 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   TIMEOUT_ERROR,
-  MAX_ATTEMPTS,
-  withRetry,
   login,
   fetchCsrfCookie
 } from '@/apis.js'
 import { loadUser } from '@/stores/auth.js'
+import { dashboardRoute } from '@/router/access.js'
 
 const router = useRouter()
 
@@ -17,15 +16,9 @@ const password = ref('')
 const error = ref('')
 const loading = ref(false)
 
-const roleRoutes = {
-  super_admin: '/super-admin/dashboard',
-  branch_manager: '/branch-manager/dashboard',
-  instructor: '/instructor/dashboard'
-}
-
 onMounted(async () => {
   try {
-    await withRetry(MAX_ATTEMPTS, fetchCsrfCookie)
+    await fetchCsrfCookie()
   } catch (err) {
     console.error('Unable to get CSRF cookie:', err)
     error.value = 'Unable to connect to server. Try logging in later.'
@@ -37,9 +30,13 @@ async function handleSubmit() {
   error.value = ''
 
   try {
-    const data = await login(email.value, password.value)
-    await loadUser()
-    router.push(roleRoutes[data.role] ?? '/')
+    await login(email.value, password.value)
+    const user = await loadUser()
+    if (!user) {
+      error.value = 'Could not confirm your session. Please try signing in again.'
+      return
+    }
+    await router.replace(dashboardRoute(user.role))
   } catch (err) {
     if (err.code === TIMEOUT_ERROR) {
       error.value = 'The server took too long to respond.'

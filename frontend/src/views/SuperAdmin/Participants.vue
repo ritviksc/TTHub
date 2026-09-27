@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { listParticipants, createParticipant, listBranches, withRetry } from '@/apis.js'
+import { listParticipants, createParticipant, listBranches } from '@/apis.js'
 
 const router = useRouter()
 
@@ -41,7 +41,7 @@ async function loadParticipants() {
   loading.value = true
   loadError.value = null
   try {
-    const result = await withRetry(null, listParticipants, currentParams())
+    const result = await listParticipants(currentParams())
     // Slow responses from previous filters must not replace the current list.
     if (version !== requestVersion) return
     participants.value = result
@@ -255,7 +255,7 @@ async function submitCreateParticipant() {
               <span v-else class="initials-avatar">{{ initial(p) }}</span>
             </td>
             <td>
-              <span class="participant-name">{{ p.full_name }}</span>
+              <RouterLink :to="{ name: 'participant-detail', params: { id: p.id } }" class="participant-name">{{ p.full_name }}</RouterLink>
               <span v-if="p.preferred_name" class="participant-preferred">{{ p.preferred_name }}</span>
             </td>
             <td>{{ p.branch_name ?? '—' }}</td>

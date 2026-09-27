@@ -1,9 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { getParticipant, updateParticipant, deactivateParticipant, downloadGpDocument, withRetry } from '@/apis.js'
+import { getParticipant, updateParticipant, deactivateParticipant, downloadGpDocument } from '@/apis.js'
 import { initials, programmeToday } from '@/utils/sessions.js'
 import ParticipantAttendance from './ParticipantAttendance.vue'
+import AssessmentHistory from '@/components/physicalTests/AssessmentHistory.vue'
 
 const props = defineProps({
   participantId: { type: String, required: true },
@@ -45,7 +46,7 @@ function setParticipant(value) {
 
 onMounted(async () => {
   try {
-    setParticipant(await withRetry(null, getParticipant, props.participantId))
+    setParticipant(await getParticipant(props.participantId))
   } catch (e) {
     loadError.value = e.response?.data?.detail ?? 'Could not load this participant.'
   } finally {
@@ -90,7 +91,7 @@ async function download() {
   downloading.value = true
   error.value = ''
   try {
-    const blob = await withRetry(null, downloadGpDocument, props.participantId)
+    const blob = await downloadGpDocument(props.participantId)
     const extension = { 'application/pdf': 'pdf', 'image/png': 'png', 'image/jpeg': 'jpg' }[blob.type] ?? 'bin'
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -143,6 +144,7 @@ async function deactivate() {
           <RouterLink :to="{ name: `${routePrefix}-participant-attendance`, params: { id: participantId } }" :class="page === 'attendance' ? 'btn-primary' : 'btn-cancel'" :aria-current="page === 'attendance' ? 'page' : undefined">Attendance history</RouterLink>
         </nav>
       </header>
+      <AssessmentHistory v-if="page !== 'attendance'" :participant="participant" />
       <form v-if="page !== 'attendance'" class="card" @submit.prevent="save">
         <fieldset :disabled="saving">
           <legend><h2>Participant details</h2></legend>

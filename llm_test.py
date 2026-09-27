@@ -1,6 +1,6 @@
 # Testing model response from vLLM using the OpenAI API client library
 
-# Remeber to set the OPENAI_API_KEY and LLM_API_ENDPOINT in your .env file before running this test.
+# Remember to set the OPENAI_API_KEY and LLM_API_ENDPOINT in your .env file before running this test.
 
 # Also connect to university VPN if you are off-campus, as the LLM API endpoint is only accessible from the university network.
 # Take a look at https://ask.otago.ac.nz/knowledgebase/article/KA-10004411 
@@ -31,10 +31,11 @@ client = OpenAI(
 
 print("\nSending a test message to vLLM...")
 
+"""
 try:
     # 2. Send a basic prompt (Remembering to control max_tokens on the client side)
     response = client.chat.completions.create(
-        model="ONCAMPUS/gemma-4-12B-it", 
+        model="ONCAMPUS/BAAI/bge-m3", 
         messages=[
             {"role": "system", "content": "You are a helpful and concise AI assistant."},
             {"role": "user", "content": "Say hello!"}
@@ -49,5 +50,9 @@ try:
 
 except Exception as e:
     print(f"\n Connection Failed: {e}")
+"""
 
+models = client.models.list()
+x = [model.id for model in models.data]
+print(x)
 

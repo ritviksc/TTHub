@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getParticipantAttendance, withRetry } from '@/apis.js'
+import { getParticipantAttendance } from '@/apis.js'
 import { countByStatus, formatSessionDate } from '@/utils/sessions.js'
 
 const props = defineProps({ participantId: { type: String, required: true } })
@@ -12,7 +12,7 @@ const completed = computed(() => records.value.filter(record => new Date(`${reco
 const summary = computed(() => countByStatus(completed.value))
 onMounted(async () => {
   try {
-    records.value = await withRetry(null, getParticipantAttendance, props.participantId)
+    records.value = await getParticipantAttendance(props.participantId)
   } catch (e) {
     error.value = e.response?.data?.detail ?? 'Could not load attendance history.'
   } finally {

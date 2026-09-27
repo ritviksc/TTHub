@@ -1,9 +1,11 @@
+from collections.abc import Mapping
+
 from django.contrib.auth import authenticate, login
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 from django.utils.decorators import method_decorator
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Branch, UserAccount
@@ -24,11 +26,17 @@ from .permissions import IsSuperAdmin, IsBranchManager, IsInstructor
  
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@csrf_protect
 def login_view(request) -> Response:
     # Staff sign in with their email address. UserAccount.username is retained
     # for Django compatibility and mirrors the normalized email value.
-    email = request.data.get("email", "").strip().lower()
-    password = request.data.get("password")
+    if not isinstance(request.data, Mapping):
+        return Response({"detail": "Provide a JSON object containing email and password."}, status=status.HTTP_400_BAD_REQUEST)
+    email = request.data.get("email", "")
+    password = request.data.get("password", "")
+    if not isinstance(email, str) or not isinstance(password, str):
+        return Response({"detail": "Email and password must be strings."}, status=status.HTTP_400_BAD_REQUEST)
+    email = email.strip().lower()
  
     user = authenticate(
         request,
@@ -92,6 +100,8 @@ class StaffCreateView(generics.CreateAPIView):
 def staff_queryset_for(user):
     qs = UserAccount.objects.exclude(id=user.id)
     if user.role == UserAccount.Role.BRANCH_MANAGER:
+        if not user.branch_id:
+            return qs.none()
         qs = qs.filter(branch=user.branch, role=UserAccount.Role.INSTRUCTOR)
     return qs
 
@@ -230,12 +240,28 @@ class BranchDetailView(generics.RetrieveUpdateDestroyAPIView):
         blockers = []
         staff_count = branch.staff.count()
         participant_count = branch.participants.count()
+        session_count = branch.programme_sessions.count()
+        report_count = branch.attendanceanalysisjob_set.count()
+        physical_count = branch.assessment_set.count()
+        physical_report_count = branch.physicalanalysisjob_set.count()
         if staff_count:
             blockers.append(f"{staff_count} staff account{'s' if staff_count > 1 else ''}")
         if participant_count:
             blockers.append(
                 f"{participant_count} participant{'s' if participant_count > 1 else ''}"
             )
+
+        if session_count:
+            blockers.append(f"{session_count} programme session(s)")
+
+        if report_count:
+            blockers.append(f"{report_count} attendance report job(s)")
+
+        if physical_count:
+            blockers.append(f"{physical_count} physical assessment(s)")
+
+        if physical_report_count:
+            blockers.append(f"{physical_report_count} physical report job(s)")
 
         if blockers:
             return Response(

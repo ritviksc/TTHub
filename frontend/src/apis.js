@@ -21,41 +21,38 @@ function sleep(ms) {
   });
 }
 
-// Wrapper function to retry an axios request up to 'maxRetries' times
-// Follows exponential backoff principle
-// NOTE: Retrying GET requests is recommended, but be careful when retrying 
-// POST requests 
+// maxAttempts includes the initial request. Retry only timeouts; permission,
+// validation and other errors must reach the caller without repeated requests.
+export async function withRetry(maxAttempts, axiosFunction, ...args) {
+  maxAttempts ??= MAX_ATTEMPTS
+  if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
+    throw new RangeError("maxAttempts must be a positive integer")
+  }
 
-// IMPORTANT: Should wrap read-only (GET) calls broadly, be optional but reasonable on idempotent updates (PATCH)
-export async function withRetry(maxRetries, axiosFunction, ...args) {
-  // Set default value manually if not provided
-  if (maxRetries === undefined || maxRetries === null)
-    maxRetries = MAX_ATTEMPTS
-
-  for (let x = 1; x <= maxRetries; x++) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      return await axiosFunction(...args);
+      return await axiosFunction(...args)
     } catch (error) {
-      var isTimeout = error.code === TIMEOUT_ERROR
-
-      if (isTimeout && x < maxRetries) {
-        // jitter of upto 500ms to prevent multiple clients sending requests at same time
-        const jitter = Math.random() * 500
-        const dropOffTime = 100 * Math.pow(2, x - 1) + jitter
-        await sleep(dropOffTime)
-        console.log("Response Timeout. Retrying")
-        continue
+      if (error.code !== TIMEOUT_ERROR || attempt === maxAttempts) {
+        // Preserve Axios status and response data for the page's error handler.
+        throw error
       }
-      // different error
-      throw error
+      const jitter = Math.random() * 500
+      await sleep(100 * Math.pow(2, attempt - 1) + jitter)
     }
   }
+}
+
+// Centralise GET retries so callers cannot accidentally omit them. Do not wrap
+// exported GET functions in another withRetry call, which multiplies attempts.
+function getWithRetry(url, config) {
+  return withRetry(null, () => api.get(url, config))
 }
 
 // fetch Crsf token and store it as a cookie
 // for future requests
 export async function fetchCsrfCookie() {
-  await api.get("/auth/csrf/")
+  await getWithRetry("/auth/csrf/")
 }
 
 export async function login(email, password) {
@@ -78,7 +75,7 @@ export async function logout() {
 }
 
 export async function fetchMe() {
-  const response = await api.get(
+  const response = await getWithRetry(
     "/auth/me/",
   )
   return response.data
@@ -87,15 +84,19 @@ export async function fetchMe() {
 /* ---- staff ---- */
 
 export async function createStaffAccount(payload){
+  // Hidden branch pickers can retain an empty or previously selected value.
+  const data = { ...payload }
+  if (data.role === 'super_admin') data.branch = null
+  else if (data.branch === '') delete data.branch
   const response = await api.post(
       "/auth/staff/", 
-      payload
+      data
     )
   return response.data
 }
 
 export async function listStaff() {
-  const response = await api.get("/auth/staff/list/")
+  const response = await getWithRetry("/auth/staff/list/")
   return response.data
 }
 
@@ -105,7 +106,7 @@ export async function deactivateStaff(id) {
 }
 
 export async function getStaff(id) {
-  const response = await api.get(`/auth/staff/${id}/`)
+  const response = await getWithRetry(`/auth/staff/${id}/`)
   return response.data
 }
 
@@ -126,7 +127,7 @@ export async function updateStaff(id, payload) {
 // Returns id/name/region plus manager_name and participant_count, so the same
 // call serves both the Branch table and the branch pickers on the staff forms.
 export async function listBranches(params = {}) {
-  const response = await api.get("/branches/", { params })
+  const response = await getWithRetry("/branches/", { params })
   return response.data
 }
 
@@ -136,7 +137,7 @@ export async function createBranch(payload) {
 }
 
 export async function getBranch(id) {
-  const response = await api.get(`/branches/${id}/`)
+  const response = await getWithRetry(`/branches/${id}/`)
   return response.data
 }
 
@@ -149,12 +150,12 @@ export async function updateBranch(id, payload) {
 
 // params: { branch, is_active, search } — all optional.
 export async function listParticipants(params = {}) {
-  const response = await api.get("/participants/", { params })
+  const response = await getWithRetry("/participants/", { params })
   return response.data
 }
 
 export async function getParticipant(id) {
-  const response = await api.get(`/participants/${id}/`)
+  const response = await getWithRetry(`/participants/${id}/`)
   return response.data
 }
 
@@ -164,13 +165,13 @@ export async function createParticipant(payload) {
 }
 
 export async function getParticipantAttendance(id) {
-  const response = await api.get(`/participants/${id}/attendance/`)
+  const response = await getWithRetry(`/participants/${id}/attendance/`)
   return response.data
 }
 
 // Fetch through the authenticated API; no permanent document URL is exposed.
 export async function downloadGpDocument(id) {
-  const response = await api.get(`/participants/${id}/gp-document/`, { responseType: 'blob' })
+  const response = await getWithRetry(`/participants/${id}/gp-document/`, { responseType: 'blob' })
   return response.data
 }
 
@@ -214,12 +215,12 @@ export async function removeBranchInstructor(branchId, userId) {
 /* ---- sessions ---- */
 
 export async function listSessions(params = {}) {
-  const response = await api.get("/sessions/", { params })
+  const response = await getWithRetry("/sessions/", { params })
   return response.data
 }
 
 export async function getSession(id) {
-  const response = await api.get(`/sessions/${id}/`)
+  const response = await getWithRetry(`/sessions/${id}/`)
   return response.data
 }
 
@@ -235,4 +236,63 @@ export async function updateAttendance(sessionId, attendanceId, changes) {
 
 export async function deleteSession(id) {
   await api.delete(`/sessions/${id}/`)
+}
+
+export async function setAttendanceFinalised(sessionId, finalised) {
+  const response = await api.patch(`/sessions/${sessionId}/attendance-state/`, {
+    attendance_finalised: finalised,
+  })
+  return response.data
+}
+
+/* ---- reporting ---- */
+
+// scope: { start_date, end_date, branch_id? }; dates are inclusive YYYY-MM-DD.
+export async function getAttendanceReport(scope) {
+  const response = await getWithRetry('/reporting/attendance/', { params: scope })
+  return response.data
+}
+
+export async function analyseAttendanceReport(scope) {
+  // This only queues work. Never retry POSTs automatically: that could create two jobs.
+  const response = await api.post('/reporting/attendance/analyse/', scope)
+  return response.data
+}
+
+export async function getAttendanceAnalysisJob(jobId, signal) {
+  const response = await getWithRetry(`/reporting/attendance/jobs/${jobId}/`, { signal })
+  return response.data
+}
+
+/* ---- physical assessments ---- */
+export async function listPhysicalAssessments(participantId) {
+  return (await getWithRetry(`/physical-tests/participants/${participantId}/`)).data
+}
+// Starting is idempotent: the backend resumes the participant's existing draft.
+export async function startPhysicalAssessment(participantId) {
+  return (await api.post(`/physical-tests/participants/${participantId}/`)).data
+}
+export async function getPhysicalAssessment(id) {
+  return (await getWithRetry(`/physical-tests/${id}/`)).data
+}
+export async function updatePhysicalAssessmentDate(id, assessed_on, version) {
+  return (await api.patch(`/physical-tests/${id}/`, { assessed_on, version })).data
+}
+export async function savePhysicalResults(id, group, results, version) {
+  return (await api.put(`/physical-tests/${id}/results/${group}/`, { results, version })).data
+}
+export async function completePhysicalAssessment(id, version) {
+  return (await api.post(`/physical-tests/${id}/complete/`, { version })).data
+}
+
+
+/* ---- physical reporting ---- */
+export async function getPhysicalReport(scope) {
+  return (await getWithRetry('/reporting/physical/', { params: scope })).data
+}
+export async function analysePhysicalReport(scope) {
+  return (await api.post('/reporting/physical/analyse/', scope)).data
+}
+export async function getPhysicalAnalysisJob(jobId, signal) {
+  return (await getWithRetry(`/reporting/physical/jobs/${jobId}/`, { signal })).data
 }
