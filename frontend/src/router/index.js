@@ -122,6 +122,11 @@ const router = createRouter({
             meta: { requiresAuth: true, roles: SA },
         },
         {
+            path: '/documents', name: 'documents',
+            component: () => import('@/views/Documents.vue'),
+            meta: { requiresAuth: true, roles: [...SA, ...BM, ...IN] },
+        },
+        {
             path: '/super-admin/participants/:id/attendance', name: 'sa-participant-attendance',
             component: () => import('@/views/SuperAdmin/ParticipantAttendance.vue'),
             meta: { requiresAuth: true, roles: SA },

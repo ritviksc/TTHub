@@ -12,6 +12,7 @@ import {
   listParticipants,
   listStaff,
 } from '@/apis.js'
+import FileExplorer from '@/components/documents/FileExplorer.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -31,6 +32,11 @@ const ROLE_LABELS = {
 }
 
 const activeCount = computed(() => participants.value.filter(p => p.is_active).length)
+
+// Only a Super Admin reaches this page, so this branch's files are fully editable.
+const documentScopes = computed(() => branch.value
+  ? [{ key: branchId, label: branch.value.name, branchId, canUpload: true, canManage: true }]
+  : [])
 
 async function loadBranch() {
   branch.value = await getBranch(branchId)
@@ -371,6 +377,12 @@ const panels = [
           </div>
 
           <p class="assign-note">{{ panel.note }}</p>
+        </section>
+
+        <!-- Documents -->
+        <section class="panel">
+          <h2>Documents</h2>
+          <FileExplorer :scopes="documentScopes" />
         </section>
 
         <!-- Participants -->
