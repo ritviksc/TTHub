@@ -14,6 +14,9 @@ const reads = [
   ['getStaff', ['staff-id'], '/auth/staff/staff-id/'],
   ['getParticipantAttendance', ['participant-id'], '/participants/participant-id/attendance/'],
   ['downloadGpDocument', ['participant-id'], '/participants/participant-id/gp-document/'],
+  ['downloadDocument', ['document-id'], '/documents/document-id/download/'],
+  ['listDocuments', [{ branch: 'branch-id' }], '/documents/'],
+  ['listFolders', [{ branch: 'branch-id' }], '/folders/'],
   ['getPhysicalReport', [{ start_date: '2026-01-01', end_date: '2026-03-31' }], '/reporting/physical/'],
   ['getPhysicalAnalysisJob', ['job-id'], '/reporting/physical/jobs/job-id/'],
   ['listPhysicalAssessments', ['participant-id'], '/physical-tests/participants/participant-id/'],
@@ -79,6 +82,11 @@ for (const [name, args] of [
   ['updateAttendance', ['session-id', 'record-id', { status: 'present' }]],
   ['deleteSession', ['session-id']],
   ['analyseAttendanceReport', [{ start_date: '2026-01-01', end_date: '2026-03-31' }]],
+  ['deleteDocument', ['document-id']],
+  ['updateDocument', ['document-id', { name: 'Renamed.pdf' }]],
+  ['createFolder', [{ name: 'Policies' }]],
+  ['updateFolder', ['folder-id', { name: 'Renamed' }]],
+  ['deleteFolder', ['folder-id']],
 ]) {
   test(`${name} does not retry a timed-out write`, async () => {
     let attempts = 0
@@ -88,6 +96,19 @@ for (const [name, args] of [
     assert.equal(attempts, 1)
   })
 }
+
+test('uploadDocument posts to the documents endpoint with a longer timeout', async () => {
+  const formData = new FormData()
+  formData.append('file', new Blob(['x']), 'notes.pdf')
+  respond = async config => {
+    assert.equal(config.method, 'post')
+    assert.equal(config.url, '/documents/')
+    assert.equal(config.timeout, 60000)
+    return { data: { id: 'doc-id' }, status: 201, headers: {}, config }
+  }
+  const result = await api.uploadDocument(formData)
+  assert.deepEqual(result, { id: 'doc-id' })
+})
 
 test('invalid retry limits fail instead of silently returning undefined', async () => {
   for (const limit of [0, -1, 1.5]) {

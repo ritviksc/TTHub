@@ -193,6 +193,63 @@ export async function deleteBranch(id) {
   return response.data
 }
 
+/* ---- documents ---- */
+
+// params: { scope, branch, participant, folder } — all optional.
+export async function listDocuments(params = {}) {
+  const response = await getWithRetry("/documents/", { params })
+  return response.data
+}
+
+// formData holds `file` plus, at most, one of `branch`, `participant` or `folder`.
+// A longer timeout than the default 5s, since uploads can take a while.
+export async function uploadDocument(formData) {
+  const response = await api.post("/documents/", formData, { timeout: 60000 })
+  return response.data
+}
+
+// Fetch through the authenticated API; no permanent document URL is exposed.
+export async function downloadDocument(id) {
+  const response = await getWithRetry(`/documents/${id}/download/`, { responseType: 'blob' })
+  return response.data
+}
+
+// payload: { name? } to rename, { folder } to move (null moves to the scope's root).
+export async function updateDocument(id, payload) {
+  const response = await api.patch(`/documents/${id}/`, payload)
+  return response.data
+}
+
+export async function deleteDocument(id) {
+  const response = await api.delete(`/documents/${id}/`)
+  return response.data
+}
+
+/* ---- folders ---- */
+
+// params: { scope: 'organisation' } or { branch }.
+export async function listFolders(params = {}) {
+  const response = await getWithRetry("/folders/", { params })
+  return response.data
+}
+
+// payload: { name, parent?, branch? }. A subfolder's branch is taken from its parent.
+export async function createFolder(payload) {
+  const response = await api.post("/folders/", payload)
+  return response.data
+}
+
+// payload: { name? } to rename, { parent } to move (null moves to the scope's root).
+export async function updateFolder(id, payload) {
+  const response = await api.patch(`/folders/${id}/`, payload)
+  return response.data
+}
+
+export async function deleteFolder(id) {
+  const response = await api.delete(`/folders/${id}/`)
+  return response.data
+}
+
 // Assigning also grants the Branch Manager role, and moves the person off any
 // branch they were on. The response reports both so the UI can say what happened.
 export async function assignBranchManager(branchId, userId) {

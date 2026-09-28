@@ -5,6 +5,7 @@ import { getParticipant, updateParticipant, deactivateParticipant, downloadGpDoc
 import { initials, programmeToday } from '@/utils/sessions.js'
 import ParticipantAttendance from './ParticipantAttendance.vue'
 import AssessmentHistory from '@/components/physicalTests/AssessmentHistory.vue'
+import DocumentList from '@/components/documents/DocumentList.vue'
 
 const props = defineProps({
   participantId: { type: String, required: true },
@@ -197,6 +198,10 @@ async function deactivate() {
       </form>
       <p v-if="error" class="form-error" role="alert">{{ error }}</p>
       <p v-if="success" class="form-success" role="status">{{ success }}</p>
+      <section v-if="page !== 'attendance'" class="card">
+        <h2>Documents</h2>
+        <DocumentList :participant-id="participantId" can-upload />
+      </section>
       <ParticipantAttendance v-if="page !== 'details'" :participant-id="participantId" />
       <section v-if="page !== 'attendance' && participant.is_active" class="card">
         <h2>Participant status</h2>
