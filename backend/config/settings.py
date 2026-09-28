@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'sessions.apps.SessionsConfig',
     'llm',
     'reporting',
-    'physical_tests'
+    'physical_tests',
+    'documents',
 ]
 
 # Send credentials with request

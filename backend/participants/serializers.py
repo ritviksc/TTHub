@@ -1,11 +1,9 @@
-from pathlib import Path
-
-from PIL import Image, UnidentifiedImageError
 from django.urls import reverse
 from django.utils import timezone
 
 from rest_framework import serializers
 
+from documents.validators import validate_upload
 from users.models import UserAccount
 
 from .models import Participant
@@ -81,25 +79,10 @@ class ParticipantSerializer(serializers.ModelSerializer):
         return value
 
     def validate_gp_consent_document(self, value):
-        if value.size > 10 * 1024 * 1024:
-            raise serializers.ValidationError("The document must be 10 MB or smaller.")
-        extension = Path(value.name).suffix.lower()
-        try:
-            if extension == ".pdf":
-                if not value.read(5) == b"%PDF-":
-                    raise serializers.ValidationError("Upload a valid PDF document.")
-            elif extension in (".jpg", ".jpeg", ".png"):
-                image = Image.open(value)
-                if image.format != ("PNG" if extension == ".png" else "JPEG"):
-                    raise serializers.ValidationError("The image does not match its file extension.")
-                image.verify()
-            else:
-                raise serializers.ValidationError("Use a PDF, JPG or PNG document.")
-        except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
-            raise serializers.ValidationError("Upload a valid image document.")
-        finally:
-            value.seek(0)
-        return value
+        return validate_upload(
+            value, allowed=(".pdf", ".jpg", ".jpeg", ".png"),
+            type_message="Use a PDF, JPG or PNG document.",
+        )
 
     def _consent_value(self, attrs, field):
         if field in attrs:
