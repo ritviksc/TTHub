@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 from participants.models import Participant
 from users.models import Branch, UserAccount
 
-from .models import Document
+from .models import Document, Folder
 
 
 def _gif_bytes():
@@ -18,7 +18,10 @@ def _gif_bytes():
     return buffer.getvalue()
 
 
-class DocumentAccessTests(TestCase):
+class DocumentsTestCase(TestCase):
+    """Shared fixtures for documents.tests: two branches, one of each role, and
+    private storage pointed at a temporary directory."""
+
     def setUp(self):
         self.directory = TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
@@ -66,6 +69,8 @@ class DocumentAccessTests(TestCase):
         upload = SimpleUploadedFile(filename, content)
         return self.client.post("/api/documents/", {"file": upload, **extra}, format="multipart")
 
+
+class DocumentAccessTests(DocumentsTestCase):
     # -- Listing scope --------------------------------------------------
 
     def test_organisation_documents_are_visible_to_everyone(self):
@@ -219,3 +224,148 @@ class DocumentAccessTests(TestCase):
     def test_anonymous_request_is_rejected(self):
         response = self.client.get("/api/documents/")
         self.assertEqual(response.status_code, 403)
+
+
+class FolderTests(DocumentsTestCase):
+    def _create_folder(self, name="Policies", **extra):
+        return self.client.post("/api/folders/", {"name": name, **extra}, format="json")
+
+    # -- Create -----------------------------------------------------------
+
+    def test_branch_manager_can_create_rename_and_delete_empty_folder(self):
+        self.client.force_authenticate(self.manager)
+        response = self._create_folder(name="Policies", branch=self.branch.pk)
+        self.assertEqual(response.status_code, 201, response.data)
+        folder_id = response.data["id"]
+
+        rename = self.client.patch(f"/api/folders/{folder_id}/", {"name": "Old Policies"}, format="json")
+        self.assertEqual(rename.status_code, 200, rename.data)
+        self.assertEqual(rename.data["name"], "Old Policies")
+
+        delete = self.client.delete(f"/api/folders/{folder_id}/")
+        self.assertEqual(delete.status_code, 204)
+
+    def test_instructor_cannot_create_rename_or_move_folders(self):
+        folder = Folder.objects.create(name="Policies", branch=self.branch)
+        self.client.force_authenticate(self.instructor)
+        self.assertEqual(self._create_folder(name="Other plans", branch=self.branch.pk).status_code, 403)
+        self.assertEqual(
+            self.client.patch(f"/api/folders/{folder.pk}/", {"name": "Renamed"}, format="json").status_code, 403,
+        )
+
+    def test_branch_manager_cannot_create_organisation_folder(self):
+        self.client.force_authenticate(self.manager)
+        response = self._create_folder(name="Org policies")
+        self.assertEqual(response.status_code, 403)
+
+    def test_super_admin_can_create_organisation_folder(self):
+        self.client.force_authenticate(self.super_admin)
+        response = self._create_folder(name="Org policies")
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertIsNone(response.data["branch"])
+
+    def test_duplicate_sibling_folder_name_is_rejected(self):
+        Folder.objects.create(name="Policies", branch=self.branch)
+        self.client.force_authenticate(self.manager)
+        response = self._create_folder(name="policies", branch=self.branch.pk)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("name", response.data)
+
+    def test_subfolder_inherits_parent_branch(self):
+        parent = Folder.objects.create(name="Policies", branch=self.branch)
+        self.client.force_authenticate(self.manager)
+        response = self._create_folder(name="H&S", parent=parent.pk)
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["branch"], self.branch.pk)
+
+    # -- Delete: blocked while not empty -----------------------------------
+
+    def test_deleting_folder_with_a_document_is_blocked(self):
+        folder = Folder.objects.create(name="Policies", branch=self.branch)
+        Document.objects.create(file="documents/p.pdf", name="Policy.pdf", size=1, branch=self.branch, folder=folder)
+        self.client.force_authenticate(self.manager)
+        response = self.client.delete(f"/api/folders/{folder.pk}/")
+        self.assertEqual(response.status_code, 409)
+
+    def test_deleting_folder_with_a_subfolder_is_blocked(self):
+        parent = Folder.objects.create(name="Policies", branch=self.branch)
+        Folder.objects.create(name="H&S", branch=self.branch, parent=parent)
+        self.client.force_authenticate(self.manager)
+        response = self.client.delete(f"/api/folders/{parent.pk}/")
+        self.assertEqual(response.status_code, 409)
+
+    # -- Move: folders ------------------------------------------------------
+
+    def test_moving_folder_into_its_own_descendant_is_rejected(self):
+        parent = Folder.objects.create(name="Policies", branch=self.branch)
+        child = Folder.objects.create(name="H&S", branch=self.branch, parent=parent)
+        self.client.force_authenticate(self.manager)
+        response = self.client.patch(f"/api/folders/{parent.pk}/", {"parent": child.pk}, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_moving_folder_into_another_branch_is_rejected(self):
+        folder = Folder.objects.create(name="Policies", branch=self.branch)
+        other_folder = Folder.objects.create(name="Other plans", branch=self.other_branch)
+        self.client.force_authenticate(self.super_admin)
+        response = self.client.patch(f"/api/folders/{folder.pk}/", {"parent": other_folder.pk}, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_other_branchs_folders_are_hidden(self):
+        Folder.objects.create(name="Other plans", branch=self.other_branch)
+        self.client.force_authenticate(self.manager)
+        response = self.client.get(f"/api/folders/?branch={self.branch.pk}")
+        self.assertEqual(response.data, [])
+
+    # -- Documents inside folders --------------------------------------------
+
+    def test_uploading_into_a_folder_sets_its_branch(self):
+        folder = Folder.objects.create(name="Policies", branch=self.branch)
+        self.client.force_authenticate(self.instructor)
+        response = self._upload(folder=folder.pk)
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["branch"], self.branch.pk)
+        self.assertEqual(response.data["folder"], folder.pk)
+
+    def test_folder_filter_root_and_specific_folder(self):
+        folder = Folder.objects.create(name="Policies", branch=self.branch)
+        Document.objects.create(file="documents/a.pdf", name="Loose.pdf", size=1, branch=self.branch)
+        Document.objects.create(file="documents/b.pdf", name="Filed.pdf", size=1, branch=self.branch, folder=folder)
+        self.client.force_authenticate(self.manager)
+
+        root = self.client.get(f"/api/documents/?branch={self.branch.pk}&folder=root")
+        self.assertEqual([d["name"] for d in root.data], ["Loose.pdf"])
+
+        in_folder = self.client.get(f"/api/documents/?branch={self.branch.pk}&folder={folder.pk}")
+        self.assertEqual([d["name"] for d in in_folder.data], ["Filed.pdf"])
+
+    def test_moving_document_to_another_branchs_folder_is_rejected(self):
+        document = Document.objects.create(file="documents/a.pdf", name="Plan.pdf", size=1, branch=self.branch)
+        other_folder = Folder.objects.create(name="Other plans", branch=self.other_branch)
+        self.client.force_authenticate(self.super_admin)
+        response = self.client.patch(f"/api/documents/{document.pk}/", {"folder": other_folder.pk}, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_participant_document_cannot_be_filed_in_a_folder(self):
+        folder = Folder.objects.create(name="Policies", branch=self.branch)
+        document = Document.objects.create(
+            file="documents/p.pdf", name="Referral.pdf", size=1, participant=self.participant,
+        )
+        self.client.force_authenticate(self.manager)
+        response = self.client.patch(f"/api/documents/{document.pk}/", {"folder": folder.pk}, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_renaming_document_keeps_its_extension(self):
+        document = Document.objects.create(file="documents/a.pdf", name="Plan.pdf", size=1, branch=self.branch)
+        self.client.force_authenticate(self.manager)
+        response = self.client.patch(f"/api/documents/{document.pk}/", {"name": "Renamed"}, format="json")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["name"], "Renamed.pdf")
+
+    def test_instructor_can_rename_but_not_move_document(self):
+        folder = Folder.objects.create(name="Policies", branch=self.branch)
+        document = Document.objects.create(file="documents/a.pdf", name="Plan.pdf", size=1, branch=self.branch)
+        self.client.force_authenticate(self.instructor)
+        rename = self.client.patch(f"/api/documents/{document.pk}/", {"name": "Renamed"}, format="json")
+        self.assertEqual(rename.status_code, 403)
+        move = self.client.patch(f"/api/documents/{document.pk}/", {"folder": folder.pk}, format="json")
+        self.assertEqual(move.status_code, 403)

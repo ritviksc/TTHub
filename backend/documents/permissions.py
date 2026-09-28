@@ -3,7 +3,7 @@ from django.db.models import Q
 from participants.views import participants_for
 from users.models import UserAccount
 
-from .models import Document
+from .models import Document, Folder
 
 
 def documents_for(user):
@@ -13,7 +13,7 @@ def documents_for(user):
     documents, their own branch's documents, and documents on participants at
     their branch -- the same scoping rule as `participants_for`.
     """
-    qs = Document.objects.select_related("branch", "participant", "uploaded_by")
+    qs = Document.objects.select_related("branch", "participant", "uploaded_by", "folder")
     if user.role == UserAccount.Role.SUPER_ADMIN:
         return qs
     return qs.filter(
@@ -21,6 +21,14 @@ def documents_for(user):
         | Q(participant__branch_id=user.branch_id)
         | Q(branch__isnull=True, participant__isnull=True)
     )
+
+
+def folders_for(user):
+    """Every folder this user is allowed to see: organisation-wide, plus their own branch."""
+    qs = Folder.objects.select_related("branch", "parent", "created_by")
+    if user.role == UserAccount.Role.SUPER_ADMIN:
+        return qs
+    return qs.filter(Q(branch_id=user.branch_id) | Q(branch__isnull=True))
 
 
 def can_upload(user, branch, participant):
@@ -35,12 +43,28 @@ def can_upload(user, branch, participant):
     return False
 
 
-def can_delete(user, document):
-    """Whether `user` may remove an existing document."""
+def can_manage_scope(user, branch_id):
+    """Whether `user` may create, rename, move or delete within this scope.
+
+    `branch_id` is None for the organisation scope. This is the same rule for
+    folders as for documents: a Branch Manager may manage their own branch,
+    only a Super Admin may manage the organisation area, and an instructor may
+    never rename, move or delete.
+    """
     if user.role == UserAccount.Role.SUPER_ADMIN:
         return True
     if user.role != UserAccount.Role.BRANCH_MANAGER:
         return False
-    if document.scope == "organisation":
+    if branch_id is None:
         return False
-    return document.owning_branch_id == user.branch_id
+    return user.branch_id == branch_id
+
+
+def can_manage(user, document):
+    """Whether `user` may rename, move or delete an existing document."""
+    return can_manage_scope(user, document.owning_branch_id)
+
+
+def can_manage_folder(user, folder):
+    """Whether `user` may rename, move or delete an existing folder."""
+    return can_manage_scope(user, folder.branch_id)
