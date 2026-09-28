@@ -14,7 +14,6 @@ const loadError = ref(null)
 const period = ref('All')
 const showCreate = ref(false)
 const isInstructor = computed(() => auth.user?.role === 'instructor')
-const canCreateSession = computed(() => ['instructor', 'branch_manager'].includes(auth.user?.role))
 const detailRouteName = computed(() => isInstructor.value ? 'in-session-detail' : 'bm-session-detail')
 
 const visibleSessions = computed(() =>
@@ -57,7 +56,7 @@ function onCreated(session) {
           <h1>Sessions</h1>
           <p class="page-subtitle">Create sessions and record participant attendance.</p>
         </div>
-        <button v-if="canCreateSession" class="btn-primary" @click="showCreate = true">+ New session</button>
+        <button v-if="isInstructor" class="btn-primary" @click="showCreate = true">+ New session</button>
       </div>
 
       <div class="pills">
