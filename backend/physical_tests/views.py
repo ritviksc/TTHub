@@ -100,6 +100,10 @@ class CompleteAssessmentView(APIView):
         version = VersionSerializer(data=request.data)
         version.is_valid(raise_exception=True)
         claim_draft(assessment, version.validated_data["version"])
+        # Participant details can change after the draft's date was first validated.
+        dates = DateSerializer(data={"assessed_on": assessment.assessed_on},
+                               context={"participant": assessment.participant})
+        dates.is_valid(raise_exception=True)
         rows = list(assessment.results.all())
         if len(rows) != 6 or any(row.outcome == "not_attempted" for row in rows):
             raise ValidationError("Record all exercise groups before completing. Not-attempted exercises remain incomplete.")

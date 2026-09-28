@@ -142,3 +142,20 @@ class AssessmentTests(TestCase):
         response = self.client.delete(f"/api/branches/{self.branch.pk}/")
         self.assertEqual(response.status_code, 409)
         self.assertIn("physical", response.data["detail"])
+
+    def test_completion_rechecks_date_after_birth_date_correction(self):
+        self.save_group("tug", [self.measured("tug", 12)])
+        self.save_group("chair", [self.measured("chair", 10)])
+        self.save_group("balance", [self.measured(e, 10) for e in BALANCE])
+        from datetime import date
+        response = self.client.patch(self.url, {"assessed_on": "1950-01-01", "version": self.job["version"]}, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.job = response.data
+        self.participant.date_of_birth = date(1960, 1, 1)
+        self.participant.save()
+        response = self.complete()
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("assessed_on", response.data)
+        saved = self.client.get(self.url).data
+        self.assertEqual(saved["status"], "draft")
+        self.assertEqual(saved["version"], self.job["version"])
