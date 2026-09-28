@@ -16,6 +16,7 @@ const NAV_ITEMS = {
     { label: 'Participants',      to: '/super-admin/participants' },
     { label: 'Users',             to: '/super-admin/users' },
     { label: 'Reporting',         to: '/super-admin/reporting' },
+    { label: 'Documents',         to: '/documents' },
     { label: 'Administration',    to: '/super-admin/administration' },
   ],
   branch_manager: [
@@ -25,12 +26,14 @@ const NAV_ITEMS = {
     { label: 'Instructors',  to: '/branch-manager/instructors' },
     { label: 'Feedback',     to: '/branch-manager/feedback' },
     { label: 'Reports',      to: '/branch-manager/reports' },
+    { label: 'Documents',    to: '/documents' },
   ],
   instructor: [
     { label: 'Home',         to: '/instructor/home' },
     { label: 'Sessions',     to: '/instructor/sessions' },
     { label: 'Participants', to: '/instructor/participants' },
     { label: 'Feedback',     to: '/instructor/feedback' },
+    { label: 'Documents',    to: '/documents' },
   ],
 }
 
