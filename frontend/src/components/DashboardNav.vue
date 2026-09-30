@@ -12,8 +12,8 @@ const logoutError = ref(null)
 const NAV_ITEMS = {
   super_admin: [
     { label: 'National overview', to: '/super-admin/overview' },
-    { label: 'Branch',            to: '/super-admin/branches' },
-    { label: 'Participants',      to: '/super-admin/participants' },
+    { label: 'Kapa',            to: '/super-admin/branches' },
+    { label: 'Kaumātua',      to: '/super-admin/participants' },
     { label: 'Users',             to: '/super-admin/users' },
     { label: 'Reporting',         to: '/super-admin/reporting' },
     { label: 'Documents',         to: '/documents' },
@@ -22,8 +22,8 @@ const NAV_ITEMS = {
   branch_manager: [
     { label: 'Overview',     to: '/branch-manager/overview' },
     { label: 'Sessions',     to: '/branch-manager/sessions' },
-    { label: 'Participants', to: '/branch-manager/participants' },
-    { label: 'Instructors',  to: '/branch-manager/instructors' },
+    { label: 'Kaumātua', to: '/branch-manager/participants' },
+    { label: 'Kaimahi',  to: '/branch-manager/instructors' },
     { label: 'Feedback',     to: '/branch-manager/feedback' },
     { label: 'Reports',      to: '/branch-manager/reports' },
     { label: 'Documents',    to: '/documents' },
@@ -31,7 +31,7 @@ const NAV_ITEMS = {
   instructor: [
     { label: 'Home',         to: '/instructor/home' },
     { label: 'Sessions',     to: '/instructor/sessions' },
-    { label: 'Participants', to: '/instructor/participants' },
+    { label: 'Kaumātua', to: '/instructor/participants' },
     { label: 'Feedback',     to: '/instructor/feedback' },
     { label: 'Documents',    to: '/documents' },
   ],
@@ -40,7 +40,7 @@ const NAV_ITEMS = {
 const ROLE_LABELS = {
   super_admin: 'Super Admin',
   branch_manager: 'Branch Manager',
-  instructor: 'Instructor',
+  instructor: 'Kaimahi',
 }
 
 const navItems  = computed(() => NAV_ITEMS[auth.user?.role] ?? [])
@@ -50,7 +50,7 @@ const roleLabel = computed(() => ROLE_LABELS[auth.user?.role] ?? '')
 const scope = computed(() =>
   auth.user?.role === 'super_admin'
     ? 'National'
-    : `Branch: ${auth.user?.branch?.name ?? '—'}`
+    : `Kapa: ${auth.user?.branch?.name ?? '—'}`
 )
 
 const userName = computed(() => {
@@ -79,8 +79,8 @@ async function handleLogout() {
   <nav class="app-nav">
     <div class="nav-left">
       <img :src="logoSrc" class="nav-logo" alt="" />
-      <span class="nav-brand">Taurite Tū</span>
-      <span class="nav-scope">{{ scope }}</span>
+<RouterLink :to="navItems[0]?.to ?? '/'" class="nav-brand">Taurite Tū</RouterLink>
+ <span class="nav-scope">{{ scope }}</span>
     </div>
 
     <div class="nav-links">

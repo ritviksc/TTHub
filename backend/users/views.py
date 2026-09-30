@@ -286,10 +286,22 @@ class BranchStaffView(generics.GenericAPIView):
     instructors run through exactly the same rules.
     """
 
-    permission_classes = [IsSuperAdmin]
+    permission_classes = [IsSuperAdmin | IsBranchManager]
     role = None
 
     def post(self, request, pk):
+        # Branch managers may only assign instructors to their own branch
+        if request.user.role == UserAccount.Role.BRANCH_MANAGER:
+            if str(pk) != str(request.user.branch_id):
+                return Response(
+                {"detail": "You can only assign instructors to your own branch."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+            if self.role != UserAccount.Role.INSTRUCTOR:
+                return Response(
+                    {"detail": "Branch managers may only assign instructors."},
+                    status=status.HTTP_403_FORBIDDEN,
+            )
         branch = get_object_or_404(Branch, pk=pk)
         if not isinstance(request.data, Mapping):
             return Response({"detail": "Provide an object containing user_id."}, status=status.HTTP_400_BAD_REQUEST)
