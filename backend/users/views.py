@@ -297,14 +297,14 @@ class BranchStaffView(generics.GenericAPIView):
         if request.user.role == UserAccount.Role.BRANCH_MANAGER:
             if str(pk) != str(request.user.branch_id):
                 return Response(
-                {"detail": "You can only assign instructors to your own branch."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+                    {"detail": "You can only assign instructors to your own branch."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             if self.role != UserAccount.Role.INSTRUCTOR:
                 return Response(
                     {"detail": "Branch managers may only assign instructors."},
                     status=status.HTTP_403_FORBIDDEN,
-            )
+                )
         branch = get_object_or_404(Branch, pk=pk)
         if not isinstance(request.data, Mapping):
             return Response({"detail": "Provide an object containing user_id."}, status=status.HTTP_400_BAD_REQUEST)
@@ -317,7 +317,10 @@ class BranchStaffView(generics.GenericAPIView):
             )
 
         try:
-            user = UserAccount.objects.get(pk=user_id)
+            staff = UserAccount.objects.all()
+            if request.user.role == UserAccount.Role.BRANCH_MANAGER:
+                staff = staff.filter(branch=request.user.branch, role=UserAccount.Role.INSTRUCTOR)
+            user = staff.get(pk=user_id)
         except (UserAccount.DoesNotExist, DjangoValidationError, ValueError, TypeError):
             # user_id arrives in the body, so it is not filtered by the URL
             # converter the way pk is. A malformed id is "no such user", not a

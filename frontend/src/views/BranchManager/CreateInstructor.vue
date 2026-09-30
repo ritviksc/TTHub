@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { createStaffAccount, assignBranchInstructor } from '@/apis.js'
+import { createStaffAccount } from '@/apis.js'
 import { auth } from '@/stores/auth.js'
+
+const router = useRouter()
 
 const form = ref({
   email: '',
@@ -18,6 +20,7 @@ const success = ref(null)
 const branchName = computed(() => auth.user?.branch?.name ?? 'Your branch')
 
 async function submit() {
+  if (loading.value) return
   error.value = null
   success.value = null
   loading.value = true
@@ -29,11 +32,8 @@ async function submit() {
       branch: auth.user?.branch?.id || auth.user?.branch,
     })
     success.value = `Instructor account created for ${form.value.email}.`
-    const createdEmail = form.value.email
     form.value = { email: '', password: '', first_name: '', last_name: '' }
-    setTimeout(() => {
-      router.push({ name: 'bm-instructors' })
-    }, 1500)
+    await router.push({ name: 'bm-instructors' })
   } catch (e) {
     const data = e.response?.data
     if (data && typeof data === 'object') {
@@ -56,6 +56,7 @@ async function submit() {
       <div class="page-header">
         <RouterLink to="/branch-manager/instructors" class="back-link">← Back to Kaimahi</RouterLink>
         <h1>Add Kaimahi</h1>
+        <p class="page-subtitle">Create an instructor account for {{ branchName }}.</p>
       </div>
 
       <div class="form-card">
@@ -78,14 +79,14 @@ async function submit() {
           </div>
 
           <div class="field">
-            <label>Temporary password</label>
-            <input v-model="form.password" type="password" placeholder="They can change this after logging in" required />
+            <label>Password</label>
+            <input v-model="form.password" type="password" placeholder="At least 8 characters" minlength="8" required />
           </div>
 
           <div v-if="error" class="msg error">{{ error }}</div>
           <div v-if="success" class="msg success">{{ success }}</div>
 
-          <button type="submit" class="btn-primary">Create instructor account</button>
+          <button type="submit" class="btn-primary" :disabled="loading">{{ loading ? 'Creating…' : 'Create instructor account' }}</button>
 
         </form>
       </div>

@@ -163,3 +163,40 @@ class StaffMutationRegressionTests(TestCase):
         self.staff.refresh_from_db()
         self.assertEqual(self.staff.role, "instructor")
         self.assertEqual(self.staff.branch_id, self.branch.pk)
+
+    def test_manager_assignment_cannot_move_foreign_staff_or_change_roles(self):
+        manager = UserAccount.objects.create_user(
+            username='assign-manager', email='assign-manager@example.com', role='branch_manager', branch=self.branch,
+        )
+        other = Branch.objects.create(name='Other assignment branch')
+        self.client.force_authenticate(manager)
+        for index, (role, branch) in enumerate([
+            ('instructor', other), ('branch_manager', other),
+            ('branch_manager', self.branch), ('instructor', None),
+        ]):
+            target = UserAccount.objects.create_user(
+                username=f'assign-target-{index}', email=f'assign-target-{index}@example.com', role=role, branch=branch,
+            )
+            with self.subTest(role=role, branch=branch):
+                response = self.client.post(f'/api/branches/{self.branch.pk}/instructors/',
+                                            {'user_id': str(target.pk)}, format='json')
+                self.assertEqual(response.status_code, 404)
+                target.refresh_from_db()
+                self.assertEqual(target.role, role)
+                self.assertEqual(target.branch, branch)
+
+    def test_manager_assignment_accepts_own_instructor_and_admin_can_transfer(self):
+        manager = UserAccount.objects.create_user(
+            username='own-manager', email='own-manager@example.com', role='branch_manager', branch=self.branch,
+        )
+        self.client.force_authenticate(manager)
+        response = self.client.post(f'/api/branches/{self.branch.pk}/instructors/',
+                                    {'user_id': str(self.staff.pk)}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        other = Branch.objects.create(name='Transfer destination')
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(f'/api/branches/{other.pk}/instructors/',
+                                    {'user_id': str(self.staff.pk)}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.staff.refresh_from_db()
+        self.assertEqual(self.staff.branch, other)

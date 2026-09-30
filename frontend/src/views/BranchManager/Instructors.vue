@@ -167,7 +167,7 @@ async function handleToggleActive(instructor) {
       <!-- Page Header -->
       <div class="page-header">
         <div>
-          <h1>Instructors</h1>
+          <h1>Kaimahi</h1>
           <p class="page-subtitle">Instructors delivering programmes at {{ branchName }}.</p>
         </div>
         <div class="header-actions">
