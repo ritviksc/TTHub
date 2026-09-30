@@ -5,8 +5,9 @@ from rest_framework import serializers
 
 from documents.validators import validate_upload
 from users.models import UserAccount
+from sessions.models import ProgrammeSession
 
-from .models import Participant
+from .models import Feedback, Participant
 
 
 def participant_photo_url(participant, request=None):
@@ -159,5 +160,44 @@ class ParticipantListSerializer(serializers.ModelSerializer):
             "branch_name",
             "phone",
             "is_active",
+            "gp_consent_given",
             "photo",
         ]
+
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    recordedBy = serializers.SerializerMethodField()
+
+    def get_recordedBy(self, obj):
+        return obj.recorded_by.get_full_name() or obj.recorded_by.email
+
+    class Meta:
+        model = Feedback
+        fields = ['id', 'branch', 'participant', 'session', 'quote', 'source', 'date',
+                  'consent', 'recorded_by', 'recordedBy', 'created_at']
+        read_only_fields = ['id', 'branch', 'source', 'recorded_by', 'created_at']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        user = self.context['request'].user
+        participants = Participant.objects.select_related("branch")
+        sessions = ProgrammeSession.objects.all()
+        if user.role != UserAccount.Role.SUPER_ADMIN:
+            participants = participants.filter(branch_id=user.branch_id)
+            sessions = sessions.filter(branch_id=user.branch_id)
+        self.fields['participant'].queryset = participants
+        self.fields['session'].queryset = sessions
+
+    def validate(self, attrs):
+        participant, session = attrs.get('participant'), attrs.get('session')
+        if not participant and not session:
+            raise serializers.ValidationError('Choose a participant or session.')
+        if participant and session and participant.branch_id != session.branch_id:
+            raise serializers.ValidationError('Participant and session must belong to the same branch.')
+        if attrs['date'] > timezone.localdate():
+            raise serializers.ValidationError({'date': 'Date cannot be in the future.'})
+        subject = participant or session
+        attrs['branch'] = subject.branch
+        # Preserve the name at recording time, rather than exposing later branch changes.
+        attrs['source'] = participant.full_name if participant else session.activity
+        return attrs
