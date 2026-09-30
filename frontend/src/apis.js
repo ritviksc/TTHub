@@ -356,3 +356,10 @@ export async function analysePhysicalReport(scope) {
 export async function getPhysicalAnalysisJob(jobId, signal) {
   return (await getWithRetry(`/reporting/physical/jobs/${jobId}/`, { signal })).data
 }
+
+export async function listFeedback() {
+  return (await getWithRetry('/participants/feedback/')).data
+}
+export async function createFeedback(payload) {
+  return (await api.post('/participants/feedback/', payload)).data
+}

@@ -37,7 +37,7 @@ async function submit() {
     <input v-model="form.email" type="email" placeholder="Email" required />
     <input v-model="form.first_name" placeholder="First name" required />
     <input v-model="form.last_name" placeholder="Last name" required />
-    <input v-model="form.password" type="password" placeholder="Temporary password" required />
+    <input v-model="form.password" type="password" placeholder="Password" required />
     <select v-model="form.role">
       <option value="instructor">Instructor</option>
       <option value="branch_manager">Branch Manager</option>

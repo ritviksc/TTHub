@@ -71,3 +71,24 @@ class Participant(models.Model):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
+
+
+class Feedback(models.Model):
+    """Branch-owned evidence with durable participant/session references."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    branch = models.ForeignKey('users.Branch', on_delete=models.PROTECT)
+    participant = models.ForeignKey(Participant, null=True, blank=True, on_delete=models.PROTECT)
+    session = models.ForeignKey('programme_sessions.ProgrammeSession', null=True, blank=True, on_delete=models.PROTECT)
+    quote = models.TextField()
+    source = models.CharField(max_length=400)
+    date = models.DateField()
+    consent = models.BooleanField(default=False)
+    recorded_by = models.ForeignKey('users.UserAccount', on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date', '-created_at']
+        constraints = [models.CheckConstraint(
+            condition=models.Q(participant__isnull=False) | models.Q(session__isnull=False),
+            name='feedback_has_subject',
+        )]

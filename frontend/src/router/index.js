@@ -5,7 +5,6 @@ import AboutUs from '@/views/AboutUs.vue'
 import ContactUs from '@/views/ContactUs.vue'
 import ComingSoon from '@/views/ComingSoon.vue'
 import CreateStaff from '@/views/SuperAdmin/CreateStaff.vue'
-import CreateInstructor from '@/views/BranchManager/CreateInstructor.vue'
 import { loadUser } from '@/stores/auth.js'
 import UserDetail from '@/views/SuperAdmin/UserDetail.vue'
 import StaffDetail from '@/views/StaffDetail.vue'
@@ -155,19 +154,24 @@ const router = createRouter({
             meta: { requiresAuth: true, roles: BM },
         },
         { path: '/branch-manager/participants', name: 'bm-participants', component: () => import('@/views/BranchManager/Participants.vue'), meta: { requiresAuth: true, roles: BM } },
-{
-  path: '/branch-manager/instructors',
-  name: 'bm-instructors',
-  component: () => import('@/views/BranchManager/Instructors.vue'),
-  meta: { requiresAuth: true, roles: BM },
-},        comingSoon('/branch-manager/feedback', 'bm-feedback', 'Feedback', BM),
+        {
+            path: '/branch-manager/instructors', name: 'bm-instructors',
+            component: () => import('@/views/BranchManager/Instructors.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        {
+            path: '/branch-manager/feedback', name: 'bm-feedback',
+            component: () => import('@/views/BranchManager/Feedback.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
         {
             path: '/branch-manager/reports', name: 'bm-reports',
             component: () => import('@/views/BranchManager/Reports.vue'),
             meta: { requiresAuth: true, roles: BM },
         },
         {
-            path: '/branch-manager/create-instructor', name: 'create-instructor', component: CreateInstructor,
+            path: '/branch-manager/create-instructor', name: 'create-instructor',
+            component: () => import('@/views/BranchManager/CreateInstructor.vue'),
             meta: { requiresAuth: true, roles: BM },
         },
 

@@ -1,30 +1,50 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { createStaffAccount, assignBranchInstructor } from '@/apis.js'
 import { auth } from '@/stores/auth.js'
 
-const router = useRouter()
-const form = ref({ email: '', password: '', first_name: '', last_name: '' })
-const error = ref('')
-const success = ref('')
+const form = ref({
+  email: '',
+  first_name: '',
+  last_name: '',
+  password: '',
+})
+
+const loading = ref(false)
+const error = ref(null)
+const success = ref(null)
+
+const branchName = computed(() => auth.user?.branch?.name ?? 'Your branch')
 
 async function submit() {
-  error.value = ''
-  success.value = ''
+  error.value = null
+  success.value = null
+  loading.value = true
+
   try {
-    // Step 1: create the instructor account
-    const newUser = await createStaffAccount({ ...form.value, role: 'instructor' })
-
-    // Step 2: assign them to this branch manager's branch
-    const branchId = auth.user?.branch?.id
-    await assignBranchInstructor(branchId, newUser.id)
-
-    success.value = `Instructor account created for ${form.value.email}`
+    await createStaffAccount({
+      ...form.value,
+      role: 'instructor',
+      branch: auth.user?.branch?.id || auth.user?.branch,
+    })
+    success.value = `Instructor account created for ${form.value.email}.`
+    const createdEmail = form.value.email
     form.value = { email: '', password: '', first_name: '', last_name: '' }
+    setTimeout(() => {
+      router.push({ name: 'bm-instructors' })
+    }, 1500)
   } catch (e) {
     const data = e.response?.data
-    error.value = data ? Object.values(data).flat().join(' ') : 'Could not create account'
+    if (data && typeof data === 'object') {
+      error.value = Object.entries(data)
+        .map(([field, msg]) => `${field}: ${Array.isArray(msg) ? msg.join(' ') : msg}`)
+        .join('; ')
+    } else {
+      error.value = e.response?.data?.detail ?? 'Could not create instructor account.'
+    }
+  } finally {
+    loading.value = false
   }
 }
 </script>

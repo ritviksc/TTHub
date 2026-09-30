@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone as datetime_timezone
+from datetime import date, datetime, timedelta, timezone as datetime_timezone
 from unittest.mock import patch
 from io import BytesIO
 from tempfile import TemporaryDirectory
@@ -8,11 +8,13 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 
+from sessions.models import ProgrammeSession
 from users.models import Branch, UserAccount
 
-from .models import Participant
+from .models import Feedback, Participant
 
 
 class ConsentDateTests(TestCase):
@@ -298,3 +300,112 @@ class ParticipantHistoryRegressionTests(TestCase):
         for value, expected in [("2030-01-02", 200), ("2030-01-03", 400)]:
             response = self.client.patch(self.url, {"date_of_birth": value}, format="json")
             self.assertEqual(response.status_code, expected, response.data)
+
+
+class FeedbackTests(TestCase):
+    def setUp(self):
+        self.a = Branch.objects.create(name='A')
+        self.b = Branch.objects.create(name='B')
+        self.manager = self.user('manager', 'branch_manager', self.a)
+        self.other = self.user('other', 'branch_manager', self.b)
+        self.instructor = self.user('instructor', 'instructor', self.a)
+        self.admin = self.user('admin', 'super_admin', None)
+        self.person = Participant.objects.create(branch=self.a, first_name='Aroha', last_name='Example',
+                                                gp_consent_given=True, gp_consent_date=timezone.localdate())
+        self.foreign_person = Participant.objects.create(branch=self.b, first_name='Other', last_name='Person')
+        self.session = ProgrammeSession.objects.create(branch=self.a, created_by=self.instructor,
+                                                       date=timezone.localdate(), time='10:00', activity='Movement')
+        self.client = APIClient()
+        self.client.force_authenticate(self.manager)
+        self.payload = {'participant': str(self.person.pk), 'quote': 'Feeling steadier',
+                        'date': timezone.localdate().isoformat(), 'consent': True}
+
+    def user(self, name, role, branch):
+        return UserAccount.objects.create_user(username=name, email=f'{name}@example.org', role=role, branch=branch)
+
+    def test_persists_between_clients_with_server_owned_scope_and_author(self):
+        response = self.client.post('/api/participants/feedback/', {
+            **self.payload, 'branch': str(self.b.pk), 'recorded_by': str(self.admin.pk), 'source': 'Forged',
+        }, format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+        entry = Feedback.objects.get()
+        self.assertEqual(entry.branch, self.a)
+        self.assertEqual(entry.recorded_by, self.manager)
+        self.assertEqual(entry.source, self.person.full_name)
+        second_device = APIClient()
+        second_device.force_authenticate(self.instructor)
+        self.assertEqual(second_device.get('/api/participants/feedback/').data[0]['id'], str(entry.pk))
+        self.client.force_authenticate(self.other)
+        self.assertEqual(self.client.get('/api/participants/feedback/').data, [])
+        self.client.force_authenticate(self.admin)
+        self.assertEqual(len(self.client.get('/api/participants/feedback/').data), 1)
+
+    def test_empty_database_has_no_demo_feedback_and_requires_auth(self):
+        self.assertEqual(self.client.get('/api/participants/feedback/').data, [])
+        self.client.force_authenticate(None)
+        self.assertEqual(self.client.get('/api/participants/feedback/').status_code, 403)
+        self.assertEqual(self.client.post('/api/participants/feedback/', self.payload, format='json').status_code, 403)
+
+    def test_rejects_foreign_subjects_and_missing_subject(self):
+        foreign_session = ProgrammeSession.objects.create(branch=self.b, created_by=self.other,
+                                                          date=timezone.localdate(), time='10:00', activity='Other')
+        for subject in ({'participant': str(self.foreign_person.pk)},
+                        {'participant': None, 'session': str(foreign_session.pk)},
+                        {'participant': None, 'session': None}):
+            with self.subTest(subject=subject):
+                response = self.client.post('/api/participants/feedback/', {**self.payload, **subject}, format='json')
+                self.assertEqual(response.status_code, 400, response.data)
+        self.assertFalse(Feedback.objects.exists())
+
+    def test_session_feedback_defaults_to_no_consent(self):
+        response = self.client.post('/api/participants/feedback/', {
+            'session': str(self.session.pk), 'quote': 'Enjoyed the class', 'date': timezone.localdate(),
+        }, format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertFalse(response.data['consent'])
+        self.assertEqual(response.data['session'], self.session.pk)
+
+    def test_admin_cannot_mix_branches_and_future_dates_are_rejected(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.post('/api/participants/feedback/', {
+            **self.payload, 'participant': str(self.foreign_person.pk), 'session': str(self.session.pk),
+        }, format='json')
+        self.assertEqual(response.status_code, 400)
+        response = self.client.post('/api/participants/feedback/', {
+            **self.payload, 'date': (timezone.localdate() + timedelta(days=1)).isoformat(),
+        }, format='json')
+        self.assertEqual(response.status_code, 400)
+
+    def test_transfer_preserves_original_branch_evidence_without_live_name_leak(self):
+        self.client.post('/api/participants/feedback/', self.payload, format='json')
+        original_name = self.person.full_name
+        self.person.branch = self.b
+        self.person.first_name = 'Changed elsewhere'
+        self.person.save()
+        self.assertEqual(self.client.get('/api/participants/feedback/').data[0]['source'], original_name)
+        self.client.force_authenticate(self.other)
+        self.assertEqual(self.client.get('/api/participants/feedback/').data, [])
+
+    def test_dashboard_contracts_and_manager_read_only_attendance(self):
+        people = self.client.get('/api/participants/').data
+        self.assertTrue(people[0]['gp_consent_given'])
+        self.person.gp_consent_given = False
+        self.person.save()
+        self.assertFalse(self.client.get('/api/participants/').data[0]['gp_consent_given'])
+        sessions = self.client.get('/api/sessions/').data
+        self.assertEqual(sessions[0]['created_by'], self.instructor.pk)
+        self.assertEqual(self.client.get(f'/api/sessions/{self.session.pk}/').status_code, 200)
+        self.assertEqual(self.client.patch(f'/api/sessions/{self.session.pk}/attendance-state/',
+                                          {'attendance_finalised': True}, format='json').status_code, 403)
+
+    def test_feedback_blocks_branch_deletion_after_all_people_transfer(self):
+        self.client.post('/api/participants/feedback/', self.payload, format='json')
+        self.session.delete()
+        self.person.branch = self.b
+        self.person.save()
+        UserAccount.objects.filter(branch=self.a).update(branch=self.b)
+        self.client.force_authenticate(self.admin)
+        response = self.client.delete(f'/api/branches/{self.a.pk}/')
+        self.assertEqual(response.status_code, 409, response.data)
+        self.assertIn('feedback', response.data['detail'])
+        self.assertTrue(Feedback.objects.exists())

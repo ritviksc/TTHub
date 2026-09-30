@@ -63,7 +63,7 @@ class SessionListSerializer(serializers.ModelSerializer):
         model = ProgrammeSession
         fields = [
             "id", "branch", "branch_name", "date", "time", "activity",
-            "present_count", "roster_count", "created_at", "attendance_finalised",
+            "present_count", "roster_count", "created_at", "attendance_finalised", "created_by",
         ]
 
 
