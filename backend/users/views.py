@@ -238,6 +238,9 @@ class BranchDetailView(generics.RetrieveUpdateDestroyAPIView):
         branch = self.get_object()
 
         blockers = []
+        feedback_count = branch.feedback_set.count()
+        if feedback_count:
+            blockers.append(f"{feedback_count} feedback record(s)")
         staff_count = branch.staff.count()
         participant_count = branch.participants.count()
         session_count = branch.programme_sessions.count()
