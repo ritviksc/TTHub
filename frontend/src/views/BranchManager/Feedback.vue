@@ -1,168 +1,87 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { auth } from '@/stores/auth.js'
-import { listParticipants } from '@/apis.js'
+import { listParticipants, listSessions, listFeedback, createFeedback } from '@/apis.js'
+import { programmeToday } from '@/utils/sessions.js'
 
-const activeFilter = ref('all') // 'all', 'with', 'without'
+const activeFilter = ref('all')
 const search = ref('')
 const showModal = ref(false)
 const participants = ref([])
-const loadingParticipants = ref(false)
-
-const STORAGE_KEY = 'taurite_tu_bm_feedback'
-
-const defaultFeedback = [
-  {
-    id: 'fb-1',
-    quote: "I can now walk down to the marae without needing to stop for a breath on the hill. My balance has returned.",
-    source: "Hinepare K.",
-    date: "14 Sep 2026",
-    recordedBy: "Rawiri T. (Instructor)",
-    consent: true,
-  },
-  {
-    id: 'fb-2',
-    quote: "The exercises have helped so much with getting in and out of the car. I feel much steadier on my feet.",
-    source: "Tāne M.",
-    date: "8 Sep 2026",
-    recordedBy: "Materoa N. (Branch Manager)",
-    consent: true,
-  },
-  {
-    id: 'fb-3',
-    quote: "Struggled with the knee flex exercises today due to arthritis flare-up, but enjoyed the waiata and social aspect.",
-    source: "Mereana R.",
-    date: "2 Sep 2026",
-    recordedBy: "Rawiri T. (Instructor)",
-    consent: false,
-  },
-  {
-    id: 'fb-4',
-    quote: "My whānau noticed I'm standing taller and not holding onto furniture when I walk across the room.",
-    source: "Wiremu P.",
-    date: "28 Aug 2026",
-    recordedBy: "Rawiri T. (Instructor)",
-    consent: true,
-  },
-]
-
+const sessions = ref([])
 const feedbackList = ref([])
-
-function loadFeedback() {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  if (saved) {
-    try {
-      feedbackList.value = JSON.parse(saved)
-      return
-    } catch {
-      // fallback if corrupted
-    }
-  }
-  feedbackList.value = [...defaultFeedback]
-  saveFeedback()
-}
-
-function saveFeedback() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(feedbackList.value))
-}
-
-const managerName = computed(() => {
-  const u = auth.user
-  if (!u) return 'Branch Manager'
-  const name = `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim()
-  return name ? `${name} (Branch Manager)` : `${u.email} (Branch Manager)`
-})
-
-const branchName = computed(() => auth.user?.branch?.name ?? 'Your branch')
-
-/* ---- new entry form ---- */
-const newEntry = ref({
-  quote: '',
-  source: '',
-  date: new Date().toISOString().split('T')[0],
-  consent: true,
-})
-
+const loading = ref(true)
+const loadError = ref(null)
+const saving = ref(false)
 const newEntryError = ref(null)
+const branchName = computed(() => auth.user?.branch?.name ?? 'Your branch')
+const emptyEntry = () => ({ quote: '', participant: '', session: '', date: programmeToday(), consent: false })
+const newEntry = ref(emptyEntry())
+
+async function loadFeedback() {
+  loading.value = true
+  loadError.value = null
+  feedbackList.value = []
+  try {
+    const [entries, people, classes] = await Promise.all([
+      listFeedback(), listParticipants(), listSessions(),
+    ])
+    feedbackList.value = entries
+    participants.value = people
+    sessions.value = classes
+  } catch {
+    loadError.value = 'Could not load feedback. Please try again.'
+  } finally {
+    loading.value = false
+  }
+}
 
 function openModal() {
-  newEntry.value = {
-    quote: '',
-    source: '',
-    date: new Date().toISOString().split('T')[0],
-    consent: true,
-  }
+  newEntry.value = emptyEntry()
   newEntryError.value = null
   showModal.value = true
 }
 
 function closeModal() {
+  if (saving.value) return
   showModal.value = false
   newEntryError.value = null
 }
 
-function handleAddFeedback() {
-  if (!newEntry.value.quote.trim()) {
-    newEntryError.value = 'Please enter a quote or feedback note.'
+async function handleAddFeedback() {
+  if (saving.value) return
+  newEntryError.value = null
+  if (!newEntry.value.participant && !newEntry.value.session) {
+    newEntryError.value = 'Choose a participant or session.'
     return
   }
-  if (!newEntry.value.source.trim()) {
-    newEntryError.value = 'Please enter the participant or source name.'
-    return
+  saving.value = true
+  try {
+    const entry = await createFeedback({
+      ...newEntry.value,
+      participant: newEntry.value.participant || null,
+      session: newEntry.value.session || null,
+    })
+    feedbackList.value.unshift(entry)
+    showModal.value = false
+  } catch (error) {
+    const data = error.response?.data
+    newEntryError.value = data ? Object.values(data).flat().join(' ') : 'Could not save feedback. Please try again.'
+  } finally {
+    saving.value = false
   }
-
-  // Format date nicely
-  const d = new Date(newEntry.value.date)
-  const formattedDate = d.toLocaleDateString('en-NZ', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-
-  feedbackList.value.unshift({
-    id: 'fb-' + Date.now(),
-    quote: newEntry.value.quote.trim(),
-    source: newEntry.value.source.trim(),
-    date: formattedDate,
-    recordedBy: managerName.value,
-    consent: Boolean(newEntry.value.consent),
-  })
-
-  saveFeedback()
-  closeModal()
 }
 
 const filteredFeedback = computed(() => {
   const query = search.value.toLowerCase().trim()
   return feedbackList.value.filter(f => {
-    // Consent filter
     if (activeFilter.value === 'with' && !f.consent) return false
     if (activeFilter.value === 'without' && f.consent) return false
-
-    // Search query
-    if (query) {
-      const matchQuote = f.quote.toLowerCase().includes(query)
-      const matchSource = f.source.toLowerCase().includes(query)
-      const matchAuthor = f.recordedBy.toLowerCase().includes(query)
-      if (!matchQuote && !matchSource && !matchAuthor) return false
-    }
-
-    return true
+    return !query || [f.quote, f.source, f.recordedBy].some(value => (value || '').toLowerCase().includes(query))
   })
 })
 
-onMounted(async () => {
-  loadFeedback()
-  loadingParticipants.value = true
-  try {
-    const data = await listParticipants()
-    participants.value = Array.isArray(data) ? data : (data.results || [])
-  } catch {
-    participants.value = []
-  } finally {
-    loadingParticipants.value = false
-  }
-})
+onMounted(loadFeedback)
 </script>
 
 <template>
@@ -175,7 +94,7 @@ onMounted(async () => {
           <h1>Feedback</h1>
           <p class="page-subtitle">Participant voice, personal stories and quotes for reporting at {{ branchName }}.</p>
         </div>
-        <button class="btn-primary" @click="openModal">+ New entry</button>
+        <button class="btn-primary" :disabled="loading || !!loadError" @click="openModal">+ New entry</button>
       </div>
 
       <!-- Controls: Filters & Search -->
@@ -212,7 +131,11 @@ onMounted(async () => {
       </div>
 
       <!-- Feedback Cards List -->
-      <div v-if="filteredFeedback.length === 0" class="card empty-card">
+      <p v-if="loading" class="loading-note">Loading feedback…</p>
+      <div v-else-if="loadError" class="form-error" role="alert">
+        {{ loadError }} <button class="btn-cancel" @click="loadFeedback">Retry</button>
+      </div>
+      <div v-else-if="filteredFeedback.length === 0" class="card empty-card">
         <h3>No feedback found</h3>
         <p v-if="search">No entries match your search "{{ search }}".</p>
         <p v-else>There is no feedback matching this filter.</p>
@@ -252,6 +175,7 @@ onMounted(async () => {
           </div>
 
           <form @submit.prevent="handleAddFeedback">
+            <fieldset :disabled="saving" class="feedback-fields">
             <p class="modal-desc">
               Record a participant quote or qualitative observation from a session or check-in.
             </p>
@@ -273,22 +197,18 @@ onMounted(async () => {
 
             <div class="form-row">
               <div class="form-group">
-                <label for="feedback-source">Participant / Source name</label>
-                <input
-                  id="feedback-source"
-                  v-model="newEntry.source"
-                  list="participant-suggestions"
-                  type="text"
-                  required
-                  placeholder="e.g. Hinepare K."
-                />
-                <datalist id="participant-suggestions">
-                  <option
-                    v-for="p in participants"
-                    :key="p.id"
-                    :value="p.preferred_name || p.full_name"
-                  />
-                </datalist>
+                <label for="feedback-participant">Participant</label>
+                <select id="feedback-participant" v-model="newEntry.participant">
+                  <option value="">Choose a participant (or a session below)</option>
+                  <option v-for="p in participants" :key="p.id" :value="p.id">{{ p.full_name }}</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="feedback-session">Session</label>
+                <select id="feedback-session" v-model="newEntry.session">
+                  <option value="">No session selected</option>
+                  <option v-for="s in sessions" :key="s.id" :value="s.id">{{ s.date }} · {{ s.activity }}</option>
+                </select>
               </div>
 
               <div class="form-group">
@@ -296,6 +216,7 @@ onMounted(async () => {
                 <input
                   id="feedback-date"
                   v-model="newEntry.date"
+                  :max="programmeToday()"
                   type="date"
                   required
                 />
@@ -314,8 +235,9 @@ onMounted(async () => {
 
             <div class="modal-actions">
               <button type="button" class="btn-cancel" @click="closeModal">Cancel</button>
-              <button type="submit" class="btn-primary">Save entry</button>
+              <button type="submit" class="btn-primary">{{ saving ? 'Saving…' : 'Save entry' }}</button>
             </div>
+            </fieldset>
           </form>
         </div>
       </div>
@@ -325,6 +247,54 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.dash-page .modal {
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+
+/* Fieldsets and grid items otherwise keep the controls' intrinsic width. */
+.feedback-fields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.modal .form-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.modal .form-group {
+  min-width: 0;
+}
+
+.modal .form-group input,
+.modal .form-group select,
+.modal .form-group textarea {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.modal textarea {
+  resize: vertical;
+  padding: 8px 12px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.modal textarea:focus {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+
+@media (max-width: 520px) {
+  .dash-page .modal { padding: 20px; }
+  .modal .form-row { grid-template-columns: minmax(0, 1fr); }
+}
+
 .controls-row {
   display: flex;
   justify-content: space-between;

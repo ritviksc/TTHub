@@ -10,6 +10,7 @@ import {
 
 const users = ref([]);
 const loadError = ref(null);
+const loading = ref(true);
 
 const activeFilter = ref("All");
 const filters = ["All", "Branch Managers", "Instructors", "Super Admins"];
@@ -32,13 +33,30 @@ const filteredUsers = computed(() => {
   })
 })
 
+const hasFilters = computed(() => activeFilter.value !== 'All' || !!selectedBranch.value)
+const emptyState = computed(() => {
+  if (!hasFilters.value) {
+    return { title: 'No other users yet', message: 'There are no other staff accounts to manage.' }
+  }
+  const role = activeFilter.value === 'All' ? 'users' : activeFilter.value.toLowerCase()
+  const scope = selectedBranch.value ? 'in the selected branch' : 'across all branches'
+  return { title: `No ${role} found`, message: `There are no ${role} matching this filter ${scope}.` }
+})
+function showAllUsers() {
+  activeFilter.value = 'All'
+  selectedBranch.value = ''
+}
+
 async function load() {
+  loading.value = true;
   try {
     users.value = await listStaff();
     loadError.value = null;
   } catch (e) {
     users.value = [];
     loadError.value = "Could not load the user list.";
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -202,7 +220,8 @@ async function handleDeactivate(id) {
         </select>
       </div>
 
-      <table class="data-table">
+      <p v-if="loading" class="loading-note">Loading users…</p>
+      <table v-else-if="!loadError" class="data-table">
         <thead>
           <tr>
             <th>Name</th>
@@ -246,7 +265,12 @@ async function handleDeactivate(id) {
             </td>
           </tr>
           <tr v-if="!filteredUsers.length">
-            <td colspan="6" class="empty-row">No users match this filter.</td>
+            <td colspan="6" class="empty-row">
+              <h3>{{ emptyState.title }}</h3>
+              <p>{{ emptyState.message }}</p>
+              <button v-if="hasFilters" class="btn-primary" @click="showAllUsers">Show all users</button>
+              <button v-else class="btn-primary" @click="openModal">Add user</button>
+            </td>
           </tr>
         </tbody>
       </table>

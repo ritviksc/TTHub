@@ -113,7 +113,15 @@ onMounted(loadParticipants)
         v-else-if="filteredParticipants.length === 0"
         class="message"
       >
-        No participants found.
+        <template v-if="!participants.length">
+          <h3>No participants yet</h3>
+          <p>There are no participants enrolled at your branch yet.</p>
+        </template>
+        <template v-else>
+          <h3>No participants found</h3>
+          <p>No participants match your search term "{{ search.trim() }}".</p>
+          <button class="btn-primary" @click="search = ''">Show all participants</button>
+        </template>
       </div>
 
       <div

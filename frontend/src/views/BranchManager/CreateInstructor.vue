@@ -111,7 +111,7 @@ async function submit() {
           </div>
 
           <div class="form-group">
-            <label for="password">Temporary password</label>
+            <label for="password">Password</label>
             <input
               id="password"
               v-model="form.password"

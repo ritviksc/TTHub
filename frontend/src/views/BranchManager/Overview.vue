@@ -3,7 +3,8 @@ import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { auth } from '@/stores/auth.js'
 import { listParticipants, listSessions, listStaff, getAttendanceReport } from '@/apis.js'
-import { formatSessionDate } from '@/utils/sessions.js'
+import { programmeQuarter, attendanceRate, loadBranchOverview } from '@/utils/branchOverview.js'
+import { formatSessionDate, programmeToday } from '@/utils/sessions.js'
 
 const loading = ref(true)
 const loadError = ref(null)
@@ -31,28 +32,15 @@ const activeInstructors = computed(() =>
 )
 
 const participantsMissingGp = computed(() =>
-  activeParticipants.value.filter(p => !p.gp_consent_date && !p.gp_consent_document)
+  activeParticipants.value.filter(p => p.gp_consent_given === false)
 )
 
 const unfinalisedSessions = computed(() =>
-  sessions.value.filter(s => !s.attendance_finalised)
+  heldSessions.value.filter(s => !s.attendance_finalised)
 )
 
-const averageAttendanceRate = computed(() => {
-  if (attendanceReport.value?.totals?.attendance_rate != null) {
-    return Math.round(attendanceReport.value.totals.attendance_rate)
-  }
-  // Fallback calculation from sessions if report not available
-  let totalPresent = 0
-  let totalRoster = 0
-  for (const s of sessions.value) {
-    const present = s.present_count ?? s.attendance?.filter(a => a.status === 'present').length ?? 0
-    const total = s.roster_count ?? s.attendance?.length ?? 0
-    totalPresent += present
-    totalRoster += total
-  }
-  return totalRoster > 0 ? Math.round((totalPresent / totalRoster) * 100) : 0
-})
+const heldSessions = computed(() => sessions.value.filter(s => s.date <= programmeToday()))
+const averageAttendanceRate = computed(() => attendanceRate(attendanceReport.value))
 
 /* ---- Alerts ---- */
 const alerts = computed(() => {
@@ -72,7 +60,7 @@ const alerts = computed(() => {
       type: 'info',
       message: `${unfinalisedSessions.value.length} session${unfinalisedSessions.value.length === 1 ? '' : 's'} awaiting attendance finalisation`,
       to: { name: 'bm-session-detail', params: { id: firstUnfinalised.id } },
-      action: 'Finalise attendance →',
+      action: 'Review session →',
     })
   }
 
@@ -88,14 +76,14 @@ const alerts = computed(() => {
 
 /* ---- Recent Sessions ---- */
 const recentSessions = computed(() => {
-  return [...sessions.value]
+  return [...heldSessions.value]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5)
 })
 
 /* ---- Attendance Chart Bars from Real Sessions ---- */
 const sessionBars = computed(() => {
-  const sorted = [...sessions.value]
+  const sorted = heldSessions.value.filter(s => s.attendance_finalised)
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(-10) // last 10 sessions
 
@@ -123,31 +111,13 @@ async function loadData() {
   loadError.value = null
 
   try {
-    const [parts, sess, staff] = await Promise.all([
-      listParticipants().catch(() => []),
-      listSessions().catch(() => []),
-      listStaff().catch(() => []),
-    ])
-
-    participants.value = Array.isArray(parts) ? parts : (parts.results || [])
-    sessions.value = Array.isArray(sess) ? sess : (sess.results || [])
-    instructors.value = Array.isArray(staff) ? staff : (staff.results || [])
-
-    // Calculate dates for current quarter to fetch attendance statistics
-    const now = new Date()
-    const quarterMonth = Math.floor(now.getMonth() / 3) * 3
-    const startQ = new Date(now.getFullYear(), quarterMonth, 1).toISOString().split('T')[0]
-    const endQ = new Date(now.getFullYear(), quarterMonth + 3, 0).toISOString().split('T')[0]
-
-    try {
-      attendanceReport.value = await getAttendanceReport({
-        start_date: startQ,
-        end_date: endQ,
-        branch_id: auth.user?.branch?.id || auth.user?.branch,
-      })
-    } catch {
-      // Non-fatal if reporting service is uninitialised
-    }
+    const data = await loadBranchOverview(
+      { listParticipants, listSessions, listStaff, getAttendanceReport }, programmeQuarter(),
+    )
+    participants.value = data.participants
+    sessions.value = data.sessions
+    instructors.value = data.instructors
+    attendanceReport.value = data.report
   } catch (err) {
     loadError.value = 'Could not load branch overview data. Please try again.'
   } finally {
@@ -167,10 +137,12 @@ onMounted(loadData)
         <div>
           <h1>Kia ora, {{ firstName }}</h1>
           <p class="page-subtitle">
-            Branch overview for {{ branchName }} ·
-            {{ activeParticipants.length }} participants ·
-            {{ sessions.length }} sessions ·
-            {{ activeInstructors.length }} instructors
+            Branch overview for {{ branchName }}
+            <template v-if="!loading && !loadError">
+              · {{ activeParticipants.length }} participants
+              · {{ heldSessions.length }} sessions
+              · {{ activeInstructors.length }} instructors
+            </template>
           </p>
         </div>
         <div class="header-badges">
@@ -199,13 +171,13 @@ onMounted(loadData)
           </div>
 
           <div class="stat-tile">
-            <div class="stat-tile-value">{{ averageAttendanceRate }}%</div>
+            <div class="stat-tile-value">{{ averageAttendanceRate === null ? '—' : `${averageAttendanceRate}%` }}</div>
             <div class="stat-tile-label">Average attendance</div>
-            <div class="stat-tile-sub">Across recorded sessions</div>
+            <div class="stat-tile-sub">Finalised sessions this quarter</div>
           </div>
 
           <div class="stat-tile">
-            <div class="stat-tile-value">{{ sessions.length }}</div>
+            <div class="stat-tile-value">{{ heldSessions.length }}</div>
             <div class="stat-tile-label">Sessions held</div>
             <div class="stat-tile-sub">
               <span v-if="unfinalisedSessions.length > 0" class="sub-alert">
@@ -246,13 +218,13 @@ onMounted(loadData)
           <!-- Left Column: Attendance Trends Chart -->
           <div class="card column-card">
             <div class="card-head">
-              <h3>Attendance by session</h3>
+              <h3>Attendance by finalised session</h3>
               <RouterLink :to="{ name: 'bm-attendance-report' }" class="card-link">Full report →</RouterLink>
             </div>
 
             <div v-if="sessionBars.length === 0" class="empty-chart">
-              <p>No recorded sessions yet.</p>
-              <RouterLink :to="{ name: 'bm-sessions' }" class="btn-primary btn-small">+ Add session</RouterLink>
+              <p>No finalised sessions yet.</p>
+              <RouterLink :to="{ name: 'bm-sessions' }" class="btn-primary btn-small">View sessions</RouterLink>
             </div>
 
             <div v-else class="chart-container">

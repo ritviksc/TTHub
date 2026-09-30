@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { listParticipants, createParticipant, listBranches } from '@/apis.js'
 
@@ -15,6 +15,29 @@ const activeFilter = ref('All')
 const branchFilter = ref('All')
 
 const filters = ['All', 'Active', 'Inactive']
+
+const hasFilters = computed(() => !!search.value.trim() || activeFilter.value !== 'All' || branchFilter.value !== 'All')
+const emptyState = computed(() => {
+  if (!hasFilters.value) {
+    return { title: 'No participants yet', message: 'There are no participants enrolled yet.' }
+  }
+  if (search.value.trim()) {
+    return { title: 'No participants found', message: `No participants match your search term "${search.value.trim()}" within the selected filters.` }
+  }
+  const scope = branchFilter.value === 'All' ? 'across all branches' : 'in the selected branch'
+  if (activeFilter.value === 'Inactive') {
+    return { title: 'No inactive participants', message: `There are no inactive participants ${scope}.` }
+  }
+  if (activeFilter.value === 'Active') {
+    return { title: 'No active participants', message: `There are no active participants ${scope}.` }
+  }
+  return { title: 'No participants found', message: 'There are no participants enrolled in the selected branch.' }
+})
+function showAllParticipants() {
+  search.value = ''
+  activeFilter.value = 'All'
+  branchFilter.value = 'All'
+}
 
 // The initial the avatar falls back to when there is no photo on file yet.
 function initial(p) {
@@ -268,11 +291,12 @@ async function submitCreateParticipant() {
             <td class="chevron" aria-hidden="true">›</td>
           </tr>
 
-          <tr v-if="!loading && !participants.length">
+          <tr v-if="!loading && !loadError && !participants.length">
             <td colspan="6" class="empty-row">
-              {{ search || activeFilter !== 'All' || branchFilter !== 'All'
-                ? 'No participants match these filters.'
-                : 'No participants yet. Add the first one.' }}
+              <h3>{{ emptyState.title }}</h3>
+              <p>{{ emptyState.message }}</p>
+              <button v-if="hasFilters" class="btn-primary" @click="showAllParticipants">Show all participants</button>
+              <button v-else class="btn-primary" @click="openModal">+ Add your first participant</button>
             </td>
           </tr>
         </tbody>

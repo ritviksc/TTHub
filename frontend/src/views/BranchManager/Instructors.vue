@@ -37,6 +37,26 @@ const sessionsCountByInstructor = computed(() => {
 })
 
 /* ---- filtered instructors ---- */
+const hasInstructors = computed(() => instructors.value.some(i => i.role === 'instructor'))
+
+const emptyState = computed(() => {
+  if (!hasInstructors.value) {
+    return { title: 'No instructors yet', message: 'There are no instructors registered for this branch yet.' }
+  }
+  if (search.value.trim()) {
+    return { title: 'No instructors found', message: `No instructors match your search term "${search.value.trim()}" within the selected filter.` }
+  }
+  if (activeFilter.value === 'inactive') {
+    return { title: 'No inactive instructors', message: 'There are no deactivated instructor accounts in your branch.' }
+  }
+  return { title: 'No active instructors', message: 'There are no active instructor accounts in your branch.' }
+})
+
+function showAllInstructors() {
+  activeFilter.value = 'all'
+  search.value = ''
+}
+
 const filteredInstructors = computed(() => {
   const query = search.value.toLowerCase().trim()
   return instructors.value.filter(i => {
@@ -151,7 +171,6 @@ async function handleToggleActive(instructor) {
           <p class="page-subtitle">Instructors delivering programmes at {{ branchName }}.</p>
         </div>
         <div class="header-actions">
-          <RouterLink :to="{ name: 'create-instructor' }" class="btn-secondary">New instructor page</RouterLink>
           <button class="btn-primary" @click="openModal">+ Add instructor</button>
         </div>
       </div>
@@ -200,10 +219,10 @@ async function handleToggleActive(instructor) {
 
       <!-- Empty State -->
       <div v-else-if="filteredInstructors.length === 0" class="card empty-card">
-        <h3>No instructors found</h3>
-        <p v-if="search">No instructors match your search term "{{ search }}".</p>
-        <p v-else>There are no instructors registered for this branch yet.</p>
-        <button class="btn-primary" style="margin-top: 12px;" @click="openModal">+ Add your first instructor</button>
+        <h3>{{ emptyState.title }}</h3>
+        <p>{{ emptyState.message }}</p>
+        <button v-if="!hasInstructors" class="btn-primary" style="margin-top: 12px;" @click="openModal">+ Add your first instructor</button>
+        <button v-else class="btn-primary" style="margin-top: 12px;" @click="showAllInstructors">Show all instructors</button>
       </div>
 
       <!-- Instructors Data Table -->
@@ -316,7 +335,7 @@ async function handleToggleActive(instructor) {
             </div>
 
             <div class="form-group">
-              <label for="modal-password">Temporary password</label>
+              <label for="modal-password">Password</label>
               <input
                 id="modal-password"
                 v-model="newInstructor.password"

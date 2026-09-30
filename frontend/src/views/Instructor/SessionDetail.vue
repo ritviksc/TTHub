@@ -21,9 +21,7 @@ const loadError = ref(null)
 const saveError = ref(null)
 const statusFilter = ref('all')
 const isInstructor = computed(() => auth.user?.role === 'instructor')
-const isBranchManager = computed(() => auth.user?.role === 'branch_manager')
 const listRouteName = computed(() => isInstructor.value ? 'in-sessions' : 'bm-sessions')
-const attendanceRouteName = computed(() => isInstructor.value ? 'in-attendance-mode' : 'bm-attendance-mode')
 
 const counts = computed(() => countByStatus(session.value?.attendance))
 
@@ -121,9 +119,9 @@ async function handleDelete() {
             </p>
           </div>
           <button
-            v-if="isInstructor || isBranchManager"
+            v-if="isInstructor"
             class="btn-primary"
-            @click="router.push({ name: attendanceRouteName, params: { id: sessionId } })"
+            @click="router.push({ name: 'in-attendance-mode', params: { id: sessionId } })"
           >
             {{ session.attendance_finalised ? 'Review attendance' : 'Attendance mode' }}
           </button>
