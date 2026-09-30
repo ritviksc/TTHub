@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from users.models import UserAccount
 from users.permissions import IsBranchManager, IsInstructor, IsSuperAdmin
 
-from .models import Participant
-from .serializers import ParticipantListSerializer, ParticipantSerializer
+from .models import Feedback, Participant
+from .serializers import FeedbackSerializer, ParticipantListSerializer, ParticipantSerializer
 
 # All three roles get the same participant screens, so they share one permission
 # set and are separated by what the queryset below will hand them.
@@ -131,3 +131,18 @@ class ParticipantAttendanceView(generics.GenericAPIView):
             }
             for record in records.order_by("-session__date", "-session__time")
         ])
+
+
+class FeedbackListCreateView(generics.ListCreateAPIView):
+    permission_classes = ANY_STAFF
+    serializer_class = FeedbackSerializer
+
+    def get_queryset(self):
+        qs = Feedback.objects.select_related('recorded_by')
+        user = self.request.user
+        if user.role != UserAccount.Role.SUPER_ADMIN:
+            qs = qs.filter(branch_id=user.branch_id)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(recorded_by=self.request.user)
