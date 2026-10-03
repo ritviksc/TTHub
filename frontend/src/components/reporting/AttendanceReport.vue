@@ -5,13 +5,13 @@ import {
   getAttendanceReport, analyseAttendanceReport, getAttendanceAnalysisJob, listBranches,
 } from '@/apis.js'
 import {
-  currentQuarter, demoAttendanceReport, DEMO_NARRATIVE, formatReportNumber,
+  recentReportPeriod, demoAttendanceReport, DEMO_NARRATIVE, formatReportNumber,
 } from '@/utils/reporting.js'
 
 import { waitForAnalysis } from '@/utils/analysisJobs.js'
 
 const props = defineProps({ showBranchFilter: Boolean, branchName: { type: String, default: '' } })
-const dates = currentQuarter()
+const dates = recentReportPeriod()
 const startDate = ref(dates.start_date)
 const endDate = ref(dates.end_date)
 const branchId = ref('')
@@ -150,6 +150,7 @@ onMounted(() => {
   <form @submit.prevent="loadReport">
     <fieldset :disabled="busy || demo">
       <legend>Report period and scope</legend>
+      <p class="loading-note">Defaults to the last three months through today. Adjust the dates to include older sessions.</p>
       <div class="form-row">
         <div class="form-group"><label for="report-start">From (inclusive)</label><input id="report-start" v-model="startDate" type="date" required /></div>
         <div class="form-group"><label for="report-end">To (inclusive)</label><input id="report-end" v-model="endDate" type="date" required /></div>
@@ -171,7 +172,7 @@ onMounted(() => {
 
   <template v-if="report">
     <p class="page-subtitle">{{ report.scope.start_date }} to {{ report.scope.end_date }} · {{ report.totals.total_sessions }} sessions recorded</p>
-    <p v-if="!report.totals.total_sessions" class="loading-note">No sessions were recorded for this period and scope.</p>
+    <p v-if="!report.totals.total_sessions" class="loading-note">No sessions were recorded for this period and scope. Try an earlier start date, then refresh statistics.</p>
     <p v-else-if="!report.totals.finalised_sessions" class="loading-note">All registers are incomplete. Finalise attendance before analysing this period.</p>
     <div class="stat-grid">
       <div v-for="[label, value] in tiles" :key="label" class="stat-tile">

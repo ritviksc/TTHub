@@ -14,6 +14,18 @@ export function currentQuarter(today = new Date()) {
   }
 }
 
+// Keep recent records visible when a new quarter starts. Clamp month ends so
+// subtracting three months from May 31 lands in February, not March.
+export function recentReportPeriod(today = new Date()) {
+  const end_date = programmeToday(today)
+  const [year, month, day] = end_date.split('-').map(Number)
+  const lastDay = new Date(year, month - 3, 0).getDate()
+  return {
+    start_date: dateString(new Date(year, month - 4, Math.min(day, lastDay))),
+    end_date,
+  }
+}
+
 export function formatReportNumber(value, suffix = '') {
   return value == null ? 'Not available' : `${value}${suffix}`
 }

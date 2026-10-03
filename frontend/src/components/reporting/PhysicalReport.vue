@@ -1,14 +1,14 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { getPhysicalReport, analysePhysicalReport, getPhysicalAnalysisJob, listBranches } from '@/apis.js'
-import { currentQuarter, formatReportNumber } from '@/utils/reporting.js'
+import { recentReportPeriod, formatReportNumber } from '@/utils/reporting.js'
 import { LABELS, physicalError } from '@/utils/physicalTests.js'
 import MeasurementChart from '@/components/charts/MeasurementChart.vue'
 import AssessmentTrend from '@/components/physicalTests/AssessmentTrend.vue'
 import ReportAnalysis from './ReportAnalysis.vue'
 
 const props = defineProps({ showBranchFilter: Boolean, branchName: String })
-const dates = currentQuarter()
+const dates = recentReportPeriod()
 const startDate = ref(dates.start_date), endDate = ref(dates.end_date), branchId = ref('')
 const branches = ref([]), branchError = ref(''), error = ref('')
 const report = ref(null), loading = ref(false), analysing = ref(false)
@@ -60,6 +60,7 @@ function analysed(result) {
   <p class="page-subtitle">{{ showBranchFilter ? 'National or selected branch' : branchName }} · Testing completion, measurements and recorded changes.</p>
   <form @submit.prevent="load"><fieldset :disabled="busy">
     <legend>Inclusive reporting dates</legend>
+    <p class="loading-note">Defaults to the last three months through today. Adjust the dates to include older assessments.</p>
     <div class="form-row">
       <div class="form-group"><label for="physical-from">From</label><input id="physical-from" v-model="startDate" type="date" required /></div>
       <div class="form-group"><label for="physical-to">To</label><input id="physical-to" v-model="endDate" type="date" required /></div>

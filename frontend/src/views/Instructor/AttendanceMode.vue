@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { getSession, updateAttendance, setAttendanceFinalised } from '@/apis.js'
-import { countByStatus, formatSessionDate, initials } from '@/utils/sessions.js'
+import { ABSENCE_REASONS, countByStatus, formatSessionDate, initials } from '@/utils/sessions.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,6 +14,7 @@ const loading = ref(true)
 const loadError = ref(null)
 const saveError = ref(null)
 const saving = ref(false)
+const reasonDrafts = ref({})
 
 const counts = computed(() => countByStatus(session.value?.attendance))
 
@@ -22,6 +23,7 @@ const counts = computed(() => countByStatus(session.value?.attendance))
 async function load() {
   try {
     session.value = await getSession(sessionId)
+    for (const record of session.value.attendance) resetReason(record)
   } catch (e) {
     loadError.value = e.response?.status === 404
       ? 'That session does not exist, or it has been deleted.'
@@ -35,6 +37,42 @@ onMounted(load)
 
 /* ---- marking ---- */
 
+function resetReason(record) {
+  reasonDrafts.value[record.id] = {
+    absence_reason: record.absence_reason || '',
+    absence_reason_other: record.absence_reason_other || '',
+  }
+}
+
+async function persistReason(record) {
+  const draft = reasonDrafts.value[record.id]
+  const changes = {
+    absence_reason: draft.absence_reason,
+    absence_reason_other: draft.absence_reason === 'other' ? draft.absence_reason_other.trim() : '',
+  }
+  if (changes.absence_reason === 'other' && !changes.absence_reason_other) {
+    throw new Error(`Describe the other absence reason for ${participantName(record)}.`)
+  }
+  if (changes.absence_reason !== (record.absence_reason || '') ||
+      changes.absence_reason_other !== (record.absence_reason_other || '')) {
+    try {
+      Object.assign(record, await updateAttendance(sessionId, record.id, changes))
+    } catch {
+      throw new Error(`Could not save the absence reason for ${participantName(record)}. Please try again.`)
+    }
+  }
+  resetReason(record)
+}
+
+async function saveReason(record) {
+  if (saving.value || session.value.attendance_finalised) return
+  saving.value = true
+  saveError.value = null
+  try { await persistReason(record) }
+  catch (e) { saveError.value = e.message }
+  finally { saving.value = false }
+}
+
 // Tapping flips present <-> absent, so a mis-tap is undone by tapping again.
 async function toggle(record) {
   if (saving.value || session.value.attendance_finalised) return
@@ -43,6 +81,7 @@ async function toggle(record) {
   saveError.value = null
   try {
     Object.assign(record, await updateAttendance(sessionId, record.id, { status }))
+    resetReason(record)
   } catch (e) {
     saveError.value = `Could not update ${record.name}.`
   } finally {
@@ -57,12 +96,17 @@ async function setFinalised(finalised) {
   saving.value = true
   saveError.value = null
   try {
+    if (finalised) {
+      for (const record of session.value.attendance.filter(r => r.status === 'absent')) {
+        await persistReason(record)
+      }
+    }
     Object.assign(session.value, await setAttendanceFinalised(sessionId, finalised))
     if (finalised) await router.push(detailRoute)
-  } catch {
-    saveError.value = finalised
+  } catch (e) {
+    saveError.value = e.message || (finalised
       ? 'Could not finalise attendance. Please try again.'
-      : 'Could not reopen attendance. Please try again.'
+      : 'Could not reopen attendance. Please try again.')
   } finally {
     saving.value = false
   }
@@ -107,9 +151,8 @@ function participantName(record) {
         <div v-if="saveError" class="form-error">{{ saveError }}</div>
 
         <div class="person-list">
+          <div v-for="record in session.attendance" :key="record.participant_id">
           <button
-            v-for="record in session.attendance"
-            :key="record.participant_id"
             type="button"
             :class="['person-row', record.status]"
             :aria-pressed="record.status === 'present'"
@@ -121,6 +164,21 @@ function participantName(record) {
             <span class="person-name">{{ participantName(record) }}</span>
             <span class="person-status">{{ cardLabel(record) }}</span>
           </button>
+          <form v-if="record.status === 'absent'" class="absence-form" @submit.prevent="saveReason(record)">
+            <fieldset :disabled="saving || session.attendance_finalised">
+              <label :for="`reason-${record.id}`">Absence reason for {{ participantName(record) }}</label>
+              <select :id="`reason-${record.id}`" v-model="reasonDrafts[record.id].absence_reason">
+                <option value="">Select reason</option>
+                <option v-for="reason in ABSENCE_REASONS" :key="reason.value" :value="reason.value">{{ reason.label }}</option>
+              </select>
+              <template v-if="reasonDrafts[record.id].absence_reason === 'other'">
+                <label :for="`other-${record.id}`">Describe the reason</label>
+                <input :id="`other-${record.id}`" v-model="reasonDrafts[record.id].absence_reason_other" type="text" required />
+              </template>
+              <button v-if="!session.attendance_finalised" type="submit" class="btn-primary">Save reason</button>
+            </fieldset>
+          </form>
+          </div>
         </div>
 
         <p v-if="!counts.total" class="loading-note">Nobody was on the roster when this session was created.</p>
@@ -136,6 +194,10 @@ function participantName(record) {
   margin: 0 0 24px;
 }
 .counter strong { color: var(--text); }
+
+.absence-form { padding: 12px 16px; }
+.absence-form fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.absence-form select, .absence-form input { padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font: inherit; max-width: 100%; }
 
 .person-list { display: flex; flex-direction: column; gap: 10px; }
 
