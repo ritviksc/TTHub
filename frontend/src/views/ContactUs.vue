@@ -191,7 +191,7 @@ function handleSubmit() {
   color: var(--text-on-ink);
   font-size: var(--text-base);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(36, 28, 23, 0.15);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
   cursor: pointer;
   transition: all 0.15s ease;
   margin-top: 6px;
@@ -199,7 +199,7 @@ function handleSubmit() {
 
 .submit-btn:hover {
   background: var(--maroon-dark);
-  box-shadow: 0 4px 10px rgba(36, 28, 23, 0.2);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
 }
 
 @media (max-width: 640px) {

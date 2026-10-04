@@ -431,14 +431,15 @@ function onSessionClick(session) {
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   outline: none;
 }
 
 .day-cell:hover {
+  transform: translateY(-2px);
   border-color: var(--teal-light);
-  box-shadow: 0 2px 8px rgba(13, 130, 135, 0.1);
+  box-shadow: 0 4px 12px var(--shadow-glow, rgba(37, 99, 235, 0.12));
 }
 
 .day-cell:focus-visible {
@@ -624,14 +625,14 @@ function onSessionClick(session) {
   border-radius: var(--radius);
   padding: 14px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .agenda-card:hover {
   background: var(--surface);
   border-color: var(--teal);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-panel);
+  transform: translateY(-2px);
 }
 
 .card-time {

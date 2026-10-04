@@ -67,17 +67,20 @@
   padding: 10px 20px;
   font-size: var(--text-base);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(36, 28, 23, 0.12);
-  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 .dash-page .btn-primary:hover:not(:disabled) {
   background: var(--maroon-dark);
-  box-shadow: 0 2px 6px rgba(36, 28, 23, 0.18);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px -2px var(--shadow-glow, rgba(37, 99, 235, 0.35));
 }
 
 .dash-page .btn-primary:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.98);
 }
 
 .dash-page .btn-cancel {
@@ -91,12 +94,13 @@
   padding: 8px 18px;
   font-size: var(--text-base);
   font-weight: 500;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dash-page .btn-cancel:hover:not(:disabled) {
   border-color: var(--text-muted);
   background: var(--surface-sunken);
+  transform: translateY(-1px);
 }
 
 /* Filter pills */
@@ -116,19 +120,21 @@
   background: var(--surface);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dash-page .pill:hover {
-  border-color: var(--text-muted);
-  color: var(--text);
+  border-color: var(--teal);
+  color: var(--teal-dark);
+  transform: translateY(-1px);
 }
 
 .dash-page .pill.active {
-  background: var(--ink);
+  background: var(--teal);
   color: var(--text-on-ink);
-  border-color: var(--ink);
-  box-shadow: 0 1px 3px rgba(36, 28, 23, 0.2);
+  border-color: var(--teal);
+  box-shadow: 0 2px 8px var(--shadow-glow, rgba(37, 99, 235, 0.25));
+  transform: translateY(-1px);
 }
 
 /* Tables */
@@ -162,7 +168,7 @@
 }
 
 .dash-page .data-table tr:hover td {
-  background: rgba(36, 28, 23, 0.02);
+  background: rgba(15, 23, 42, 0.02);
 }
 
 .dash-page .data-table tr:last-child td {
@@ -285,13 +291,14 @@
 .dash-page .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(36, 28, 23, 0.45);
-  backdrop-filter: blur(3px);
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
   padding: 16px;
+  animation: backdropFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dash-page .modal {
@@ -302,6 +309,23 @@
   max-width: 100%;
   box-shadow: var(--shadow-modal);
   border: 1px solid var(--border);
+  animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .dash-page .modal h2 {

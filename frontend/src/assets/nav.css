@@ -1,167 +1,431 @@
-/* The top bar. Shared by NavBar.vue (public) and DashboardNav.vue (signed in)
-   so the two are the same object with different contents, not two lookalikes
-   that drift apart. */
+/* ============================================================
+   Taurite Tū — Animated Glassmorphism Navigation Bar
+   Shared by NavBar.vue (public) and DashboardNav.vue (signed in)
+   ============================================================ */
 
 .app-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px;
 
   height: var(--nav-height);
-  padding: 0 28px;
+  min-height: var(--nav-height);
+  max-height: var(--nav-height);
+  padding: 0 16px;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: visible !important;
+  white-space: nowrap !important;
 
-  background: var(--ink);
+  /* Modern glassmorphism tinted dynamically with active theme ink */
+  background: rgba(11, 19, 43, 0.92);
+  background: color-mix(in srgb, var(--ink) 92%, transparent);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
   color: var(--text-on-ink);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.28);
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 1000;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Ambient animated gradient line across the bottom of the navbar */
+.app-nav::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--teal-light) 25%,
+    var(--teal) 50%,
+    var(--teal-light) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: nav-glow-slide 6s ease-in-out infinite;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+@keyframes nav-glow-slide {
+  0% { background-position: -100% 0; }
+  50% { background-position: 100% 0; }
+  100% { background-position: 300% 0; }
 }
 
 /* Left: logo, wordmark, scope */
 .app-nav .nav-left {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0 !important;
 }
 
-/* The mark is a tall portrait tiki (~1:2), so height drives it and the width
-   follows. */
+/* Logo animation: playful spring hover rotation & ambient glow */
 .app-nav .nav-logo {
-  height: 34px;
+  height: 28px;
   width: auto;
   object-fit: contain;
+  flex-shrink: 0;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.35s ease;
+  transform-origin: center bottom;
+}
+
+.app-nav .nav-left:hover .nav-logo {
+  transform: scale(1.14) rotate(-5deg);
+  filter: drop-shadow(0 0 10px var(--teal));
 }
 
 .app-nav .nav-brand {
   font-weight: 700;
-  font-size: 16px;
+  font-size: 15px;
   letter-spacing: -0.01em;
   color: var(--text-on-ink);
   text-decoration: none;
-  transition: opacity 0.15s ease;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: all 0.25s ease;
+  position: relative;
 }
 
 .app-nav .nav-brand:hover {
   text-decoration: none;
-  opacity: 0.88;
+  color: #ffffff;
+  text-shadow: 0 0 12px var(--shadow-glow, rgba(37, 99, 235, 0.6));
 }
 
+/* Scope badge with live pulsating radar dot */
 .app-nav .nav-scope {
-  font-size: var(--text-xs);
-  color: #5ed0d5;
-  background: rgba(13, 130, 135, 0.22);
-  border: 1px solid rgba(13, 130, 135, 0.35);
-  padding: 2px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--teal-light);
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  padding: 2px 8px;
   border-radius: var(--radius-pill);
   font-weight: 600;
   letter-spacing: 0.02em;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-nav .nav-scope:hover {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(37, 99, 235, 0.45);
+  transform: scale(1.02);
+}
+
+.live-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--teal-light);
+  display: inline-block;
+  box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  animation: radar-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
 }
 
 /* Middle: pill links */
 .app-nav .nav-links {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 2px;
+}
+
+.app-nav .nav-links::-webkit-scrollbar {
+  display: none;
 }
 
 .app-nav .nav-link {
-  padding: 6px 14px;
+  position: relative;
+  padding: 5px 9px;
   border-radius: var(--radius-pill);
-  font-size: var(--text-base);
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-on-ink-dim);
   text-decoration: none;
-  white-space: nowrap;
-  background: none;
-  border: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap !important;
+  background: transparent;
+  border: 1px solid transparent;
+  flex-shrink: 0 !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .app-nav .nav-link:hover {
-  color: var(--text-on-ink);
+  color: #ffffff;
   background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1.5px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   text-decoration: none;
+}
+
+.app-nav .nav-link:active {
+  transform: translateY(0.5px) scale(0.98);
 }
 
 .app-nav .nav-link.router-link-exact-active,
 .app-nav .nav-link.router-link-active:not([href="/"]) {
-  background: var(--ink-soft);
-  color: var(--text-on-ink);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.32), rgba(37, 99, 235, 0.12));
+  border-color: rgba(37, 99, 235, 0.45);
+  color: #ffffff;
   font-weight: 600;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 14px var(--shadow-glow, rgba(37, 99, 235, 0.3)), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 /* Right: identity and actions */
 .app-nav .nav-right {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  margin-left: auto;
+}
+
+/* User avatar pill */
+.nav-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-pill);
+  padding: 3px 8px 3px 4px;
+  cursor: default;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+.nav-user-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.user-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--teal-light), var(--teal-dark));
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 14px;
-  font-size: var(--text-sm);
-  white-space: nowrap;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .app-nav .nav-user {
   color: var(--text-on-ink-dim);
   font-weight: 500;
+  font-size: var(--text-xs);
+  max-width: 85px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap !important;
+  display: inline-block;
 }
 
 .app-nav .logout-error {
   color: #ff9e99;
   font-size: var(--text-xs);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
+/* Navigation buttons */
 .app-nav .nav-btn {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: var(--text-on-ink);
-  border-radius: var(--radius-sm);
-  padding: 6px 14px;
-  font-size: var(--text-sm);
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  font-size: var(--text-xs);
   font-weight: 500;
   text-decoration: none;
-  transition: all 0.15s ease;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .app-nav .nav-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
   text-decoration: none;
 }
 
-.app-nav .nav-btn--accent {
-  background: var(--teal);
-  border-color: var(--teal);
+/* Logout button with red frosted glow & animated icon */
+.app-nav .nav-btn--logout {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   color: var(--text-on-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: var(--radius-pill);
+  padding: 5px 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-nav .nav-btn--logout:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.35);
+  transform: translateY(-1.5px);
+}
+
+.app-nav .nav-btn--logout:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.97);
+}
+
+.logout-icon {
+  font-size: 13px;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-nav .nav-btn--logout:hover .logout-icon {
+  transform: translateX(2px);
+}
+
+/* Accent button (Login on public nav) */
+.app-nav .nav-btn--accent {
+  background: linear-gradient(135deg, var(--teal-light), var(--teal));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 2px 10px var(--shadow-glow, rgba(37, 99, 235, 0.35));
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .app-nav .nav-btn--accent:hover {
-  background: var(--teal-dark);
-  border-color: var(--teal-dark);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 16px var(--shadow-glow, rgba(37, 99, 235, 0.5));
+  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
 }
 
-@media (max-width: 820px) {
+/* Responsive breakdowns to ensure navigation items and logout NEVER overflow */
+@media (max-width: 1300px) {
   .app-nav {
-    padding: 0 16px;
-    gap: 8px;
+    padding: 0 12px;
+    gap: 6px;
   }
   .app-nav .nav-link {
-    padding: 5px 10px;
-    font-size: var(--text-sm);
+    padding: 4px 7px;
+    font-size: 12.5px;
   }
   .app-nav .nav-scope {
+    max-width: 90px;
+  }
+}
+
+@media (max-width: 1140px) {
+  .app-nav .nav-scope {
+    display: none;
+  }
+  .app-nav .nav-user {
+    max-width: 70px;
+  }
+  .app-nav .nav-links {
+    gap: 2px;
+  }
+  .app-nav .nav-link {
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 980px) {
+  .nav-user-pill {
+    padding: 3px 4px;
+  }
+  .app-nav .nav-user {
+    display: none;
+  }
+  .app-nav .nav-brand {
+    font-size: 14px;
+  }
+  .app-nav .nav-logo {
+    height: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-nav {
+    padding: 0 8px;
+    gap: 4px;
+  }
+  .app-nav .nav-links {
+    gap: 1px;
+  }
+  .app-nav .nav-link {
+    padding: 4px 5px;
+    font-size: 11px;
+  }
+  .app-nav .nav-btn {
+    padding: 4px 8px;
+    font-size: var(--text-xs);
+  }
+  .app-nav .nav-btn--logout .logout-text {
     display: none;
   }
 }
 
 @media (max-width: 580px) {
-  .app-nav .nav-user {
-    display: none;
-  }
   .app-nav .nav-logo {
     display: none;
   }

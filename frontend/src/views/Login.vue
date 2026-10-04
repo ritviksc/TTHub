@@ -245,14 +245,14 @@ form {
   color: var(--text-on-ink);
   font-size: 15px;
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(36, 28, 23, 0.12);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .submit-btn:hover:not(:disabled) {
   background: var(--maroon-dark);
-  box-shadow: 0 4px 12px rgba(36, 28, 23, 0.2);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
 }
 
 .submit-btn:active:not(:disabled) {

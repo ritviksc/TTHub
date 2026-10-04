@@ -159,12 +159,12 @@ async function submit() {
   font-weight: 600;
   cursor: pointer;
   margin-top: 6px;
-  box-shadow: 0 1px 2px rgba(36, 28, 23, 0.1);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
   transition: all 0.15s ease;
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--maroon-dark);
-  box-shadow: 0 2px 6px rgba(36, 28, 23, 0.15);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
 }
 
 .msg {

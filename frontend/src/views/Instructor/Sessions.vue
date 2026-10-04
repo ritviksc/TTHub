@@ -213,7 +213,7 @@ function onCreated(session) {
 .toggle-btn.active {
   background: var(--surface);
   color: var(--teal-dark);
-  box-shadow: 0 1px 3px rgba(36, 28, 23, 0.1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
 .session-row { cursor: pointer; }

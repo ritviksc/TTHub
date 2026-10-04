@@ -100,13 +100,13 @@
   font-size: var(--text-base);
   font-weight: 600;
   text-decoration: none;
-  box-shadow: 0 2px 6px rgba(36, 28, 23, 0.12);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
   transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
 .public-page .btn:hover {
   background: var(--maroon-dark);
-  box-shadow: 0 4px 12px rgba(36, 28, 23, 0.16);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
   text-decoration: none;
 }
 
