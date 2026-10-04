@@ -14,24 +14,24 @@
   --maroon-dark:     #6a2424;
 
   /* ---- surfaces ---- */
-  --bg:              #f0ede6;   /* page background (cream) */
-  --surface:         #ffffff;   /* cards, tables, panels */
-  --surface-sunken:  #f7f4ef;   /* table headers, inset areas */
-  --ink:             #1a1a1a;   /* the dark nav bar + headings */
-  --ink-soft:        #333333;   /* active nav pill */
+  --bg:              #0f2a2d;   /* page background (cream) */
+  --surface:         #1a3d42;   /* cards, tables, panels */
+  --surface-sunken:  #122e32;   /* table headers, inset areas */
+  --ink:             #e8f4f4;   /* the dark nav bar + headings */
+  --ink-soft:        #b0d0d4;   /* active nav pill */
 
   /* ---- text ---- */
-  --text:            #1a1a1a;
-  --text-secondary:  #555555;
-  --text-muted:      #888888;
-  --text-faint:      #aaaaaa;
+  --text:            #e8f4f4;
+  --text-secondary:  #a8c8cc;
+  --text-muted:      #6a9a9e;
+  --text-faint:      #4a7a7e;
   --text-on-ink:     #ffffff;
   --text-on-ink-dim: rgba(255, 255, 255, 0.7);
 
   /* ---- lines ---- */
-  --border:          #e8e2d8;   /* cream-toned divider */
+  --border:          #1e4a50;   /* cream-toned divider */
   --border-strong:   #cccccc;   /* input + pill outlines */
-  --border-faint:    #f0ede6;   /* between table rows */
+  --border-faint:    #163840;   /* between table rows */
 
   /* ---- status ---- */
   --success:         #2a7a4a;
@@ -72,4 +72,26 @@
   --nav-height:    52px;
   --content-width: 1100px;
   --prose-width:   760px;
+
+  /* ---- transitions ---- */
+--transition-fast:   0.15s ease;
+--transition-base:   0.2s ease;
+--transition-slow:   0.3s ease;
+
+/* ---- Page transitions ---- */
+.fade-enter-active,
+.fade-leave-active { transition: opacity var(--transition-base); }
+.fade-enter-from,
+.fade-leave-to     { opacity: 0; }
+
+/* ---- extended palette ---- */
+--teal-deep:   #1e4a4e;   /* dark teal for nav bar */
+--sand-light:  #e8f4f4;   /* teal-tinted light background */
+--bark:        #5a7a7c;   /* muted teal-grey for secondary text */
+--terracotta:  #c0522b;   /* warm alert accent */
+--forest:      #4D9298;   /* bar chart fill → teal */
+--mint:        #e0f2f3;   /* light teal badge background (same as teal-tint) */
 }
+
+
+

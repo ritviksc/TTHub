@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import logoSrc from '@/assets/logo-mark.png'
 import { auth, clearUser } from '@/stores/auth.js'
@@ -73,6 +73,12 @@ async function handleLogout() {
     loggingOut.value = false
   }
 }
+const handleScroll = () => {
+  const nav = document.querySelector('.app-nav')
+  if (nav) nav.classList.toggle('scrolled', window.scrollY > 10)
+}
+onMounted(() => window.addEventListener('scroll', handleScroll))
+onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 </script>
 
 <template>

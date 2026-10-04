@@ -2,9 +2,16 @@
    Namespaced under .dash-page so none of it reaches the public pages.
    All values come from theme.css. */
 
+/* BEFORE */
 .dash-page {
   min-height: calc(100vh - var(--nav-height));
-  background: var(--bg);
+  background-color: var(--bg);
+}
+
+/* AFTER */
+.dash-page {
+  min-height: calc(100vh - var(--nav-height));
+  background-color: transparent;
 }
 
 .dash-page .content {
@@ -14,7 +21,6 @@
 }
 
 /* Headings */
-.dash-page h1 { font-size: var(--text-2xl); font-weight: 700; color: var(--text); margin: 0 0 6px; }
 .dash-page h2 { font-size: var(--text-lg); font-weight: 700; color: var(--text); margin: 0; }
 .dash-page h3 { font-size: var(--text-md); font-weight: 700; color: var(--text); margin: 0; }
 .dash-page .page-subtitle { font-size: var(--text-base); color: var(--text-muted); margin-bottom: 32px; }
@@ -44,7 +50,7 @@
 }
 .dash-page .pill:hover { border-color: var(--text-muted); }
 .dash-page .pill.active {
-  background: var(--ink); color: var(--text-on-ink); border-color: var(--ink);
+  background: var(--teal); color: #ffffff; border-color: var(--teal);
 }
 
 /* Tables */
@@ -163,3 +169,220 @@
 .dash-page .placeholder-page h2 {
   font-size: var(--text-xl); margin-bottom: 8px; color: var(--text-muted);
 }
+/* ANIMATIONS & INTERACTIONS */
+
+/* ---- Buttons ---- */
+.dash-page .btn-primary {
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  cursor: pointer;
+}
+.dash-page .btn-primary:hover { transform: translateY(-1px); }
+
+.dash-page .btn-cancel {
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+  cursor: pointer;
+}
+
+/* ---- Pills ---- */
+.dash-page .pill {
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+/* ---- Table row hover ---- */
+.dash-page .data-table tbody tr {
+  transition: background var(--transition-fast);
+}
+.dash-page .data-table tbody tr:hover { background: var(--surface-sunken); }
+
+/* ---- Card hover lift ---- */
+.dash-page .card {
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+.dash-page .card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-panel);
+}
+
+/* ---- Stat tile colour accents ---- */
+.dash-page .stat-tile { border-top: 3px solid var(--teal); }
+.dash-page .stat-tile:nth-child(2) { border-top-color: var(--maroon); }
+.dash-page .stat-tile:nth-child(3) { border-top-color: var(--success); }
+.dash-page .stat-tile:nth-child(4) { border-top-color: var(--warning); }
+
+/* ---- Skeleton loading ---- */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-sunken) 25%,
+    var(--border) 50%,
+    var(--surface-sunken) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+  color: transparent;
+  user-select: none;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ---- Modal entrance ---- */
+.dash-page .modal-backdrop {
+  animation: backdrop-in 0.2s ease;
+}
+.dash-page .modal {
+  animation: modal-in 0.2s ease;
+}
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* ---- Badge hover ---- */
+.dash-page .status-badge,
+.dash-page .role-badge {
+  transition: opacity var(--transition-fast);
+}
+
+/* ---- Back link ---- */
+.dash-page .back-link {
+  transition: color var(--transition-fast), gap var(--transition-fast);
+}
+.dash-page .back-link:hover { color: var(--text); }
+.dash-page .card:hover {
+  box-shadow: 0 8px 32px rgba(77, 146, 152, 0.25);
+  border-color: var(--teal);
+}
+.dash-page .page-header {
+  background: linear-gradient(135deg, rgba(77,146,152,0.12) 0%, transparent 60%);
+  border-radius: var(--radius-xl);
+  padding: 24px 28px;
+  border: 1px solid rgba(77,146,152,0.15);
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--teal-dark); border-radius: 3px; }
+
+/* ============================================================
+   BOLD EXTRAS
+   ============================================================ */
+
+/* 1. Glowing teal stat tiles */
+.dash-page .stat-tile {
+  box-shadow: 0 0 0 1px rgba(77,146,152,0.3), inset 0 1px 0 rgba(77,146,152,0.1);
+}
+.dash-page .stat-tile:hover {
+  box-shadow: 0 0 24px rgba(77,146,152,0.3);
+}
+
+/* 2. Teal accent line on table row hover */
+.dash-page .data-table tbody tr {
+  border-left: 3px solid transparent;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.dash-page .data-table tbody tr:hover {
+  border-left-color: var(--teal);
+  background: rgba(77,146,152,0.08);
+}
+
+/* 3. Glassmorphism cards */
+.dash-page .card {
+  background: rgba(26, 61, 66, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(77,146,152,0.2);
+}
+
+/* 4. Card entrance animation */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dash-page .card {
+  animation: slide-up 0.4s ease both;
+}
+.dash-page .stat-tile:nth-child(1) { animation-delay: 0.05s; }
+.dash-page .stat-tile:nth-child(2) { animation-delay: 0.1s; }
+.dash-page .stat-tile:nth-child(3) { animation-delay: 0.15s; }
+.dash-page .stat-tile:nth-child(4) { animation-delay: 0.2s; }
+
+/* 5. Pulsing dot on active badges */
+.dash-page .status-badge.active::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--success);
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+  vertical-align: middle;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+.dash-page .form-group input:focus,
+.dash-page .form-group select:focus {
+  box-shadow: 0 0 0 3px rgba(77,146,152,0.25);
+}
+.dash-page h1 {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0 0 6px;
+  background: linear-gradient(135deg, #ffffff 0%, #7dcdd1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+/* Card light sweep */
+.dash-page .card {
+  position: relative;
+  overflow: hidden;
+
+}
+.dash-page .card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  );
+  transform: skewX(-15deg);
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+.dash-page .card:hover::before {
+  left: 150%;
+}
+
+/* Staggered table rows */
+@keyframes row-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.dash-page .data-table tbody tr {
+  animation: row-in 0.3s ease both;
+}
+.dash-page .data-table tbody tr:nth-child(1)  { animation-delay: 0.05s; }
+.dash-page .data-table tbody tr:nth-child(2)  { animation-delay: 0.10s; }
+.dash-page .data-table tbody tr:nth-child(3)  { animation-delay: 0.15s; }
+.dash-page .data-table tbody tr:nth-child(4)  { animation-delay: 0.20s; }
+.dash-page .data-table tbody tr:nth-child(5)  { animation-delay: 0.25s; }
+.dash-page .data-table tbody tr:nth-child(6)  { animation-delay: 0.30s; }
+.dash-page .data-table tbody tr:nth-child(7)  { animation-delay: 0.35s; }
+.dash-page .data-table tbody tr:nth-child(8)  { animation-delay: 0.40s; }
+.dash-page .data-table tbody tr:nth-child(9)  { animation-delay: 0.45s; }
+.dash-page .data-table tbody tr:nth-child(10) { animation-delay: 0.50s; }
