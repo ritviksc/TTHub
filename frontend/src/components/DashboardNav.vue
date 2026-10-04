@@ -13,27 +13,27 @@ const NAV_ITEMS = {
   super_admin: [
     { label: 'National overview', to: '/super-admin/overview' },
     { label: 'Kapa',            to: '/super-admin/branches' },
-    { label: 'Kaumātua',      to: '/super-admin/participants' },
-    { label: 'Users',             to: '/super-admin/users' },
-    { label: 'Reporting',         to: '/super-admin/reporting' },
-    { label: 'Documents',         to: '/documents' },
-    { label: 'Administration',    to: '/super-admin/administration' },
+    { label: 'Kaumātua',        to: '/super-admin/participants' },
+    { label: 'Users',           to: '/super-admin/users' },
+    { label: 'Reporting',       to: '/super-admin/reporting' },
+    { label: 'Documents',       to: '/documents' },
+    { label: 'Administration',  to: '/super-admin/administration' },
   ],
   branch_manager: [
-    { label: 'Overview',     to: '/branch-manager/overview' },
-    { label: 'Sessions',     to: '/branch-manager/sessions' },
-    { label: 'Kaumātua', to: '/branch-manager/participants' },
-    { label: 'Kaimahi',  to: '/branch-manager/instructors' },
-    { label: 'Feedback',     to: '/branch-manager/feedback' },
-    { label: 'Reports',      to: '/branch-manager/reports' },
-    { label: 'Documents',    to: '/documents' },
+    { label: 'Overview',        to: '/branch-manager/overview' },
+    { label: 'Sessions',        to: '/branch-manager/sessions' },
+    { label: 'Kaumātua',        to: '/branch-manager/participants' },
+    { label: 'Kaimahi',         to: '/branch-manager/instructors' },
+    { label: 'Feedback',        to: '/branch-manager/feedback' },
+    { label: 'Reports',         to: '/branch-manager/reports' },
+    { label: 'Documents',       to: '/documents' },
   ],
   instructor: [
-    { label: 'Home',         to: '/instructor/home' },
-    { label: 'Sessions',     to: '/instructor/sessions' },
-    { label: 'Kaumātua', to: '/instructor/participants' },
-    { label: 'Feedback',     to: '/instructor/feedback' },
-    { label: 'Documents',    to: '/documents' },
+    { label: 'Home',            to: '/instructor/home' },
+    { label: 'Sessions',        to: '/instructor/sessions' },
+    { label: 'Kaumātua',        to: '/instructor/participants' },
+    { label: 'Feedback',        to: '/instructor/feedback' },
+    { label: 'Documents',       to: '/documents' },
   ],
 }
 
@@ -78,9 +78,9 @@ async function handleLogout() {
 <template>
   <nav class="app-nav">
     <div class="nav-left">
-      <img :src="logoSrc" class="nav-logo" alt="" />
-<RouterLink :to="navItems[0]?.to ?? '/'" class="nav-brand">Taurite Tū</RouterLink>
- <span class="nav-scope">{{ scope }}</span>
+      <img :src="logoSrc" class="nav-logo" alt="Taurite Tū logo" />
+      <RouterLink :to="navItems[0]?.to ?? '/'" class="nav-brand">Taurite Tū</RouterLink>
+      <span class="nav-scope">{{ scope }}</span>
     </div>
 
     <div class="nav-links">
@@ -96,8 +96,10 @@ async function handleLogout() {
 
     <div class="nav-right">
       <span class="nav-user">{{ userName }} · {{ roleLabel }}</span>
-      <span v-if="logoutError" role="alert">{{ logoutError }}</span>
-      <button class="nav-btn" :disabled="loggingOut" @click="handleLogout">{{ loggingOut ? 'Logging out…' : 'Log out' }}</button>
+      <span v-if="logoutError" class="logout-error" role="alert">{{ logoutError }}</span>
+      <button class="nav-btn" :disabled="loggingOut" @click="handleLogout">
+        {{ loggingOut ? 'Logging out…' : 'Log out' }}
+      </button>
     </div>
   </nav>
 </template>

@@ -110,10 +110,11 @@ async function submit() {
 
 .form-card {
   background: var(--surface);
-  border-radius: 10px;
-  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 32px 28px;
   max-width: 560px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-panel);
 }
 
 .field {
@@ -122,21 +123,24 @@ async function submit() {
   margin-bottom: 18px;
 }
 .field label {
-  font-size: 13px;
+  font-size: var(--text-sm);
+  font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 6px;
 }
 .field input {
-  padding: 10px 12px;
-  border: 1px solid var(--border-faint);
-  border-radius: 6px;
-  font-size: 14px;
-  background: var(--bg);
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: var(--text-base);
+  background: var(--surface);
   color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .field input:focus {
-  outline: none;
   border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-tint);
 }
 
 .field-row {
@@ -146,29 +150,38 @@ async function submit() {
 }
 
 .btn-primary {
-  background: var(--teal);
-  color: white;
+  background: var(--maroon);
+  color: var(--text-on-ink);
   border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 11px 22px;
+  border-radius: var(--radius);
+  font-size: var(--text-base);
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 4px;
+  margin-top: 6px;
+  box-shadow: 0 1px 2px rgba(36, 28, 23, 0.1);
+  transition: all 0.15s ease;
 }
-.btn-primary:hover { opacity: 0.9; }
+.btn-primary:hover:not(:disabled) {
+  background: var(--maroon-dark);
+  box-shadow: 0 2px 6px rgba(36, 28, 23, 0.15);
+}
 
 .msg {
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  margin-bottom: 18px;
+  line-height: 1.45;
 }
 .error {
-  background: var(--danger-bg, #fee);
+  background: var(--danger-bg);
+  border: 1px solid rgba(184, 46, 36, 0.2);
   color: var(--danger);
 }
 .success {
   background: var(--success-bg);
+  border: 1px solid rgba(35, 108, 60, 0.2);
   color: var(--success);
 }
 </style>

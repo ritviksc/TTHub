@@ -191,10 +191,9 @@ onMounted(loadParticipants)
 </template>
 
 <style scoped>
-
 .participant-count {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 .search-box {
@@ -204,17 +203,27 @@ onMounted(loadParticipants)
 .search-box input {
   width: 100%;
   box-sizing: border-box;
-  padding: 13px 15px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 11px 18px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   background: var(--surface);
-  font-size: 14px;
+  font-size: var(--text-base);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-box input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-tint);
 }
 
 .participants-list {
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 
 .participant-row {
@@ -223,6 +232,11 @@ onMounted(loadParticipants)
   gap: 15px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border-faint);
+  transition: background-color 0.15s ease;
+}
+
+.participant-row:hover {
+  background: var(--surface-sunken);
 }
 
 .participant-row:last-child {
@@ -230,8 +244,8 @@ onMounted(loadParticipants)
 }
 
 .avatar {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   overflow: hidden;
   background: var(--teal-tint);
@@ -241,6 +255,7 @@ onMounted(loadParticipants)
   justify-content: center;
   font-weight: 700;
   flex-shrink: 0;
+  border: 1px solid rgba(13, 130, 135, 0.2);
 }
 
 .avatar img {
@@ -261,12 +276,20 @@ onMounted(loadParticipants)
   font-size: var(--text-sm);
 }
 
-.participant-name { color: var(--text); font-weight: 600; }
-.participant-name:hover { color: var(--maroon); }
+.participant-name {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.participant-name:hover {
+  color: var(--maroon);
+}
 
 .status {
   color: var(--success);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
@@ -276,22 +299,38 @@ onMounted(loadParticipants)
 
 .message {
   background: var(--surface);
-  padding: 40px;
+  padding: 48px 24px;
   text-align: center;
   border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
 }
 
 .error {
-  padding: 20px;
-  background: var(--error-bg);
-  color: var(--error);
-  border-radius: 8px;
+  padding: 16px 20px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid rgba(184, 46, 36, 0.2);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .retry {
-  margin-left: 10px;
-  padding: 7px 12px;
+  padding: 6px 14px;
   cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  transition: all 0.15s ease;
 }
 
+.retry:hover {
+  background: var(--surface-sunken);
+  border-color: var(--text-muted);
+}
 </style>

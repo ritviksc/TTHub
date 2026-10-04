@@ -1,15 +1,32 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { createSession } from '@/apis.js'
 import { programmeToday } from '@/utils/sessions.js'
 
+const props = defineProps({
+  initialDate: {
+    type: String,
+    default: '',
+  },
+})
+
 const emit = defineEmits(['close', 'created'])
 
-const form = ref({ date: '', time: '', activity: '' })
+const form = ref({
+  date: props.initialDate || '',
+  time: '',
+  activity: '',
+})
 const error = ref('')
 const saving = ref(false)
 const minimumDate = ref(programmeToday())
 const ACTIVITIES = ['Standard strength and mobility training', 'Fitness test']
+
+watch(() => props.initialDate, (newDate) => {
+  if (newDate) {
+    form.value.date = newDate
+  }
+})
 
 // Recheck at submission in case the modal has stayed open across midnight.
 async function submit() {
