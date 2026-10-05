@@ -12,6 +12,7 @@ import {
   listParticipants,
   listStaff,
 } from '@/apis.js'
+import QuarterPeriod from '@/components/reporting/QuarterPeriod.vue'
 import FileExplorer from '@/components/documents/FileExplorer.vue'
 
 const route = useRoute()
@@ -320,6 +321,8 @@ const panels = [
             </div>
           </dl>
         </section>
+
+        <QuarterPeriod :branch-id="branch.id" settings-only />
 
         <!-- Branch managers, then instructors: one block, rendered twice -->
         <section v-for="panel in panels" :key="panel.key" class="panel">

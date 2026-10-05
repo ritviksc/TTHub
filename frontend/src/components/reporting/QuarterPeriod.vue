@@ -4,7 +4,8 @@ import { getBranchQuarters, saveBranchQuarters } from '@/apis.js'
 import { calendarQuarters } from '@/utils/quarters.js'
 import { programmeToday } from '@/utils/sessions.js'
 
-const props = defineProps({ branchId: { type: String, default: '' } })
+// Settings pages edit the same dates without offering report-filter actions.
+const props = defineProps({ branchId: { type: String, default: '' }, settingsOnly: Boolean })
 const emit = defineEmits(['select'])
 const year = ref(Number(programmeToday().slice(0, 4)))
 const quarter = ref(1)
@@ -34,7 +35,7 @@ async function load() {
     drafts.value = result.quarters.map(row => ({ ...row }))
     isDefault.value = result.is_default
   } catch {
-    if (current === generation) error.value = 'Could not load quarter dates. You can still use the date range above.'
+    if (current === generation) error.value = 'Could not load quarter dates. Please try again.'
   } finally {
     if (current === generation) loading.value = false
   }
@@ -49,7 +50,8 @@ async function save() {
     rows.value = result.quarters
     drafts.value = result.quarters.map(row => ({ ...row }))
     isDefault.value = result.is_default
-    notice.value = 'Quarter dates saved. Use a quarter below to update your report dates.'
+    notice.value = props.settingsOnly ? `Quarter dates saved for ${year.value}.`
+      : 'Quarter dates saved. Select a quarter to update your report dates.'
   } catch (e) {
     if (current === generation) {
       const data = e.response?.data
@@ -63,15 +65,16 @@ async function save() {
 <template>
   <section class="card quarter-period">
     <h2>Reporting quarters</h2>
-    <p>{{ branchId ? 'Choose a branch quarter, or edit its dates for this year.' : 'All branches uses standard calendar quarters. Select a branch to use or configure its own dates.' }}</p>
+    <p>{{ settingsOnly ? 'Set the dates used when choosing a quarter in this branch’s reports.' : branchId ? 'Choose a branch quarter, or edit its dates for this year.' : 'All branches uses standard calendar quarters. Select a branch to use or configure its own dates.' }}</p>
     <div class="form-row">
       <div class="form-group"><label for="quarter-year">Year</label><input id="quarter-year" v-model.number="year" type="number" min="1900" max="9998" :disabled="saving" /></div>
-      <div class="form-group"><label for="quarter-number">Quarter</label><select id="quarter-number" v-model.number="quarter"><option v-for="q in 4" :key="q" :value="q">Q{{ q }}</option></select></div>
+      <div v-if="!settingsOnly" class="form-group"><label for="quarter-number">Quarter</label><select id="quarter-number" v-model.number="quarter"><option v-for="q in 4" :key="q" :value="q">Q{{ q }}</option></select></div>
     </div>
     <p v-if="loading" class="loading-note" role="status">Loading quarter dates…</p>
     <p v-if="error" class="form-error" role="alert">{{ error }}</p>
+    <button v-if="error && !rows.length" class="btn-cancel" type="button" :disabled="loading || saving" @click="load">Retry</button>
     <p v-if="notice" role="status">{{ notice }}</p>
-    <template v-if="selected">
+    <template v-if="selected && !settingsOnly">
       <p>{{ selected.start_date }} to {{ selected.end_date }} (inclusive) · {{ isDefault ? 'Calendar defaults' : 'Branch settings' }}</p>
       <button class="btn-cancel" type="button" :disabled="loading || saving" @click="emit('select', { ...selected })">Use Q{{ quarter }} dates</button>
     </template>

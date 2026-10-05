@@ -29,3 +29,11 @@ Years and branches are independent. Changing past settings affects future select
 Backend regression tests cover default fallback, branch/year isolation, permissions, invalid updates preserving saved settings, invalid years, and using saved dates in both reporting APIs (including attendance boundary dates). The frontend test checks calendar-quarter boundaries.
 
 For manual testing, configure Q1 to February 1–21 for one branch. Apply it in both report screens and verify the displayed range. Switch to another branch and year to confirm unchanged defaults. Log in as that branch's manager to edit the same settings. Try overlapping dates and confirm a validation message without losing the saved schedule. Switch to All branches as a super admin and confirm calendar quarters are used.
+
+## Settings from branch pages
+
+Super admins can also open Kapa → a branch → Reporting quarters, below the branch details. Branch admins can open their Overview dashboard → Reporting quarters. Choose the year, expand Edit this branch’s quarter dates, edit and save. These entry points reuse `QuarterPeriod.vue` in settings-only mode, so they do not show the report's Use quarter button or quarter filter. Existing reporting-screen controls remain available.
+
+The dashboard's average-attendance tile still describes the current calendar quarter and is now explicitly labelled that way. Custom branch periods are applied through the reporting filters.
+
+Frontend files changed for these entry points: `components/reporting/QuarterPeriod.vue` (settings-only mode and load retry), `views/SuperAdmin/BranchDetail.vue`, and `views/BranchManager/Overview.vue`. Existing API permissions, validation and audit logging apply. Check a saved year in either report screen to confirm it uses the same dates.
