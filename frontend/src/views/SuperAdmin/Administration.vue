@@ -12,8 +12,8 @@
         </div>
         <div class="card">
           <h3>Audit log</h3>
-          <p>Every write and cross-branch read, append-only and enforced in the database.</p>
-          <a href="#">Open →</a>
+          <p>Review staff and branch changes, report generation, and API write outcomes.</p>
+          <RouterLink :to="{ name: 'sa-audit-log' }">Open →</RouterLink>
         </div>
         <div class="card">
           <h3>Exports</h3>

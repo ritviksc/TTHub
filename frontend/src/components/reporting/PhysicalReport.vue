@@ -1,4 +1,6 @@
 <script setup>
+import QuarterPeriod from './QuarterPeriod.vue'
+import { auth } from '@/stores/auth.js'
 import { computed, onMounted, ref, watch } from 'vue'
 import { getPhysicalReport, analysePhysicalReport, getPhysicalAnalysisJob, listBranches } from '@/apis.js'
 import { recentReportPeriod, formatReportNumber } from '@/utils/reporting.js'
@@ -68,6 +70,8 @@ function analysed(result) {
     <div v-if="showBranchFilter" class="form-group"><label for="physical-branch">Branch</label>
       <select id="physical-branch" v-model="branchId"><option value="">All branches</option><option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.name }}</option></select>
     </div>
+    <QuarterPeriod :branch-id="showBranchFilter ? branchId : (auth.user?.branch?.id ?? '')"
+      @select="startDate = $event.start_date; endDate = $event.end_date" />
     <button class="btn-primary">Refresh statistics</button>
   </fieldset></form>
   <p v-if="branchError" class="form-error" role="alert">{{ branchError }}</p>

@@ -1,4 +1,6 @@
 <script setup>
+import QuarterPeriod from './QuarterPeriod.vue'
+import { auth } from '@/stores/auth.js'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import MarkdownResponse from '@/components/MarkdownResponse.vue'
 import {
@@ -162,6 +164,8 @@ onMounted(() => {
           <option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.name }}</option>
         </select>
       </div>
+    <QuarterPeriod :branch-id="showBranchFilter ? branchId : (auth.user?.branch?.id ?? '')"
+      @select="startDate = $event.start_date; endDate = $event.end_date" />
       <button class="btn-primary" type="submit">Refresh statistics</button>
     </fieldset>
   </form>

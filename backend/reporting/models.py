@@ -39,11 +39,12 @@ class AnalysisJob(models.Model):
             and user.branch_id == self.branch_id
         )
 
-    def expire_if_needed(self):
+    def expire_if_needed(self, source="system"):
         if self.expires_at <= timezone.now():
-            type(self).objects.filter(
+            from audit.services import transition_job
+            transition_job(self, type(self).objects.filter(
                 pk=self.pk, status__in=[self.Status.QUEUED, self.Status.RUNNING],
-            ).update(status=self.Status.FAILED, error="Analysis timed out. Please try again.")
+            ), "failed", source=source, reason="timeout", error="Analysis timed out. Please try again.")
             self.refresh_from_db()
 
 

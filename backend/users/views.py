@@ -1,3 +1,5 @@
+from django.db import transaction
+from audit.services import record, staff_changed, staff_snapshot
 from collections.abc import Mapping
 
 from django.contrib.auth import authenticate, login
@@ -93,7 +95,20 @@ class BranchListView(generics.ListAPIView):
     serializer_class = BranchSerializer
     permission_classes = [IsAuthenticated]
  
-class StaffCreateView(generics.CreateAPIView):
+class StaffAuditMixin:
+    @transaction.atomic
+    def perform_create(self, serializer):
+        staff_changed(self.request, serializer.save())
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        # Lock before capturing the old values so concurrent edits have a real order.
+        serializer.instance = UserAccount.objects.select_for_update().get(pk=serializer.instance.pk)
+        before = staff_snapshot(serializer.instance)
+        staff_changed(self.request, serializer.save(), before)
+
+
+class StaffCreateView(StaffAuditMixin, generics.CreateAPIView):
     serializer_class = StaffCreateSerializer
     permission_classes = [IsSuperAdmin | IsBranchManager]
 
@@ -113,7 +128,7 @@ class StaffListView(generics.ListAPIView):
         return staff_queryset_for(self.request.user)
 
 class StaffDetailView(
-    generics.RetrieveUpdateAPIView
+    StaffAuditMixin, generics.RetrieveUpdateAPIView
 ):
     serializer_class = StaffDetailSerializer
 
@@ -130,10 +145,13 @@ class StaffDetailView(
 class StaffDeactivateView(generics.GenericAPIView):
     permission_classes = [IsSuperAdmin | IsBranchManager]
 
+    @transaction.atomic
     def post(self, request, pk):
-        staff = get_object_or_404(staff_queryset_for(request.user), pk=pk)
+        staff = get_object_or_404(staff_queryset_for(request.user).select_for_update(), pk=pk)
+        before = staff_snapshot(staff)
         staff.is_active = False
         staff.save()
+        staff_changed(request, staff, before)
         return Response({"id": str(staff.id), "is_active": staff.is_active})
 
 
@@ -185,7 +203,29 @@ def branches_for(user):
     return qs
 
 
-class BranchListCreateView(generics.ListCreateAPIView):
+class BranchAuditMixin:
+    @transaction.atomic
+    def perform_create(self, serializer):
+        branch = serializer.save()
+        record("branch.created", request=self.request, branch_id=branch.pk,
+               target_type="branch", target_id=branch.pk, target_label=branch.name,
+               details={"name": branch.name, "region": branch.region})
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        Branch.objects.select_for_update().get(pk=serializer.instance.pk)
+        # Keep the annotated counts and staff lists required by the detail response.
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
+        before = {key: getattr(serializer.instance, key) for key in ("name", "region")}
+        branch = serializer.save()
+        after = {key: getattr(branch, key) for key in before}
+        if before != after:
+            record("branch.updated", request=self.request, branch_id=branch.pk,
+                   target_type="branch", target_id=branch.pk, target_label=branch.name,
+                   details={"before": before, "after": after})
+
+
+class BranchListCreateView(BranchAuditMixin, generics.ListCreateAPIView):
     """The Branch table, and the Add branch action behind it.
 
     Every signed-in role can read the list; only a Super Admin can add one.
@@ -214,7 +254,7 @@ class BranchListCreateView(generics.ListCreateAPIView):
         return qs
 
 
-class BranchDetailView(generics.RetrieveUpdateDestroyAPIView):
+class BranchDetailView(BranchAuditMixin, generics.RetrieveUpdateDestroyAPIView):
     """One branch: the detail page reads it, a Super Admin edits or deletes it."""
 
     serializer_class = BranchDetailSerializer
@@ -227,6 +267,7 @@ class BranchDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return branches_for(self.request.user)
 
+    @transaction.atomic
     def destroy(self, request, *args, **kwargs):
         """Deleting a branch is refused while anyone still points at it.
 
@@ -278,6 +319,8 @@ class BranchDetailView(generics.RetrieveUpdateDestroyAPIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
+        record("branch.deleted", request=request, branch_id=branch.pk,
+               target_type="branch", target_id=branch.pk, target_label=branch.name)
         branch.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -292,6 +335,7 @@ class BranchStaffView(generics.GenericAPIView):
     permission_classes = [IsSuperAdmin | IsBranchManager]
     role = None
 
+    @transaction.atomic
     def post(self, request, pk):
         # Branch managers may only assign instructors to their own branch
         if request.user.role == UserAccount.Role.BRANCH_MANAGER:
@@ -317,7 +361,7 @@ class BranchStaffView(generics.GenericAPIView):
             )
 
         try:
-            staff = UserAccount.objects.all()
+            staff = UserAccount.objects.select_for_update()
             if request.user.role == UserAccount.Role.BRANCH_MANAGER:
                 staff = staff.filter(branch=request.user.branch, role=UserAccount.Role.INSTRUCTOR)
             user = staff.get(pk=user_id)
@@ -344,6 +388,7 @@ class BranchStaffView(generics.GenericAPIView):
 
         # Assigning from this page also sets the role, so this can promote an
         # instructor or step a manager down. The UI reports whichever happened.
+        before = staff_snapshot(user)
         previous_role = user.role
         role_changed = previous_role != self.role
         moved_from = user.branch.name if user.branch and user.branch_id != branch.id else None
@@ -351,6 +396,7 @@ class BranchStaffView(generics.GenericAPIView):
         user.role = self.role
         user.branch = branch
         user.save()
+        staff_changed(request, user, before)
 
         return Response(
             {
@@ -370,13 +416,16 @@ class BranchStaffDetailView(generics.GenericAPIView):
     permission_classes = [IsSuperAdmin]
     role = None
 
+    @transaction.atomic
     def delete(self, request, pk, user_id):
         branch = get_object_or_404(Branch, pk=pk)
-        person = get_object_or_404(UserAccount, pk=user_id, branch=branch, role=self.role)
+        person = get_object_or_404(UserAccount.objects.select_for_update(), pk=user_id, branch=branch, role=self.role)
+        before = staff_snapshot(person)
 
         # Unassigned, not deleted or demoted: the account stays exactly as it
         # was so it can be pointed at another branch.
         person.branch = None
         person.save()
+        staff_changed(request, person, before)
 
         return Response({"id": str(person.id), "branch": None})

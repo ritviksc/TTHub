@@ -38,3 +38,19 @@ class UserAccount(AbstractUser): # Default fields for user come from AbstractUse
 
     def __str__(self):
         return self.get_full_name() or self.username
+
+
+class BranchQuarter(models.Model):
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name="quarters")
+    year = models.PositiveSmallIntegerField()
+    quarter = models.PositiveSmallIntegerField()
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    class Meta:
+        ordering = ["year", "quarter"]
+        constraints = [
+            models.UniqueConstraint(fields=["branch", "year", "quarter"], name="unique_branch_quarter"),
+            models.CheckConstraint(condition=models.Q(quarter__gte=1, quarter__lte=4), name="valid_quarter_number"),
+            models.CheckConstraint(condition=models.Q(start_date__lte=models.F("end_date")), name="quarter_dates_ordered"),
+        ]

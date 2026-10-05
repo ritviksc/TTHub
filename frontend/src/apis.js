@@ -363,3 +363,17 @@ export async function listFeedback() {
 export async function createFeedback(payload) {
   return (await api.post('/participants/feedback/', payload)).data
 }
+
+/* ---- branch reporting quarters ---- */
+export async function getBranchQuarters(branchId, year) {
+  return (await getWithRetry(`/branches/${branchId}/quarters/${year}/`)).data
+}
+
+export async function saveBranchQuarters(branchId, year, quarters) {
+  return (await api.put(`/branches/${branchId}/quarters/${year}/`, { quarters })).data
+}
+
+/* ---- audit trail (admins; branch scope enforced by server) ---- */
+export async function listAuditEvents(params = {}) {
+  return (await getWithRetry('/audit/', { params })).data
+}

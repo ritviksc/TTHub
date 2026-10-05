@@ -24,6 +24,21 @@ const router = createRouter({
     history: createWebHistory(),
     routes: [
         {
+            path: '/branch-manager/administration', name: 'bm-administration',
+            component: () => import('@/views/BranchManager/Administration.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        {
+            path: '/branch-manager/administration/audit', name: 'bm-audit-log',
+            component: () => import('@/views/BranchManager/AuditLog.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        {
+            path: '/super-admin/administration/audit', name: 'sa-audit-log',
+            component: () => import('@/views/SuperAdmin/AuditLog.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
             path: '/super-admin/physical-assessments/:id', name: 'sa-physical-assessment',
             component: () => import('@/views/SuperAdmin/PhysicalAssessment.vue'),
             meta: { requiresAuth: true, roles: SA },

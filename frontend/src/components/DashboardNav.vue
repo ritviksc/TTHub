@@ -26,6 +26,7 @@ const NAV_ITEMS = {
     { label: 'Kaimahi',  to: '/branch-manager/instructors' },
     { label: 'Feedback',     to: '/branch-manager/feedback' },
     { label: 'Reports',      to: '/branch-manager/reports' },
+    { label: 'Administration', to: '/branch-manager/administration' },
     { label: 'Documents',    to: '/documents' },
   ],
   instructor: [
