@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.conf import settings
 from audit.services import report_event, transition_job
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
@@ -10,14 +11,14 @@ from rest_framework.views import APIView
 
 from users.permissions import IsBranchManager, IsSuperAdmin
 from .models import AttendanceAnalysisJob, PhysicalAnalysisJob
-from .serializers import AttendanceReportRequestSerializer
+from .serializers import AttendanceReportRequestSerializer, AnalysisModelSerializer
 from .services.attendance import attendance_statistics
 from .tasks import generate_attendance_analysis, generate_physical_analysis
 from .services.physical import physical_statistics
 
 
 def job_response(job):
-    data = {"job_id": str(job.pk), "status": job.status}
+    data = {"job_id": str(job.pk), "status": job.status, "model": job.model_name or None}
     if job.status == job.Status.SUCCEEDED:
         data.update(statistics=job.statistics, narrative=job.narrative)
     elif job.status == job.Status.FAILED:
@@ -51,14 +52,28 @@ class AttendanceAnalysisView(AttendanceReportView):
         # Validate permissions and save the exact figures before queueing any AI work.
         statistics = self.report_statistics(request, request.data)
         return queue_analysis(request.user, statistics, AttendanceAnalysisJob, generate_attendance_analysis,
-                              statistics["totals"]["finalised_sessions"], request=request)
+                              statistics["totals"]["finalised_sessions"], request=request, model=selected_model(request))
 
 
-def queue_analysis(user, statistics, job_model, task, has_data, request=None):
+class ReportModelsView(APIView):
+    permission_classes = [IsSuperAdmin | IsBranchManager]
+
+    def get(self, request):
+        from llm.services.catalog import report_models
+        return Response(report_models())
+
+
+def selected_model(request):
+    serializer = AnalysisModelSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    return serializer.validated_data["model"]
+
+
+def queue_analysis(user, statistics, job_model, task, has_data, request=None, model=None):
     with transaction.atomic():
         job = job_model.objects.create(
             requested_by=user, branch_id=statistics["scope"]["branch_id"], statistics=statistics,
-            status="queued" if has_data else "succeeded",
+            status="queued" if has_data else "succeeded", model_name=model if model is not None else (settings.DEFAULT_LLM_MODEL or ""),
         )
         report_event(job, "report.requested", request=request, source="api")
         if not has_data:
@@ -103,7 +118,7 @@ class PhysicalAnalysisView(PhysicalReportView):
     def post(self, request):
         statistics = self.report_statistics(request, request.data)
         return queue_analysis(request.user, statistics, PhysicalAnalysisJob, generate_physical_analysis,
-                              statistics["totals"]["completed_assessments"], request=request)
+                              statistics["totals"]["completed_assessments"], request=request, model=selected_model(request))
 
 
 class PhysicalAnalysisStatusView(AnalysisStatusView):

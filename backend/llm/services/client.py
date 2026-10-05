@@ -113,5 +113,5 @@ def get_available_models() -> list:
         list: A list of available LLM models.
     """
     client = get_client()
-    models = client.models.list()
+    models = client.models.list(timeout=4.0)
     return [model.id for model in models.data]

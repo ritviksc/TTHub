@@ -62,6 +62,13 @@ def summary(event, viewer, staff_label=None):
         kind = {"attendance": "Attendance", "physical": "Physical testing"}.get(event.details.get("report_type"))
         if kind:
             text += f" — {kind}"
+        model = event.details.get("model")
+        if event.details.get("reason") == "no_data":
+            text += " — no AI needed (no data)"
+        elif model:
+            text += f" — Model: {model}"
+        elif event.action in {"report.requested", "report.succeeded", "report.failed"}:
+            text += " — model not recorded"
         try:
             start = date.fromisoformat(event.details.get("start_date", ""))
             end = date.fromisoformat(event.details.get("end_date", ""))

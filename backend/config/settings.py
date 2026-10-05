@@ -30,6 +30,8 @@ SECRET_KEY = 'django-insecure-pbxm-#iwl5pa9&mm3sa0b_zhc19q4_-1)_p@dmde+ei#%ese25
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 LLM_API_ENDPOINT = os.getenv("LLM_API_ENDPOINT")
 DEFAULT_LLM_MODEL = os.getenv("DEFAULT_LLM_MODEL")
+# Optional list of chat models offered to report administrators.
+REPORT_LLM_MODELS = [model.strip() for model in os.getenv("REPORT_LLM_MODELS", "").split(",") if model.strip()]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

@@ -17,6 +17,7 @@ from .prompts.physical import build_physical_prompt
 from .services.physical import physical_statistics
 
 
+@override_settings(DEFAULT_LLM_MODEL="test-model", REPORT_LLM_MODELS=["test-model"])
 class PhysicalReportTests(TestCase):
     def setUp(self):
         self.branch = Branch.objects.create(name="Report branch")
@@ -190,6 +191,7 @@ class PhysicalReportTests(TestCase):
         self.assertEqual(self.client.get(self.url, self.scope).status_code, 403)
 
 
+@override_settings(DEFAULT_LLM_MODEL="test-model", REPORT_LLM_MODELS=["test-model"])
 class PhysicalWorkerTests(TransactionTestCase):
     @patch("reporting.tasks.explain_physical", return_value="Physical worker narrative")
     def test_real_worker_consumes_physical_task(self, explain):

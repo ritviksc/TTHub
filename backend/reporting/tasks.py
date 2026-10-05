@@ -3,6 +3,7 @@
 from audit.services import transition_job
 
 from celery import shared_task
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 
@@ -17,16 +18,17 @@ def run_analysis_job(job_model, explain, job_id):
         return
     job.expire_if_needed(source="worker")
     # Claim once so duplicate task delivery does not repeat a paid model request.
+    job.model_name = job.model_name or (settings.DEFAULT_LLM_MODEL or "").strip()
     claimed = transition_job(job, job_model.objects.filter(
         pk=job.pk, status=job_model.Status.QUEUED, expires_at__gt=timezone.now(),
-    ), "running")
+    ), "running", model_name=job.model_name)
     if not claimed:
         job.expire_if_needed(source="worker")
         return
     try:
         if not job.can_access(job.requested_by):
             raise PermissionDenied("Report permissions changed.")
-        narrative = explain(job.statistics)
+        narrative = explain(job.statistics, model=job.model_name or None)
     except Exception:
         # Persist a safe message; the task still fails visibly in Celery worker logs.
         transition_job(job, job_model.objects.filter(pk=job.pk, status="running"),

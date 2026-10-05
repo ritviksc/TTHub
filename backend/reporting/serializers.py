@@ -13,3 +13,15 @@ class AttendanceReportRequestSerializer(serializers.Serializer):
         if (attrs["end_date"] - attrs["start_date"]).days > 3660:
             raise serializers.ValidationError("Select a reporting period of ten years or less.")
         return attrs
+
+
+class AnalysisModelSerializer(serializers.Serializer):
+    model = serializers.CharField(required=False, max_length=200)
+
+    def validate(self, attrs):
+        from llm.services.catalog import report_models
+        catalog = report_models()
+        chosen = attrs.get("model", catalog["default"])
+        if not chosen or chosen not in catalog["models"]:
+            raise serializers.ValidationError({"model": "Choose an available AI model."})
+        return {"model": chosen}

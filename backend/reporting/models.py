@@ -26,6 +26,7 @@ class AnalysisJob(models.Model):
     branch = models.ForeignKey("users.Branch", null=True, on_delete=models.PROTECT)
     statistics = models.JSONField()
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.QUEUED)
+    model_name = models.CharField(max_length=200, blank=True, default="")
     narrative = models.TextField(null=True, blank=True)
     error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

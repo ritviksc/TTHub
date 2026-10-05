@@ -1,4 +1,5 @@
 <script setup>
+import ModelSelector from './ModelSelector.vue'
 import QuarterPeriod from './QuarterPeriod.vue'
 import { auth } from '@/stores/auth.js'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
@@ -21,6 +22,9 @@ const branches = ref([])
 const branchError = ref(null)
 const report = ref(null)
 const narrative = ref(null)
+const selectedModel = ref('')
+const usedModel = ref('')
+watch(selectedModel, () => { narrative.value = null; analysisError.value = null })
 const loading = ref(false)
 const analysing = ref(false)
 const jobStatus = ref(null)
@@ -49,7 +53,7 @@ const tiles = computed(() => {
 
 function messageFor(e, fallback) {
   const data = e.response?.data
-  return data?.detail ?? data?.start_date?.[0] ?? data?.end_date?.[0] ?? data?.non_field_errors?.[0] ?? fallback
+  return data?.detail ?? data?.model?.[0] ?? data?.start_date?.[0] ?? data?.end_date?.[0] ?? data?.non_field_errors?.[0] ?? fallback
 }
 
 // Never leave a narrative visible under filters that describe a different report.
@@ -81,7 +85,7 @@ async function loadReport() {
 }
 
 async function analyse() {
-  if (busy.value || !report.value?.totals.finalised_sessions) return
+  if (busy.value || !report.value?.totals.finalised_sessions || (!demo.value && !selectedModel.value)) return
   analysisError.value = null
   narrative.value = null
   if (demo.value) {
@@ -93,7 +97,7 @@ async function analyse() {
   analysisController = new AbortController()
   const controller = analysisController
   try {
-    const queued = await analyseAttendanceReport(scope())
+    const queued = await analyseAttendanceReport({ ...scope(), model: selectedModel.value })
     if (controller.signal.aborted) return
     const result = queued.status === 'succeeded' ? queued : await waitForAnalysis(
       () => getAttendanceAnalysisJob(queued.job_id, controller.signal),
@@ -102,6 +106,7 @@ async function analyse() {
     // Display the exact statistics used for this narrative if records changed since loading.
     report.value = result.statistics
     narrative.value = result.narrative
+    usedModel.value = result.model
   } catch (e) {
     if (!controller.signal.aborted) {
       analysisError.value = messageFor(e, e.message || 'Analysis could not be completed. Your statistics are still available.')
@@ -203,10 +208,12 @@ onMounted(() => {
     <section class="card report-section" aria-live="polite">
       <div class="page-header">
         <h2>{{ demo ? 'Example explanation' : 'AI attendance explanation' }}</h2>
-        <button class="btn-primary" :disabled="busy || !report.totals.finalised_sessions" @click="analyse">
+        <button class="btn-primary" :disabled="busy || (!report.totals.finalised_sessions || (!demo && !selectedModel))" @click="analyse">
           {{ analysing ? 'Analysing…' : demo ? 'Show example explanation' : 'Analyse attendance' }}
         </button>
       </div>
+      <ModelSelector v-if="!demo" v-model="selectedModel" :disabled="busy" />
+      <p v-if="narrative && !demo && usedModel" class="loading-note">Model: {{ usedModel }}</p>
       <p v-if="analysisError" class="form-error" role="alert">{{ analysisError }}</p>
       <p v-if="analysing" class="loading-note">{{ jobStatus === 'queued' ? 'Analysis queued. Waiting for a worker…' : 'Generating an explanation. This may take a few minutes.' }}</p>
       <MarkdownResponse v-else-if="narrative" :text="narrative" />

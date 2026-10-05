@@ -377,3 +377,7 @@ export async function saveBranchQuarters(branchId, year, quarters) {
 export async function listAuditEvents(params = {}) {
   return (await getWithRetry('/audit/', { params })).data
 }
+
+export async function getReportModels() {
+  return (await getWithRetry('/reporting/models/')).data
+}

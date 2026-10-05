@@ -1,9 +1,10 @@
 from django.urls import path
 
-from .views import (AttendanceAnalysisView, AttendanceReportView, AttendanceAnalysisStatusView,
+from .views import (ReportModelsView, AttendanceAnalysisView, AttendanceReportView, AttendanceAnalysisStatusView,
                     PhysicalReportView, PhysicalAnalysisView, PhysicalAnalysisStatusView)
 
 urlpatterns = [
+    path("models/", ReportModelsView.as_view(), name="report-models"),
     path("physical/", PhysicalReportView.as_view(), name="physical-report"),
     path("physical/analyse/", PhysicalAnalysisView.as_view(), name="physical-analysis"),
     path("physical/jobs/<uuid:pk>/", PhysicalAnalysisStatusView.as_view(), name="physical-analysis-status"),
