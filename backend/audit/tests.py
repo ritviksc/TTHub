@@ -278,3 +278,21 @@ class AuditTests(TestCase):
         self.assertEqual(response.data['results'][0]['description'], 'Created a staff account — staff@example.nz')
         self.assertEqual(self.client.get('/api/audit/', {'category': 'staff'}).data['count'], 1)
         self.assertEqual(self.client.get('/api/audit/', {'category': 'reports'}).data['count'], 0)
+
+    def test_staff_history_is_not_relabelled_when_email_is_reused(self):
+        original_email = self.instructor.email
+        event = record('staff.created', actor=self.admin, branch_id=self.branch.pk,
+                       target_type='staff', target_id=self.instructor.pk, target_label=original_email)
+        self.instructor.first_name = 'Original'
+        self.instructor.email = 'changed@example.nz'
+        self.instructor.save()
+        UserAccount.objects.create_user(username='replacement', email=original_email,
+            first_name='Replacement', role='instructor', branch=self.branch)
+        row = self.client.get('/api/audit/').data['results'][0]
+        self.assertEqual(row['id'], str(event.pk))
+        self.assertIn('Original', row['description'])
+        self.assertNotIn('Replacement', row['description'])
+        self.instructor.delete()
+        row = self.client.get('/api/audit/').data['results'][0]
+        self.assertIn(original_email, row['description'])
+        self.assertNotIn('Replacement', row['description'])

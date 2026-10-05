@@ -16,6 +16,10 @@ def documents_for(user):
     qs = Document.objects.select_related("branch", "participant", "uploaded_by", "folder")
     if user.role == UserAccount.Role.SUPER_ADMIN:
         return qs
+    if user.branch_id is None:
+        # Participant documents also have a null branch FK. A null staff branch
+        # must never turn that into access to every participant's private files.
+        return qs.filter(branch__isnull=True, participant__isnull=True)
     return qs.filter(
         Q(branch_id=user.branch_id)
         | Q(participant__branch_id=user.branch_id)

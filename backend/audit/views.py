@@ -1,4 +1,5 @@
 from datetime import datetime, time
+from uuid import UUID
 from django.db.models import Q, Exists, OuterRef
 from django.utils import timezone
 from rest_framework import generics, serializers
@@ -25,7 +26,7 @@ class AuditSerializer(serializers.ModelSerializer):
         return self.context["people"].get(obj.actor_id) or obj.actor_email or "Unknown user"
 
     def get_description(self, obj):
-        return summary(obj, self.context["request"].user, self.context["staff_names"].get(obj.target_label))
+        return summary(obj, self.context["request"].user, self.context["staff_names"].get(obj.target_id))
 
     def get_branch(self, obj):
         viewer = self.context["request"].user
@@ -68,11 +69,19 @@ class AuditListView(generics.ListAPIView):
         context = super().get_serializer_context()
         # Resolve names once for this page, not once per row; never query all staff.
         rows = getattr(self, "audit_page", [])
+        target_ids = set()
+        for row in rows:
+            if row.action.startswith("staff."):
+                try:
+                    target_ids.add(UUID(row.target_id))
+                except (ValueError, TypeError):
+                    pass
+        # Email addresses can be changed or reused by another account. Resolve
+        # the immutable target ID, falling back to the recorded identity if deleted.
         people = list(UserAccount.objects.filter(
-            Q(pk__in={row.actor_id for row in rows if row.actor_id}) |
-            Q(email__in={row.target_label for row in rows if row.action.startswith("staff.")})))
+            pk__in={row.actor_id for row in rows if row.actor_id} | target_ids))
         context["people"] = {person.pk: person.get_full_name().strip() for person in people}
-        context["staff_names"] = {person.email: person.get_full_name().strip() for person in people}
+        context["staff_names"] = {str(person.pk): person.get_full_name().strip() for person in people}
         branch_ids = {row.branch_id for row in rows if row.branch_id}
         if self.request.user.role != "super_admin":
             branch_ids = {self.request.user.branch_id} if self.request.user.branch_id else set()
