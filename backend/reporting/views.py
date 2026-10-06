@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from users.permissions import IsBranchManager, IsSuperAdmin
 from .models import AttendanceAnalysisJob, PhysicalAnalysisJob
-from .serializers import AttendanceReportRequestSerializer, AnalysisModelSerializer
+from .serializers import AttendanceReportRequestSerializer, AnalysisModelSerializer, ReportNarrativeSerializer
 from .services.attendance import attendance_statistics
 from .tasks import generate_attendance_analysis, generate_physical_analysis
 from .services.physical import physical_statistics
@@ -94,6 +94,23 @@ def queue_analysis(user, statistics, job_model, task, has_data, request=None, mo
 
 class AnalysisStatusView(APIView):
     permission_classes = [IsSuperAdmin | IsBranchManager]
+
+    def get_permissions(self):
+        if self.request.method == "PATCH":
+            return [IsSuperAdmin()]
+        return super().get_permissions()
+
+    @transaction.atomic
+    def patch(self, request, pk):
+        job = get_object_or_404(self.job_model, pk=pk, requested_by=request.user)
+        if job.status != job.Status.SUCCEEDED or not job.narrative:
+            return Response({"detail": "Only completed AI explanations can be edited."}, status=409)
+        serializer = ReportNarrativeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        job.narrative = serializer.validated_data["narrative"]
+        job.save(update_fields=["narrative"])
+        report_event(job, "report.edited", request=request, source="api")
+        return Response(job_response(job))
 
     def get(self, request, pk):
         job = get_object_or_404(self.job_model, pk=pk, requested_by=request.user)

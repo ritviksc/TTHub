@@ -307,6 +307,10 @@ export async function setAttendanceFinalised(sessionId, finalised) {
 
 /* ---- reporting ---- */
 
+export async function saveReportNarrative(reportType, jobId, narrative) {
+  return (await api.patch(`/reporting/${reportType}/jobs/${jobId}/`, { narrative })).data
+}
+
 // scope: { start_date, end_date, branch_id? }; dates are inclusive YYYY-MM-DD.
 export async function getAttendanceReport(scope) {
   const response = await getWithRetry('/reporting/attendance/', { params: scope })

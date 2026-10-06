@@ -15,6 +15,7 @@ ACTIONS = {
     "branch.quarters_updated": "Updated reporting quarter dates",
     "report.requested": "Requested a report",
     "report.succeeded": "Report ready",
+    "report.edited": "Edited a report explanation",
     "report.failed": "Report could not be completed",
     "report.statistics_viewed": "Viewed reporting statistics",
     "auth.login": "Signed in",

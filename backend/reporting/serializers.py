@@ -1,6 +1,15 @@
 from rest_framework import serializers
 
 
+class ReportNarrativeSerializer(serializers.Serializer):
+    narrative = serializers.CharField(max_length=100000, trim_whitespace=False)
+
+    def validate_narrative(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Enter a report explanation.")
+        return value
+
+
 class AttendanceReportRequestSerializer(serializers.Serializer):
     start_date = serializers.DateField()
     end_date = serializers.DateField()

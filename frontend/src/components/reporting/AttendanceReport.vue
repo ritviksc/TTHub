@@ -3,7 +3,7 @@ import ModelSelector from './ModelSelector.vue'
 import QuarterPeriod from './QuarterPeriod.vue'
 import { auth } from '@/stores/auth.js'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
-import MarkdownResponse from '@/components/MarkdownResponse.vue'
+import ReportNarrative from './ReportNarrative.vue'
 import {
   getAttendanceReport, analyseAttendanceReport, getAttendanceAnalysisJob, listBranches,
 } from '@/apis.js'
@@ -22,6 +22,7 @@ const branches = ref([])
 const branchError = ref(null)
 const report = ref(null)
 const narrative = ref(null)
+const jobId = ref(''), editing = ref(false)
 const selectedModel = ref('')
 const usedModel = ref('')
 watch(selectedModel, () => { narrative.value = null; analysisError.value = null })
@@ -33,7 +34,7 @@ onBeforeUnmount(() => analysisController?.abort())
 const error = ref(null)
 const analysisError = ref(null)
 const demo = ref(false)
-const busy = computed(() => loading.value || analysing.value)
+const busy = computed(() => loading.value || analysing.value || editing.value)
 const scope = () => ({
   start_date: startDate.value, end_date: endDate.value,
   ...(props.showBranchFilter && branchId.value ? { branch_id: branchId.value } : {}),
@@ -89,6 +90,7 @@ async function analyse() {
   analysisError.value = null
   narrative.value = null
   if (demo.value) {
+    jobId.value = ''
     narrative.value = DEMO_NARRATIVE
     return
   }
@@ -106,6 +108,7 @@ async function analyse() {
     // Display the exact statistics used for this narrative if records changed since loading.
     report.value = result.statistics
     narrative.value = result.narrative
+    jobId.value = result.job_id
     usedModel.value = result.model
   } catch (e) {
     if (!controller.signal.aborted) {
@@ -216,7 +219,7 @@ onMounted(() => {
       <p v-if="narrative && !demo && usedModel" class="loading-note">Model: {{ usedModel }}</p>
       <p v-if="analysisError" class="form-error" role="alert">{{ analysisError }}</p>
       <p v-if="analysing" class="loading-note">{{ jobStatus === 'queued' ? 'Analysis queued. Waiting for a worker…' : 'Generating an explanation. This may take a few minutes.' }}</p>
-      <MarkdownResponse v-else-if="narrative" :text="narrative" />
+      <ReportNarrative v-else-if="narrative" :key="jobId" :text="narrative" :job-id="jobId" report-type="attendance" @saved="narrative = $event" @busy="editing = $event" />
       <p v-else>Use the button to explain the recorded trends. Statistics are available without AI.</p>
       <p v-if="narrative && !demo" class="analysis-note">This explanation is AI-generated and may vary between requests, even with the same data. Check its accuracy before using it in a formal report. Statistics are calculated from recorded attendance.</p>
     </section>
