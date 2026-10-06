@@ -8,12 +8,14 @@ import { LABELS, physicalError } from '@/utils/physicalTests.js'
 import MeasurementChart from '@/components/charts/MeasurementChart.vue'
 import AssessmentTrend from '@/components/physicalTests/AssessmentTrend.vue'
 import ReportAnalysis from './ReportAnalysis.vue'
+import ReportNarrative from './ReportNarrative.vue'
 
-const props = defineProps({ showBranchFilter: Boolean, branchName: String })
+const props = defineProps({ savedReport: Object, showBranchFilter: Boolean, branchName: String })
 const dates = recentReportPeriod()
 const startDate = ref(dates.start_date), endDate = ref(dates.end_date), branchId = ref('')
 const branches = ref([]), branchError = ref(''), error = ref('')
-const report = ref(null), loading = ref(false), analysing = ref(false)
+const narrative = ref(props.savedReport?.narrative ?? '')
+const report = ref(props.savedReport?.statistics ?? null), loading = ref(false), analysing = ref(false)
 const selectedId = ref(''), exercise = ref('tug'), search = ref('')
 const generation = ref(0)
 const busy = computed(() => loading.value || analysing.value)
@@ -45,6 +47,7 @@ async function load() {
   finally { loading.value = false }
 }
 onMounted(async () => {
+  if (props.savedReport) return
   load()
   if (props.showBranchFilter) {
     try { branches.value = await listBranches() }
@@ -58,9 +61,9 @@ function analysed(result) {
 </script>
 
 <template>
-  <div class="page-header"><h1>Physical-testing reporting</h1></div>
-  <p class="page-subtitle">{{ showBranchFilter ? 'National or selected branch' : branchName }} · Testing completion, measurements and recorded changes.</p>
-  <form @submit.prevent="load"><fieldset :disabled="busy">
+  <div class="page-header"><h1>{{ savedReport ? 'Saved physical-test report' : 'Physical-testing reporting' }}</h1></div>
+  <p v-if="!savedReport" class="page-subtitle">{{ showBranchFilter ? 'National or selected branch' : branchName }} · Testing completion, measurements and recorded changes.</p>
+  <form v-if="!savedReport" @submit.prevent="load"><fieldset :disabled="busy">
     <legend>Inclusive reporting dates</legend>
     <p class="loading-note">Defaults to the last three months through today. Adjust the dates to include older assessments.</p>
     <div class="form-row">
@@ -125,7 +128,12 @@ function analysed(result) {
       <MeasurementChart :points="points" :title="`Monthly mean — ${LABELS[exercise]}`" :unit="exercise === 'chair' ? 'stands' : 'seconds'" />
       <p>Each point represents a month's available scored assessments. The people and number of assessments may differ between months; missing months are gaps.</p>
     </section>
-    <ReportAnalysis :key="generation" class="report-section" :scope="scope" :start="analysePhysicalReport" :get-status="getPhysicalAnalysisJob" :has-data="!!report.totals.completed_assessments" :disabled="loading" @busy="analysing = $event" @complete="analysed" />
+    <section v-if="savedReport" class="card report-section">
+      <h2>AI explanation</h2>
+      <p v-if="savedReport.model" class="loading-note">Model: {{ savedReport.model }}</p>
+      <ReportNarrative :text="narrative" :job-id="savedReport.job_id" report-type="physical" @saved="narrative = $event" />
+    </section>
+    <ReportAnalysis v-else :key="generation" class="report-section" :scope="scope" :start="analysePhysicalReport" :get-status="getPhysicalAnalysisJob" :has-data="!!report.totals.completed_assessments" :disabled="loading" @busy="analysing = $event" @complete="analysed" />
     <section class="card report-section"><h2>How to read this report</h2><ul><li v-for="item in report.limitations" :key="item">{{ item }}</li></ul></section>
   </template>
 </template>

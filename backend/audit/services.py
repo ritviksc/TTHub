@@ -51,7 +51,7 @@ def report_event(job, action, *, source="worker", request=None, outcome="success
                "model": job.model_name or None}
     if reason:
         details["reason"] = reason
-    record(action, request=request, actor=job.requested_by, branch_id=job.branch_id,
+    record(action, request=request, actor=request.user if request is not None else job.requested_by, branch_id=job.branch_id,
            target_type="report", target_id=job.pk, details=details, source=source, outcome=outcome)
 
 

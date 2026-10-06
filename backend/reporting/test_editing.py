@@ -28,7 +28,8 @@ class ReportEditingTests(TestCase):
                 for payload in ({}, {"narrative": "   "}, {"narrative": None}, {"narrative": "x" * 100001}):
                     self.assertEqual(client.patch(url, payload, format="json").status_code, 400)
                 client.force_authenticate(other)
-                self.assertEqual(client.patch(url, {"narrative": "Forbidden"}, format="json").status_code, 404)
+                self.assertEqual(client.patch(url, {"narrative": "Reviewed by another admin"}, format="json").status_code, 200)
+                self.assertTrue(AuditEvent.objects.filter(action="report.edited", target_id=str(job.pk), actor_id=other.pk).exists())
                 for role in ("branch_manager", "instructor"):
                     admin.role = role
                     client.force_authenticate(admin)

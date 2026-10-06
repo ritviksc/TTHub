@@ -7,6 +7,7 @@ from kombu.exceptions import OperationalError
 from redis.exceptions import RedisError
 from rest_framework import serializers
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 
 from users.permissions import IsBranchManager, IsSuperAdmin
@@ -102,7 +103,7 @@ class AnalysisStatusView(APIView):
 
     @transaction.atomic
     def patch(self, request, pk):
-        job = get_object_or_404(self.job_model, pk=pk, requested_by=request.user)
+        job = get_object_or_404(self.job_model, pk=pk)
         if job.status != job.Status.SUCCEEDED or not job.narrative:
             return Response({"detail": "Only completed AI explanations can be edited."}, status=409)
         serializer = ReportNarrativeSerializer(data=request.data)
@@ -140,3 +141,29 @@ class PhysicalAnalysisView(PhysicalReportView):
 
 class PhysicalAnalysisStatusView(AnalysisStatusView):
     job_model = PhysicalAnalysisJob
+
+
+class ReportHistoryView(APIView):
+    permission_classes = [IsSuperAdmin]
+    job_model = None
+
+    def get(self, request, pk=None):
+        jobs = self.job_model.objects.filter(status="succeeded", narrative__isnull=False).exclude(narrative="")
+        if pk is not None:
+            job = get_object_or_404(jobs.select_related("branch", "requested_by"), pk=pk)
+            return Response({**job_response(job), "created_at": job.created_at,
+                             "branch_name": job.branch.name if job.branch else "All branches",
+                             "requested_by": job.requested_by.email})
+        # Fetch only the scope from the saved snapshot, not participant histories or narrative text.
+        rows = jobs.order_by("-created_at", "-pk").values(
+            "pk", "created_at", "branch__name", "requested_by__email", "statistics__scope",
+        )
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        page = paginator.paginate_queryset(rows, request)
+        return paginator.get_paginated_response([
+            {"job_id": str(row["pk"]), "created_at": row["created_at"],
+             "branch_name": row["branch__name"] or "All branches",
+             "requested_by": row["requested_by__email"], "scope": row["statistics__scope"]}
+            for row in page
+        ])

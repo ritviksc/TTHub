@@ -13,18 +13,18 @@ import {
 
 import { waitForAnalysis } from '@/utils/analysisJobs.js'
 
-const props = defineProps({ showBranchFilter: Boolean, branchName: { type: String, default: '' } })
+const props = defineProps({ savedReport: Object, showBranchFilter: Boolean, branchName: { type: String, default: '' } })
 const dates = recentReportPeriod()
 const startDate = ref(dates.start_date)
 const endDate = ref(dates.end_date)
 const branchId = ref('')
 const branches = ref([])
 const branchError = ref(null)
-const report = ref(null)
-const narrative = ref(null)
-const jobId = ref(''), editing = ref(false)
+const report = ref(props.savedReport?.statistics ?? null)
+const narrative = ref(props.savedReport?.narrative ?? null)
+const jobId = ref(props.savedReport?.job_id ?? ''), editing = ref(false)
 const selectedModel = ref('')
-const usedModel = ref('')
+const usedModel = ref(props.savedReport?.model ?? '')
 watch(selectedModel, () => { narrative.value = null; analysisError.value = null })
 const loading = ref(false)
 const analysing = ref(false)
@@ -140,6 +140,7 @@ async function loadBranches() {
 }
 
 onMounted(() => {
+  if (props.savedReport) return
   loadReport()
   loadBranches()
 })
@@ -148,16 +149,16 @@ onMounted(() => {
 <template>
   <div class="page-header">
     <div>
-      <h1>Attendance reporting</h1>
-      <p class="page-subtitle">{{ scopeLabel }} · Statistics load automatically. Request an AI explanation when needed.</p>
+      <h1>{{ savedReport ? 'Saved attendance report' : 'Attendance reporting' }}</h1>
+      <p v-if="!savedReport" class="page-subtitle">{{ scopeLabel }} · Statistics load automatically. Request an AI explanation when needed.</p>
     </div>
-    <button class="btn-cancel" :disabled="busy" @click="toggleDemo">
+    <button v-if="!savedReport" class="btn-cancel" :disabled="busy" @click="toggleDemo">
       {{ demo ? 'Return to live data' : 'Show demo data' }}
     </button>
   </div>
 
   <p v-if="demo" class="demo-banner" role="status">Demo preview — fictional January–March 2026 data. It is not saved or sent to the AI provider.</p>
-  <form @submit.prevent="loadReport">
+  <form v-if="!savedReport" @submit.prevent="loadReport">
     <fieldset :disabled="busy || demo">
       <legend>Report period and scope</legend>
       <p class="loading-note">Defaults to the last three months through today. Adjust the dates to include older sessions.</p>
@@ -211,11 +212,11 @@ onMounted(() => {
     <section class="card report-section" aria-live="polite">
       <div class="page-header">
         <h2>{{ demo ? 'Example explanation' : 'AI attendance explanation' }}</h2>
-        <button class="btn-primary" :disabled="busy || (!report.totals.finalised_sessions || (!demo && !selectedModel))" @click="analyse">
+        <button v-if="!savedReport" class="btn-primary" :disabled="busy || (!report.totals.finalised_sessions || (!demo && !selectedModel))" @click="analyse">
           {{ analysing ? 'Analysing…' : demo ? 'Show example explanation' : 'Analyse attendance' }}
         </button>
       </div>
-      <ModelSelector v-if="!demo" v-model="selectedModel" :disabled="busy" />
+      <ModelSelector v-if="!demo && !savedReport" v-model="selectedModel" :disabled="busy" />
       <p v-if="narrative && !demo && usedModel" class="loading-note">Model: {{ usedModel }}</p>
       <p v-if="analysisError" class="form-error" role="alert">{{ analysisError }}</p>
       <p v-if="analysing" class="loading-note">{{ jobStatus === 'queued' ? 'Analysis queued. Waiting for a worker…' : 'Generating an explanation. This may take a few minutes.' }}</p>

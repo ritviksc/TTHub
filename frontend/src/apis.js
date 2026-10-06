@@ -307,6 +307,10 @@ export async function setAttendanceFinalised(sessionId, finalised) {
 
 /* ---- reporting ---- */
 
+export async function getReportHistory(reportType, { id, page = 1 } = {}) {
+  return (await getWithRetry(`/reporting/${reportType}/history/${id ? `${id}/` : ''}`, { params: { page } })).data
+}
+
 export async function saveReportNarrative(reportType, jobId, narrative) {
   return (await api.patch(`/reporting/${reportType}/jobs/${jobId}/`, { narrative })).data
 }

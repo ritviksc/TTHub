@@ -56,6 +56,11 @@ const router = createRouter({
         { path: '/super-admin/reporting/attendance', name: 'sa-attendance-report',
           component: () => import('@/views/SuperAdmin/AttendanceReporting.vue'),
           meta: { requiresAuth: true, roles: SA } },
+        ...['attendance', 'physical'].map(reportType => ({
+          path: `/super-admin/reporting/${reportType}/history/:id?`, name: `sa-${reportType}-history`,
+          component: () => import('@/views/SuperAdmin/ReportHistory.vue'),
+          props: { reportType }, meta: { requiresAuth: true, roles: SA },
+        })),
         { path: '/super-admin/reporting/physical', name: 'sa-physical-report',
           component: () => import('@/views/SuperAdmin/PhysicalReporting.vue'),
           meta: { requiresAuth: true, roles: SA } },
