@@ -46,7 +46,7 @@ def staff_changed(request, user, before=None):
 
 def report_event(job, action, *, source="worker", request=None, outcome="success", reason=None):
     scope = job.statistics.get("scope", {})
-    details = {"report_type": "attendance" if job._meta.model_name == "attendanceanalysisjob" else "physical",
+    details = {"report_type": job._meta.model_name.removesuffix("analysisjob"),
                "start_date": scope.get("start_date"), "end_date": scope.get("end_date"),
                "model": job.model_name or None}
     if reason:

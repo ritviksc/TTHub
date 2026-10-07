@@ -7,7 +7,8 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 
-from .models import AttendanceAnalysisJob, PhysicalAnalysisJob
+from .models import AttendanceAnalysisJob, PhysicalAnalysisJob, ACCAnalysisJob
+from .services.acc import explain_acc
 from .services.physical import explain_physical
 from .services.attendance import explain_attendance
 
@@ -53,3 +54,8 @@ def generate_attendance_analysis(job_id):
 @shared_task(ignore_result=True, soft_time_limit=240, time_limit=270)
 def generate_physical_analysis(job_id):
     run_analysis_job(PhysicalAnalysisJob, explain_physical, job_id)
+
+
+@shared_task(ignore_result=True, soft_time_limit=240, time_limit=270)
+def generate_acc_analysis(job_id):
+    run_analysis_job(ACCAnalysisJob, explain_acc, job_id)

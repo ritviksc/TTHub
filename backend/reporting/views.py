@@ -11,10 +11,11 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 
 from users.permissions import IsBranchManager, IsSuperAdmin
-from .models import AttendanceAnalysisJob, PhysicalAnalysisJob
-from .serializers import AttendanceReportRequestSerializer, AnalysisModelSerializer, ReportNarrativeSerializer
+from .models import AttendanceAnalysisJob, PhysicalAnalysisJob, ACCAnalysisJob
+from .serializers import AttendanceReportRequestSerializer, AnalysisModelSerializer, ReportNarrativeSerializer, ACCReportRequestSerializer
 from .services.attendance import attendance_statistics
-from .tasks import generate_attendance_analysis, generate_physical_analysis
+from .tasks import generate_attendance_analysis, generate_physical_analysis, generate_acc_analysis
+from .services.acc import acc_feedback, acc_snapshot
 from .services.physical import physical_statistics
 
 
@@ -141,6 +142,45 @@ class PhysicalAnalysisView(PhysicalReportView):
 
 class PhysicalAnalysisStatusView(AnalysisStatusView):
     job_model = PhysicalAnalysisJob
+
+
+class ACCAnalysisStatusView(AnalysisStatusView):
+    permission_classes = [IsSuperAdmin]
+    job_model = ACCAnalysisJob
+
+
+class ACCSourcesView(APIView):
+    permission_classes = [IsSuperAdmin]
+
+    def get(self, request):
+        serializer = AttendanceReportRequestSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        try:
+            sources = acc_feedback(user=request.user, **serializer.validated_data)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"detail": " ".join(exc.messages)}) from exc
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        page = paginator.paginate_queryset(sources, request)
+        return paginator.get_paginated_response([
+            {"id": str(source.pk), "text": source.quote, "date": source.date.isoformat(),
+             "branch": source.branch.name, "speaker": "unknown"} for source in page
+        ])
+
+
+class ACCAnalysisView(APIView):
+    permission_classes = [IsSuperAdmin]
+
+    def post(self, request):
+        serializer = ACCReportRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        model = selected_model(request)
+        try:
+            snapshot = acc_snapshot(user=request.user, **serializer.validated_data)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"detail": " ".join(exc.messages)}) from exc
+        return queue_analysis(request.user, snapshot, ACCAnalysisJob, generate_acc_analysis,
+                              True, request=request, model=model)
 
 
 class ReportHistoryView(APIView):
