@@ -7,6 +7,12 @@ defineProps({ attendanceRoute: String, physicalRoute: String })
     <div class="page-header"><h1>Reporting</h1></div>
     <p class="page-subtitle">Choose a report, select your dates, and optionally request an AI explanation of the recorded trends.</p>
     <div class="report-options">
+      <section v-if="auth.user?.role === 'super_admin'" class="card">
+        <h2>ACC reporting</h2>
+        <p>Prepare a quarterly draft from reviewed feedback, recorded participation, and physical testing. Review source references and edit before use.</p>
+        <RouterLink class="btn-primary" :to="{ name: 'sa-acc-report' }">Prepare ACC report</RouterLink>
+        <p><RouterLink :to="{ name: 'sa-acc-history' }">View past ACC reports</RouterLink></p>
+      </section>
       <section class="card">
         <h2>Attendance reporting</h2>
         <p>See attendance rates, participant visits and monthly trends. Finalised empty sessions are included; incomplete registers are counted separately.</p>

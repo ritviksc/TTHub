@@ -307,6 +307,16 @@ export async function setAttendanceFinalised(sessionId, finalised) {
 
 /* ---- reporting ---- */
 
+export async function getACCSources(scope, page = 1) {
+  return (await getWithRetry('/reporting/acc/sources/', { params: { ...scope, page } })).data
+}
+export async function generateACCReport(payload) {
+  return (await api.post('/reporting/acc/analyse/', payload)).data
+}
+export async function getACCAnalysisJob(jobId, signal) {
+  return (await getWithRetry(`/reporting/acc/jobs/${jobId}/`, { signal })).data
+}
+
 export async function getReportHistory(reportType, { id, page = 1 } = {}) {
   return (await getWithRetry(`/reporting/${reportType}/history/${id ? `${id}/` : ''}`, { params: { page } })).data
 }
