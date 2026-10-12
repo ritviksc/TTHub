@@ -195,18 +195,51 @@ function participantName(record) {
 }
 .counter strong { color: var(--text); }
 
-.absence-form { padding: 12px 16px; }
-.absence-form fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.absence-form select, .absence-form input { padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font: inherit; max-width: 100%; }
+.absence-form {
+  padding: 12px 16px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+  margin-top: 6px;
+}
+.absence-form fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.absence-form select,
+.absence-form input {
+  padding: 8px 12px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  max-width: 100%;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.absence-form select:focus,
+.absence-form input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-tint);
+}
 
-.person-list { display: flex; flex-direction: column; gap: 10px; }
+.person-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
 .person-row {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   width: 100%;
-  padding: 12px 16px;
+  padding: 14px 18px;
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-lg);
@@ -214,13 +247,39 @@ function participantName(record) {
   font: inherit;
   text-align: left;
   cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: all 0.15s ease;
 }
-.person-row:hover { border-color: var(--maroon); }
+.person-row:hover {
+  border-color: var(--teal);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-panel);
+}
 
-.person-row.present { border-color: var(--success); background: var(--success-bg); }
-.participant-photo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+.person-row.present {
+  border-color: var(--success);
+  background: var(--success-bg);
+  box-shadow: 0 1px 4px rgba(35, 108, 60, 0.15);
+}
+.participant-photo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(13, 130, 135, 0.2);
+}
 
-.person-name { flex: 1; font-weight: 600; }
-.person-status { font-size: var(--text-sm); color: var(--text-muted); }
-.person-row.present .person-status { color: var(--success); font-weight: 600; }
+.person-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: var(--text-md);
+}
+.person-status {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.person-row.present .person-status {
+  color: var(--success);
+  font-weight: 600;
+}
 </style>

@@ -8,8 +8,26 @@ import { auth } from './stores/auth.js'
   <PublicNav v-if="!auth.user" />
   <DashboardNav v-else />
   <RouterView v-slot="{ Component }">
-    <Transition name="fade" mode="out-in">
+    <transition name="page-fade" mode="out-in">
       <component :is="Component" />
-    </Transition>
+    </transition>
   </RouterView>
 </template>
+
+<style>
+/* Smooth page navigation transition */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+</style>

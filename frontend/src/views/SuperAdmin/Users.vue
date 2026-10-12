@@ -280,27 +280,43 @@ async function handleDeactivate(id) {
 
 <style scoped>
 /* Filter bar holds role pills and branch dropdown side by side */
-.filter-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-.filter-bar .pills { margin-bottom: 0; }
-.branch-select {
-  border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm);
-  padding: 6px 12px; font-size: var(--text-base); background: var(--surface); color: var(--text);
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
-.user-link { font-weight: 600; color: var(--text); text-decoration: none; }
-.user-link:hover { color: var(--teal); }
-.empty-row { text-align: center; color: var(--text-faint); padding: 32px 16px; }
-.empty-row {
-  text-align: center;
-  color: var(--text-faint);
-  padding: 32px 16px;
+.filter-bar .pills {
+  margin-bottom: 0;
+}
+.branch-select {
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: var(--text-base);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.branch-select:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-tint);
 }
 .user-link {
-  color: var(--text);
   font-weight: 600;
-}
-
-.user-link:hover {
-  color: var(--maroon);
+  color: var(--text);
   text-decoration: none;
+  transition: color 0.15s ease;
+}
+.user-link:hover {
+  color: var(--teal);
+  text-decoration: underline;
+}
+.empty-row {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 32px 16px;
 }
 </style>

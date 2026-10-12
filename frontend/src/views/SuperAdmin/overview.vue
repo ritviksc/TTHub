@@ -260,13 +260,16 @@ function openBranch(id) {
   text-decoration: underline; white-space: nowrap; margin-left: 16px;
 }
 
-.bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+.bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
 .panel {
-  background: var(--surface); border-radius: var(--radius-lg); padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
   box-shadow: var(--shadow-card);
 }
-.panel h3 { margin-bottom: 16px; }
-.loading-note { color: var(--text-faint); font-size: var(--text-base); }
+.panel h3 { margin-bottom: 16px; font-size: var(--text-md); font-weight: 700; color: var(--text); }
+.loading-note { color: var(--text-muted); font-size: var(--text-base); }
 
 .region-rows { display: flex; flex-direction: column; gap: 14px; }
 .region-label {
@@ -277,11 +280,18 @@ function openBranch(id) {
 .region-bar-track {
   height: 8px; border-radius: var(--radius-pill); background: var(--surface-sunken); overflow: hidden;
 }
-.region-bar { height: 100%; border-radius: var(--radius-pill); background: var(--teal); }
+.region-bar {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--teal);
+  transition: width 0.3s ease;
+}
 
 .branch-summary-row {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 0; border-bottom: 1px solid var(--border-faint); cursor: pointer;
+  padding: 12px 8px; border-bottom: 1px solid var(--border-faint); cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s ease;
 }
 .branch-summary-row:last-of-type { border-bottom: none; }
 .branch-summary-row:hover { background: var(--surface-sunken); }
@@ -290,8 +300,8 @@ function openBranch(id) {
 .branch-summary-meta { font-size: var(--text-sm); color: var(--text-muted); margin-top: 2px; }
 .branch-summary-count { font-size: var(--text-lg); font-weight: 700; color: var(--text); }
 
-.view-all { display: block; margin-top: 14px; font-size: var(--text-sm); font-weight: 600; color: var(--teal-dark); text-decoration: none; }
-.view-all:hover { text-decoration: underline; }
+.view-all { display: block; margin-top: 16px; font-size: var(--text-sm); font-weight: 600; color: var(--teal); text-decoration: none; }
+.view-all:hover { color: var(--teal-dark); text-decoration: underline; }
 
 .table-note { font-size: var(--text-sm); color: var(--text-faint); margin: 0; }
 

@@ -346,6 +346,7 @@ onMounted(loadData)
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -370,13 +371,13 @@ onMounted(loadData)
 .alert-action {
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--maroon);
+  color: var(--teal);
   text-decoration: none;
 }
 
 .alert-action:hover {
   text-decoration: underline;
-  color: var(--maroon-dark);
+  color: var(--teal-dark);
 }
 
 .overview-columns {
@@ -412,13 +413,14 @@ onMounted(loadData)
 
 .card-link {
   font-size: var(--text-sm);
-  color: var(--maroon);
+  color: var(--teal);
   text-decoration: none;
   font-weight: 600;
 }
 
 .card-link:hover {
   text-decoration: underline;
+  color: var(--teal-dark);
 }
 
 .empty-chart, .empty-list {

@@ -4,6 +4,8 @@ import { useRouter, RouterLink } from 'vue-router'
 import logoSrc from '@/assets/logo-mark.png'
 import { auth, clearUser } from '@/stores/auth.js'
 import { logout } from '@/apis.js'
+import { initials } from '@/utils/sessions.js'
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 
 const router = useRouter()
 const loggingOut = ref(false)
@@ -13,27 +15,27 @@ const NAV_ITEMS = {
   super_admin: [
     { label: 'National overview', to: '/super-admin/overview' },
     { label: 'Kapa',            to: '/super-admin/branches' },
-    { label: 'Kaumātua',      to: '/super-admin/participants' },
-    { label: 'Users',             to: '/super-admin/users' },
-    { label: 'Reporting',         to: '/super-admin/reporting' },
-    { label: 'Documents',         to: '/documents' },
-    { label: 'Administration',    to: '/super-admin/administration' },
+    { label: 'Kaumātua',        to: '/super-admin/participants' },
+    { label: 'Users',           to: '/super-admin/users' },
+    { label: 'Reporting',       to: '/super-admin/reporting' },
+    { label: 'Documents',       to: '/documents' },
+    { label: 'Administration',  to: '/super-admin/administration' },
   ],
   branch_manager: [
-    { label: 'Overview',     to: '/branch-manager/overview' },
-    { label: 'Sessions',     to: '/branch-manager/sessions' },
-    { label: 'Kaumātua', to: '/branch-manager/participants' },
-    { label: 'Kaimahi',  to: '/branch-manager/instructors' },
-    { label: 'Feedback',     to: '/branch-manager/feedback' },
-    { label: 'Reports',      to: '/branch-manager/reports' },
-    { label: 'Documents',    to: '/documents' },
+    { label: 'Overview',        to: '/branch-manager/overview' },
+    { label: 'Sessions',        to: '/branch-manager/sessions' },
+    { label: 'Kaumātua',        to: '/branch-manager/participants' },
+    { label: 'Kaimahi',         to: '/branch-manager/instructors' },
+    { label: 'Feedback',        to: '/branch-manager/feedback' },
+    { label: 'Reports',         to: '/branch-manager/reports' },
+    { label: 'Documents',       to: '/documents' },
   ],
   instructor: [
-    { label: 'Home',         to: '/instructor/home' },
-    { label: 'Sessions',     to: '/instructor/sessions' },
-    { label: 'Kaumātua', to: '/instructor/participants' },
-    { label: 'Feedback',     to: '/instructor/feedback' },
-    { label: 'Documents',    to: '/documents' },
+    { label: 'Home',            to: '/instructor/home' },
+    { label: 'Sessions',        to: '/instructor/sessions' },
+    { label: 'Kaumātua',        to: '/instructor/participants' },
+    { label: 'Feedback',        to: '/instructor/feedback' },
+    { label: 'Documents',       to: '/documents' },
   ],
 }
 
@@ -50,13 +52,22 @@ const roleLabel = computed(() => ROLE_LABELS[auth.user?.role] ?? '')
 const scope = computed(() =>
   auth.user?.role === 'super_admin'
     ? 'National'
-    : `Kapa: ${auth.user?.branch?.name ?? '—'}`
+    : (auth.user?.branch?.name || '—')
 )
 
 const userName = computed(() => {
   const u = auth.user
   if (!u) return ''
   return `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || u.email
+})
+
+const shortName = computed(() => {
+  const u = auth.user
+  if (!u) return ''
+  const full = `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim()
+  if (full) return full
+  if (u.email) return u.email.split('@')[0]
+  return 'User'
 })
 
 async function handleLogout() {
@@ -84,9 +95,12 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 <template>
   <nav class="app-nav">
     <div class="nav-left">
-      <img :src="logoSrc" class="nav-logo" alt="" />
-<RouterLink :to="navItems[0]?.to ?? '/'" class="nav-brand">Taurite Tū</RouterLink>
- <span class="nav-scope">{{ scope }}</span>
+      <img :src="logoSrc" class="nav-logo" alt="Taurite Tū logo" />
+      <RouterLink :to="navItems[0]?.to ?? '/'" class="nav-brand">Taurite Tū</RouterLink>
+      <span class="nav-scope" :title="auth.user?.role === 'super_admin' ? 'National scope' : `Kapa: ${auth.user?.branch?.name ?? '—'}`">
+        <span class="live-pulse-dot"></span>
+        {{ scope }}
+      </span>
     </div>
 
     <div class="nav-links">
@@ -101,9 +115,16 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
     </div>
 
     <div class="nav-right">
-      <span class="nav-user">{{ userName }} · {{ roleLabel }}</span>
-      <span v-if="logoutError" role="alert">{{ logoutError }}</span>
-      <button class="nav-btn" :disabled="loggingOut" @click="handleLogout">{{ loggingOut ? 'Logging out…' : 'Log out' }}</button>
+      <ThemeSwitcher />
+      <div class="nav-user-pill" :title="`${userName} (${roleLabel})`">
+        <span class="user-avatar">{{ initials(userName) }}</span>
+        <span class="nav-user">{{ shortName }}</span>
+      </div>
+      <span v-if="logoutError" class="logout-error" role="alert">{{ logoutError }}</span>
+      <button class="nav-btn nav-btn--logout" :disabled="loggingOut" :title="loggingOut ? 'Logging out…' : 'Log out'" @click="handleLogout">
+        <span class="logout-icon">⎋</span>
+        <span class="logout-text">{{ loggingOut ? 'Logging out…' : 'Log out' }}</span>
+      </button>
     </div>
   </nav>
 </template>
