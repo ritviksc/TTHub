@@ -4,11 +4,12 @@ import { useRoute } from 'vue-router'
 import { getReportHistory } from '@/apis.js'
 import AttendanceReport from '@/components/reporting/AttendanceReport.vue'
 import PhysicalReport from '@/components/reporting/PhysicalReport.vue'
+import ACCReport from '@/components/reporting/ACCReport.vue'
 
 const props = defineProps({ reportType: String })
 const route = useRoute()
 const result = ref(null), loading = ref(false), error = ref('')
-const title = computed(() => props.reportType === 'attendance' ? 'attendance' : 'physical-test')
+const title = computed(() => ({ attendance: 'attendance', physical: 'physical-test', acc: 'ACC' })[props.reportType])
 const historyRoute = computed(() => `sa-${props.reportType}-history`)
 const page = computed(() => Math.max(1, Number.parseInt(route.query.page, 10) || 1))
 const dateTime = value => new Date(value).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })
@@ -31,14 +32,14 @@ watch(() => [props.reportType, route.params.id, page.value], async ([type, id, p
 <template>
   <div class="dash-page"><main class="content">
     <RouterLink v-if="route.params.id" class="back-link" :to="{ name: historyRoute, params: { id: '' }, query: { page } }">← Past {{ title }} reports</RouterLink>
-    <RouterLink v-else class="back-link" :to="{ name: `sa-${reportType}-report` }">← {{ title === 'attendance' ? 'Attendance' : 'Physical-testing' }} reporting</RouterLink>
+    <RouterLink v-else class="back-link" :to="{ name: `sa-${reportType}-report` }">← {{ title }} reporting</RouterLink>
     <p v-if="loading" class="loading-note" role="status">Loading saved reports…</p>
     <p v-else-if="error" class="form-error" role="alert">{{ error }}</p>
     <template v-else-if="result">
       <template v-if="route.params.id">
         <p class="page-subtitle">{{ result.branch_name }} · Generated {{ dateTime(result.created_at) }} (NZ time) · By {{ result.requested_by }}</p>
         <p class="loading-note">Statistics saved when this report was generated. The explanation includes any saved edits.</p>
-        <component :is="reportType === 'attendance' ? AttendanceReport : PhysicalReport" :key="result.job_id" :saved-report="result" />
+        <component :is="({ attendance: AttendanceReport, physical: PhysicalReport, acc: ACCReport })[reportType]" :key="result.job_id" :saved-report="result" />
       </template>
       <template v-else>
         <div class="page-header"><h1>Past {{ title }} reports</h1></div>

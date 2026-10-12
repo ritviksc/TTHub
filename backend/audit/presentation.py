@@ -60,7 +60,7 @@ def summary(event, viewer, staff_label=None):
             if previous == str(viewer.branch_id) and event.branch_id != viewer.branch_id:
                 text = "Staff member left your branch" + (f" — {staff_label}" if staff_label else "")
     elif event.action.startswith("report."):
-        kind = {"attendance": "Attendance", "physical": "Physical testing"}.get(event.details.get("report_type"))
+        kind = {"attendance": "Attendance", "physical": "Physical testing", "acc": "ACC"}.get(event.details.get("report_type"))
         if kind:
             text += f" — {kind}"
         model = event.details.get("model")

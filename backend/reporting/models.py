@@ -55,3 +55,8 @@ class AttendanceAnalysisJob(AnalysisJob):
 
 class PhysicalAnalysisJob(AnalysisJob):
     pass
+
+
+class ACCAnalysisJob(AnalysisJob):
+    def can_access(self, user):
+        return user.role == "super_admin" and super().can_access(user)
