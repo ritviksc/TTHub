@@ -34,13 +34,8 @@ function showNotice(title) {
         </div>
         <div class="card">
           <h3>Audit log</h3>
-<<<<<<< HEAD
-          <p>Every write and cross-branch read, append-only and enforced in the database.</p>
-          <a href="#" @click.prevent="showNotice('Audit log')">Review records →</a>
-=======
           <p>Review staff and branch changes, report generation, and API write outcomes.</p>
           <RouterLink :to="{ name: 'sa-audit-log' }">Open →</RouterLink>
->>>>>>> origin/master
         </div>
         <div class="card">
           <h3>Exports</h3>
