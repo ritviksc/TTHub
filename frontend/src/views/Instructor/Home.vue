@@ -1,38 +1,128 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, RouterLink } from 'vue-router'
 import { auth } from '@/stores/auth.js'
+import { listSessions } from '@/apis.js'
+import { programmeToday, formatSessionDate } from '@/utils/sessions.js'
+import { formatTimeDisplay, formatFullDate } from '@/utils/calendar.js'
+
+const router = useRouter()
 
 const instructorName = computed(() => {
   const u = auth.user
   if (!u) return ''
   return `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || u.email
 })
-const firstName = computed(() => instructorName.value.split(' ')[0])
+const firstName = computed(() => instructorName.value.split(' ')[0] || 'Kaimahi')
 
-// TODO: all of the below is prototype data — no API behind it yet.
-const today = ref('Thursday 13 August')
+const sessions = ref([])
+const loading = ref(true)
+const loadError = ref(null)
 
-const todaySession = ref({
-  name: 'Thursday morning class',
-  startsIn: '25 minutes',
-  time: '9:30–10:30am',
-  location: 'Te Whare Manaaki, Rotorua',
-  roster: 14,
-  tags: ['2 sent word they\'re māuiui', '1 new participant this week'],
+const todayDateStr = programmeToday()
+const todayDisplay = computed(() => formatFullDate(todayDateStr))
+
+async function load() {
+  loading.value = true
+  loadError.value = null
+  try {
+    sessions.value = await listSessions()
+  } catch (err) {
+    loadError.value = 'Could not load sessions.'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(load)
+
+// Determine the featured session (today's, next upcoming, or most recent)
+const featuredSession = computed(() => {
+  if (!sessions.value.length) return null
+
+  // 1. Session today
+  const todayMatch = sessions.value.find(s => s.date === todayDateStr)
+  if (todayMatch) return todayMatch
+
+  // 2. Next upcoming session
+  const upcoming = sessions.value
+    .filter(s => s.date > todayDateStr)
+    .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))
+  if (upcoming.length > 0) return upcoming[0]
+
+  // 3. Fallback to most recent session
+  return sessions.value[0]
 })
 
-const recentSessions = ref([
-  { name: 'Tuesday morning class',  date: 'Tue 11 Aug', attended: 12,   total: 14,   amended: false },
-  { name: 'Thursday morning class', date: 'Thu 6 Aug',  attended: 13,   total: 14,   amended: false },
-  { name: 'Tuesday morning class',  date: 'Tue 4 Aug',  attended: null, total: null, amended: true, amendedDate: 'Wed 5 Aug' },
-  { name: 'Thursday morning class', date: 'Thu 30 Jul', attended: 11,   total: 14,   amended: false },
-])
+const isToday = computed(() => featuredSession.value?.date === todayDateStr)
+const isUpcoming = computed(() => featuredSession.value && featuredSession.value.date > todayDateStr)
 
-const alerts = ref([
-  { type: 'warning', message: '3 participants overdue for physical testing', action: 'See who →' },
-  { type: 'info',    message: 'Hone T. — GP consent renews 30 Aug', action: 'Open record →' },
-  { type: 'info',    message: 'Quarterly whakaaro round closes Fri', action: 'Record feedback →' },
-])
+const sessionCardLabel = computed(() => {
+  if (!featuredSession.value) return 'SESSIONS'
+  if (isToday.value) {
+    return `TODAY · ${formatTimeDisplay(featuredSession.value.time)}`
+  }
+  if (isUpcoming.value) {
+    return `NEXT SESSION · ${formatSessionDate(featuredSession.value.date)}`
+  }
+  return `MOST RECENT · ${formatSessionDate(featuredSession.value.date)}`
+})
+
+const pageSubtitle = computed(() => {
+  const todayCount = sessions.value.filter(s => s.date === todayDateStr).length
+  if (todayCount === 1) return `${todayDisplay.value} · 1 session today`
+  if (todayCount > 1) return `${todayDisplay.value} · ${todayCount} sessions today`
+  return `${todayDisplay.value} · No sessions today`
+})
+
+function startRollCall() {
+  if (featuredSession.value?.id) {
+    router.push({
+      name: 'in-attendance-mode',
+      params: { id: featuredSession.value.id },
+    })
+  } else {
+    router.push({ name: 'in-sessions' })
+  }
+}
+
+function openSessionDetails() {
+  if (featuredSession.value?.id) {
+    router.push({
+      name: 'in-session-detail',
+      params: { id: featuredSession.value.id },
+    })
+  } else {
+    router.push({ name: 'in-sessions' })
+  }
+}
+
+const recentSessions = computed(() => {
+  return [...sessions.value]
+    .sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || '')))
+    .slice(0, 5)
+})
+
+const alerts = [
+  {
+    type: 'warning',
+    message: 'Check kaumātua attendance & record assessments',
+    action: 'Open kaumātua →',
+    to: { name: 'in-participants' },
+  },
+  {
+    type: 'info',
+    message: 'Review full timetable and session calendar',
+    action: 'Open sessions →',
+    to: { name: 'in-sessions' },
+  },
+  {
+    type: 'info',
+    message: 'Read training resources and programme documentation',
+    action: 'Open documents →',
+    to: { name: 'documents' },
+  },
+]
 </script>
 
 <template>
@@ -40,30 +130,64 @@ const alerts = ref([
     <main class="content">
 
       <h1>Kia ora, {{ firstName }}</h1>
-      <p class="page-subtitle">{{ today }} · one session today</p>
+      <p class="page-subtitle">{{ pageSubtitle }}</p>
 
-      <div class="today-card">
+      <div v-if="loading" class="loading-state">
+        <p>Loading your sessions…</p>
+      </div>
+
+      <div v-else-if="featuredSession" class="today-card">
         <div>
-          <div class="today-label">TODAY · STARTS IN {{ todaySession.startsIn.toUpperCase() }}</div>
-          <h2 class="today-title">{{ todaySession.name }}</h2>
+          <div class="today-label">{{ sessionCardLabel }}</div>
+          <h2 class="today-title">{{ featuredSession.activity || 'Class session' }}</h2>
           <p class="session-meta">
-            {{ todaySession.time }} · {{ todaySession.location }} · {{ todaySession.roster }} on the roster
+            {{ formatTimeDisplay(featuredSession.time) }} · 
+            {{ featuredSession.branch_name || auth.user?.branch?.name || 'Branch' }} · 
+            {{ featuredSession.roster_count ?? 0 }} on the roster
           </p>
           <div class="session-tags">
-            <span class="tag" v-for="tag in todaySession.tags" :key="tag">{{ tag }}</span>
+            <span v-if="featuredSession.attendance_finalised" class="tag tag--finalised">
+              ✓ Attendance finalised
+            </span>
+            <span v-else class="tag tag--active">
+              Ready for roll call
+            </span>
+            <span class="tag">
+              {{ featuredSession.present_count ?? 0 }} present
+            </span>
+            <span v-if="featuredSession.roster_count" class="tag">
+              {{ featuredSession.roster_count }} rostered
+            </span>
           </div>
         </div>
         <div class="today-card-right">
-          <button class="btn-roll-call">
+          <button class="btn-roll-call" @click="startRollCall" title="Start roll call attendance mode">
             Start roll call
             <span class="btn-sub">Walk the room with the tablet</span>
           </button>
-          <button class="btn-secondary">Open session details</button>
+          <button class="btn-secondary" @click="openSessionDetails" title="Open full session details">
+            Open session details
+          </button>
+        </div>
+      </div>
+
+      <div v-else class="today-card empty-card">
+        <div>
+          <div class="today-label">SCHEDULE</div>
+          <h2 class="today-title">No sessions scheduled</h2>
+          <p class="session-meta">
+            There are currently no sessions scheduled for this branch.
+          </p>
+        </div>
+        <div class="today-card-right">
+          <button class="btn-roll-call" @click="router.push({ name: 'in-sessions' })">
+            Go to Sessions
+            <span class="btn-sub">Create or schedule a session</span>
+          </button>
         </div>
       </div>
 
       <div class="home-grid">
-
         <div>
           <h3 class="section-heading">Recent sessions</h3>
           <table class="data-table">
@@ -75,12 +199,28 @@ const alerts = ref([
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(s, i) in recentSessions" :key="i">
-                <td>{{ s.name }}</td>
-                <td>{{ s.date }}</td>
+              <tr v-if="!recentSessions.length">
+                <td colspan="3" class="empty-sessions">No sessions found.</td>
+              </tr>
+              <tr
+                v-for="s in recentSessions"
+                :key="s.id"
+                class="clickable-row"
+                @click="router.push({ name: 'in-session-detail', params: { id: s.id } })"
+              >
                 <td>
-                  <span v-if="s.amended" class="amended">↗ Amended {{ s.amendedDate }}</span>
-                  <span v-else class="attendance-ok">✓ {{ s.attended }} of {{ s.total }} present</span>
+                  <RouterLink :to="{ name: 'in-session-detail', params: { id: s.id } }" class="session-name-link" @click.stop>
+                    {{ s.activity || 'Class session' }}
+                  </RouterLink>
+                </td>
+                <td>{{ formatSessionDate(s.date) }}</td>
+                <td>
+                  <span v-if="s.attendance_finalised" class="attendance-ok">
+                    ✓ {{ s.present_count }} of {{ s.roster_count }} present
+                  </span>
+                  <span v-else class="amended">
+                    ⏱ Unfinalised
+                  </span>
                 </td>
               </tr>
             </tbody>
@@ -95,56 +235,224 @@ const alerts = ref([
                 <span v-if="alert.type === 'warning'">⚠ </span>
                 {{ alert.message }}
               </div>
-              <a href="#">{{ alert.action }}</a>
+              <RouterLink :to="alert.to">{{ alert.action }}</RouterLink>
             </div>
           </div>
         </div>
-
       </div>
 
-      <p class="demo-note">Demonstration data only. All names, branches and quotes are fictional.</p>
+      <p class="demo-note">Taurite Tū Māori Movement & Well-being programme.</p>
     </main>
   </div>
 </template>
 
 <style scoped>
 .today-card {
-  display: flex; justify-content: space-between; align-items: center;
-  background: var(--surface); border-radius: 12px; padding: 24px 28px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: 36px; gap: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--teal);
+  border-radius: var(--radius-xl);
+  padding: 28px 32px;
+  box-shadow: var(--shadow-panel);
+  margin-bottom: 36px;
+  gap: 24px;
 }
 .today-label {
-  font-size: 11px; font-weight: 700; color: var(--maroon);
-  letter-spacing: 0.5px; margin-bottom: 6px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--teal);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
 }
-.today-title { font-size: 22px; margin-bottom: 6px; }
-.session-meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
-.session-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-.tag { background: var(--bg); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--text-secondary); }
+.today-title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.session-meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+.session-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tag {
+  background: var(--sand-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--bark);
+}
+.tag--active {
+  background: var(--teal-tint);
+  border-color: var(--teal-light);
+  color: var(--teal-dark);
+  font-weight: 600;
+}
+.tag--finalised {
+  background: var(--success-bg, #ecfdf5);
+  border-color: var(--success, #10b981);
+  color: var(--success, #10b981);
+  font-weight: 600;
+}
 
-.today-card-right { display: flex; flex-direction: column; gap: 10px; min-width: 200px; }
+.today-card-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 200px;
+}
 .btn-roll-call {
-  background: var(--maroon); color: var(--text-on-ink); border: none; border-radius: 8px;
-  padding: 12px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: var(--primary);
+  color: var(--text-on-ink);
+  border: none;
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  box-shadow: 0 2px 6px var(--shadow-glow, rgba(37, 99, 235, 0.25));
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.btn-roll-call:hover { background: var(--maroon-dark); }
-.btn-sub { font-size: 11px; font-weight: 400; opacity: 0.8; }
+.btn-roll-call:hover {
+  background: var(--primary-dark);
+  box-shadow: 0 4px 14px var(--shadow-glow, rgba(37, 99, 235, 0.4));
+  transform: translateY(-1px);
+}
+.btn-roll-call:active {
+  transform: translateY(0.5px);
+}
+.btn-sub {
+  font-size: var(--text-xs);
+  font-weight: 400;
+  opacity: 0.88;
+}
 .btn-secondary {
-  background: var(--surface); color: var(--text); border: 1.5px solid var(--border-strong); border-radius: 8px;
-  padding: 10px 18px; font-size: 13px; cursor: pointer; font-weight: 500;
+  background: var(--surface);
+  color: var(--text);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 10px 18px;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.btn-secondary:hover { border-color: var(--text-muted); background: var(--surface); }
+.btn-secondary:hover {
+  border-color: var(--teal);
+  background: var(--surface-sunken);
+  color: var(--teal-dark);
+  transform: translateY(-1px);
+}
+.btn-secondary:active {
+  transform: translateY(0.5px);
+}
 
-.home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
-.section-heading { margin-bottom: 14px; }
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.section-heading {
+  margin-bottom: 16px;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text);
+}
 
-.alerts { display: flex; flex-direction: column; gap: 10px; }
-.alert-row { background: var(--surface); border-radius: 8px; padding: 14px 16px; font-size: 13px; color: var(--text-secondary); }
-.alert-row.warning { background: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text); font-weight: 600; }
-.alert-row a { display: block; font-size: 12px; color: var(--maroon); text-decoration: none; margin-top: 2px; }
-.alert-row a:hover { text-decoration: underline; }
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.clickable-row:hover {
+  background-color: var(--surface-sunken);
+}
+.session-name-link {
+  font-weight: 600;
+  color: var(--teal);
+  text-decoration: none;
+}
+.session-name-link:hover {
+  text-decoration: underline;
+}
+.empty-sessions {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 16px;
+}
+.loading-state {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+}
 
-.attendance-ok { color: var(--success); font-size: 13px; }
-.amended { color: var(--warning); font-size: 13px; font-weight: 500; }
+.alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alert-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-card);
+}
+.alert-row.warning {
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  color: var(--warning-text);
+  font-weight: 600;
+}
+.alert-row a {
+  display: inline-block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--teal);
+  text-decoration: none;
+  margin-top: 4px;
+}
+.alert-row a:hover {
+  text-decoration: underline;
+}
+
+.attendance-ok {
+  color: var(--success);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.amended {
+  color: var(--warning);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .today-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .today-card-right {
+    width: 100%;
+  }
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

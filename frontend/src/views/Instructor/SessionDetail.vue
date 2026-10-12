@@ -232,13 +232,40 @@ async function handleDelete() {
   font-size: var(--text-base);
   background: var(--surface);
   color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.data-table select:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-tint);
 }
 
 /* Colour the status so the table can be scanned at a glance. */
-.status-select.present { border-color: var(--success); color: var(--success); }
+.status-select.present {
+  border-color: var(--success);
+  color: var(--success);
+  background: var(--success-bg);
+}
 
 .not-applicable { color: var(--text-faint); }
-.other-reason { display: block; width: 100%; margin-top: 6px; }
+.other-reason {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-base);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.other-reason:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-tint);
+}
 
 .empty-row { text-align: center; color: var(--text-faint); padding: 32px 16px; }
 
@@ -251,6 +278,7 @@ async function handleDelete() {
   color: var(--danger);
   font-size: var(--text-sm);
   font-weight: 600;
+  cursor: pointer;
 }
 .link-danger:hover { text-decoration: underline; }
 </style>
