@@ -1,21 +1,26 @@
+from django.db import transaction
+from django.conf import settings
+from audit.services import report_event, transition_job
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
 from kombu.exceptions import OperationalError
 from redis.exceptions import RedisError
 from rest_framework import serializers
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 
 from users.permissions import IsBranchManager, IsSuperAdmin
-from .models import AttendanceAnalysisJob, PhysicalAnalysisJob
-from .serializers import AttendanceReportRequestSerializer
+from .models import AttendanceAnalysisJob, PhysicalAnalysisJob, ACCAnalysisJob
+from .serializers import AttendanceReportRequestSerializer, AnalysisModelSerializer, ReportNarrativeSerializer, ACCReportRequestSerializer
 from .services.attendance import attendance_statistics
-from .tasks import generate_attendance_analysis, generate_physical_analysis
+from .tasks import generate_attendance_analysis, generate_physical_analysis, generate_acc_analysis
+from .services.acc import acc_feedback, acc_snapshot
 from .services.physical import physical_statistics
 
 
 def job_response(job):
-    data = {"job_id": str(job.pk), "status": job.status}
+    data = {"job_id": str(job.pk), "status": job.status, "model": job.model_name or None}
     if job.status == job.Status.SUCCEEDED:
         data.update(statistics=job.statistics, narrative=job.narrative)
     elif job.status == job.Status.FAILED:
@@ -49,22 +54,41 @@ class AttendanceAnalysisView(AttendanceReportView):
         # Validate permissions and save the exact figures before queueing any AI work.
         statistics = self.report_statistics(request, request.data)
         return queue_analysis(request.user, statistics, AttendanceAnalysisJob, generate_attendance_analysis,
-                              statistics["totals"]["finalised_sessions"])
+                              statistics["totals"]["finalised_sessions"], request=request, model=selected_model(request))
 
 
-def queue_analysis(user, statistics, job_model, task, has_data):
-    job = job_model.objects.create(
-        requested_by=user, branch_id=statistics["scope"]["branch_id"], statistics=statistics,
-        status="queued" if has_data else "succeeded",
-    )
+class ReportModelsView(APIView):
+    permission_classes = [IsSuperAdmin | IsBranchManager]
+
+    def get(self, request):
+        from llm.services.catalog import report_models
+        return Response(report_models())
+
+
+def selected_model(request):
+    serializer = AnalysisModelSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    return serializer.validated_data["model"]
+
+
+def queue_analysis(user, statistics, job_model, task, has_data, request=None, model=None):
+    with transaction.atomic():
+        job = job_model.objects.create(
+            requested_by=user, branch_id=statistics["scope"]["branch_id"], statistics=statistics,
+            status="queued" if has_data else "succeeded", model_name=model if model is not None else (settings.DEFAULT_LLM_MODEL or ""),
+        )
+        report_event(job, "report.requested", request=request, source="api")
+        if not has_data:
+            report_event(job, "report.succeeded", request=request, source="api", reason="no_data")
     if job.status == job.Status.SUCCEEDED:
         return Response(job_response(job))
     try:
         task.apply_async(args=[str(job.pk)], expires=job.expires_at)
     except (OperationalError, RedisError, OSError):
-        job.status = job.Status.FAILED
-        job.error = "The analysis queue is unavailable. Please try again."
-        job.save(update_fields=["status", "error"])
+        transition_job(job, job_model.objects.filter(pk=job.pk, status="queued"), "failed",
+                       source="api", reason="queue_unavailable",
+                       error="The analysis queue is unavailable. Please try again.")
+        job.refresh_from_db()
         return Response(job_response(job), status=503)
     return Response(job_response(job), status=202)
 
@@ -73,12 +97,29 @@ def queue_analysis(user, statistics, job_model, task, has_data):
 class AnalysisStatusView(APIView):
     permission_classes = [IsSuperAdmin | IsBranchManager]
 
+    def get_permissions(self):
+        if self.request.method == "PATCH":
+            return [IsSuperAdmin()]
+        return super().get_permissions()
+
+    @transaction.atomic
+    def patch(self, request, pk):
+        job = get_object_or_404(self.job_model, pk=pk)
+        if job.status != job.Status.SUCCEEDED or not job.narrative:
+            return Response({"detail": "Only completed AI explanations can be edited."}, status=409)
+        serializer = ReportNarrativeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        job.narrative = serializer.validated_data["narrative"]
+        job.save(update_fields=["narrative"])
+        report_event(job, "report.edited", request=request, source="api")
+        return Response(job_response(job))
+
     def get(self, request, pk):
         job = get_object_or_404(self.job_model, pk=pk, requested_by=request.user)
         if not job.can_access(request.user):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("You no longer have access to this report's branch.")
-        job.expire_if_needed()
+        job.expire_if_needed(source="api")
         return Response(job_response(job))
 
 
@@ -96,8 +137,73 @@ class PhysicalAnalysisView(PhysicalReportView):
     def post(self, request):
         statistics = self.report_statistics(request, request.data)
         return queue_analysis(request.user, statistics, PhysicalAnalysisJob, generate_physical_analysis,
-                              statistics["totals"]["completed_assessments"])
+                              statistics["totals"]["completed_assessments"], request=request, model=selected_model(request))
 
 
 class PhysicalAnalysisStatusView(AnalysisStatusView):
     job_model = PhysicalAnalysisJob
+
+
+class ACCAnalysisStatusView(AnalysisStatusView):
+    permission_classes = [IsSuperAdmin]
+    job_model = ACCAnalysisJob
+
+
+class ACCSourcesView(APIView):
+    permission_classes = [IsSuperAdmin]
+
+    def get(self, request):
+        serializer = AttendanceReportRequestSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        try:
+            sources = acc_feedback(user=request.user, **serializer.validated_data)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"detail": " ".join(exc.messages)}) from exc
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        page = paginator.paginate_queryset(sources, request)
+        return paginator.get_paginated_response([
+            {"id": str(source.pk), "text": source.quote, "date": source.date.isoformat(),
+             "branch": source.branch.name, "speaker": "unknown"} for source in page
+        ])
+
+
+class ACCAnalysisView(APIView):
+    permission_classes = [IsSuperAdmin]
+
+    def post(self, request):
+        serializer = ACCReportRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        model = selected_model(request)
+        try:
+            snapshot = acc_snapshot(user=request.user, **serializer.validated_data)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"detail": " ".join(exc.messages)}) from exc
+        return queue_analysis(request.user, snapshot, ACCAnalysisJob, generate_acc_analysis,
+                              True, request=request, model=model)
+
+
+class ReportHistoryView(APIView):
+    permission_classes = [IsSuperAdmin]
+    job_model = None
+
+    def get(self, request, pk=None):
+        jobs = self.job_model.objects.filter(status="succeeded", narrative__isnull=False).exclude(narrative="")
+        if pk is not None:
+            job = get_object_or_404(jobs.select_related("branch", "requested_by"), pk=pk)
+            return Response({**job_response(job), "created_at": job.created_at,
+                             "branch_name": job.branch.name if job.branch else "All branches",
+                             "requested_by": job.requested_by.email})
+        # Fetch only the scope from the saved snapshot, not participant histories or narrative text.
+        rows = jobs.order_by("-created_at", "-pk").values(
+            "pk", "created_at", "branch__name", "requested_by__email", "statistics__scope",
+        )
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        page = paginator.paginate_queryset(rows, request)
+        return paginator.get_paginated_response([
+            {"job_id": str(row["pk"]), "created_at": row["created_at"],
+             "branch_name": row["branch__name"] or "All branches",
+             "requested_by": row["requested_by__email"], "scope": row["statistics__scope"]}
+            for row in page
+        ])

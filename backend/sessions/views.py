@@ -1,8 +1,9 @@
 from django.db import transaction
+from django.db.models.deletion import ProtectedError
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.response import Response
 
 from participants.models import Participant
@@ -56,6 +57,11 @@ class SessionListCreateView(generics.ListCreateAPIView):
         )
 
 
+class SessionHasFeedback(APIException):
+    status_code = 409
+    default_detail = "This session has saved feedback and cannot be deleted."
+
+
 class SessionDetailView(generics.RetrieveDestroyAPIView):
     permission_classes = ANY_STAFF
     serializer_class = SessionDetailSerializer
@@ -69,7 +75,10 @@ class SessionDetailView(generics.RetrieveDestroyAPIView):
     def perform_destroy(self, instance):
         if self.request.user.role != UserAccount.Role.INSTRUCTOR or instance.created_by_id != self.request.user.id:
             raise PermissionDenied("Only the Instructor who created this session can delete it.")
-        instance.delete()
+        try:
+            instance.delete()
+        except ProtectedError as exc:
+            raise SessionHasFeedback() from exc
 
 
 class AttendanceRecordDetailView(generics.GenericAPIView):

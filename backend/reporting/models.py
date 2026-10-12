@@ -26,6 +26,7 @@ class AnalysisJob(models.Model):
     branch = models.ForeignKey("users.Branch", null=True, on_delete=models.PROTECT)
     statistics = models.JSONField()
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.QUEUED)
+    model_name = models.CharField(max_length=200, blank=True, default="")
     narrative = models.TextField(null=True, blank=True)
     error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -39,11 +40,12 @@ class AnalysisJob(models.Model):
             and user.branch_id == self.branch_id
         )
 
-    def expire_if_needed(self):
+    def expire_if_needed(self, source="system"):
         if self.expires_at <= timezone.now():
-            type(self).objects.filter(
+            from audit.services import transition_job
+            transition_job(self, type(self).objects.filter(
                 pk=self.pk, status__in=[self.Status.QUEUED, self.Status.RUNNING],
-            ).update(status=self.Status.FAILED, error="Analysis timed out. Please try again.")
+            ), "failed", source=source, reason="timeout", error="Analysis timed out. Please try again.")
             self.refresh_from_db()
 
 
@@ -53,3 +55,8 @@ class AttendanceAnalysisJob(AnalysisJob):
 
 class PhysicalAnalysisJob(AnalysisJob):
     pass
+
+
+class ACCAnalysisJob(AnalysisJob):
+    def can_access(self, user):
+        return user.role == "super_admin" and super().can_access(user)

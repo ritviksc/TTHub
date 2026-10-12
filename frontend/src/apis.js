@@ -307,6 +307,24 @@ export async function setAttendanceFinalised(sessionId, finalised) {
 
 /* ---- reporting ---- */
 
+export async function getACCSources(scope, page = 1) {
+  return (await getWithRetry('/reporting/acc/sources/', { params: { ...scope, page } })).data
+}
+export async function generateACCReport(payload) {
+  return (await api.post('/reporting/acc/analyse/', payload)).data
+}
+export async function getACCAnalysisJob(jobId, signal) {
+  return (await getWithRetry(`/reporting/acc/jobs/${jobId}/`, { signal })).data
+}
+
+export async function getReportHistory(reportType, { id, page = 1 } = {}) {
+  return (await getWithRetry(`/reporting/${reportType}/history/${id ? `${id}/` : ''}`, { params: { page } })).data
+}
+
+export async function saveReportNarrative(reportType, jobId, narrative) {
+  return (await api.patch(`/reporting/${reportType}/jobs/${jobId}/`, { narrative })).data
+}
+
 // scope: { start_date, end_date, branch_id? }; dates are inclusive YYYY-MM-DD.
 export async function getAttendanceReport(scope) {
   const response = await getWithRetry('/reporting/attendance/', { params: scope })
@@ -362,4 +380,22 @@ export async function listFeedback() {
 }
 export async function createFeedback(payload) {
   return (await api.post('/participants/feedback/', payload)).data
+}
+
+/* ---- branch reporting quarters ---- */
+export async function getBranchQuarters(branchId, year) {
+  return (await getWithRetry(`/branches/${branchId}/quarters/${year}/`)).data
+}
+
+export async function saveBranchQuarters(branchId, year, quarters) {
+  return (await api.put(`/branches/${branchId}/quarters/${year}/`, { quarters })).data
+}
+
+/* ---- audit trail (admins; branch scope enforced by server) ---- */
+export async function listAuditEvents(params = {}) {
+  return (await getWithRetry('/audit/', { params })).data
+}
+
+export async function getReportModels() {
+  return (await getWithRetry('/reporting/models/')).data
 }

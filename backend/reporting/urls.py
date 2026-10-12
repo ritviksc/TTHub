@@ -1,9 +1,21 @@
 from django.urls import path
 
-from .views import (AttendanceAnalysisView, AttendanceReportView, AttendanceAnalysisStatusView,
-                    PhysicalReportView, PhysicalAnalysisView, PhysicalAnalysisStatusView)
+from .views import (ReportModelsView, AttendanceAnalysisView, AttendanceReportView, AttendanceAnalysisStatusView,
+                    PhysicalReportView, PhysicalAnalysisView, PhysicalAnalysisStatusView, ReportHistoryView,
+                    ACCSourcesView, ACCAnalysisView, ACCAnalysisStatusView)
+from .models import AttendanceAnalysisJob, PhysicalAnalysisJob, ACCAnalysisJob
 
 urlpatterns = [
+    path("acc/sources/", ACCSourcesView.as_view()),
+    path("acc/analyse/", ACCAnalysisView.as_view()),
+    path("acc/jobs/<uuid:pk>/", ACCAnalysisStatusView.as_view()),
+    path("acc/history/", ReportHistoryView.as_view(job_model=ACCAnalysisJob)),
+    path("acc/history/<uuid:pk>/", ReportHistoryView.as_view(job_model=ACCAnalysisJob)),
+    path("attendance/history/", ReportHistoryView.as_view(job_model=AttendanceAnalysisJob)),
+    path("attendance/history/<uuid:pk>/", ReportHistoryView.as_view(job_model=AttendanceAnalysisJob)),
+    path("physical/history/", ReportHistoryView.as_view(job_model=PhysicalAnalysisJob)),
+    path("physical/history/<uuid:pk>/", ReportHistoryView.as_view(job_model=PhysicalAnalysisJob)),
+    path("models/", ReportModelsView.as_view(), name="report-models"),
     path("physical/", PhysicalReportView.as_view(), name="physical-report"),
     path("physical/analyse/", PhysicalAnalysisView.as_view(), name="physical-analysis"),
     path("physical/jobs/<uuid:pk>/", PhysicalAnalysisStatusView.as_view(), name="physical-analysis-status"),

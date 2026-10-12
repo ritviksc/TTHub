@@ -1,4 +1,5 @@
 <script setup>
+import QuarterPeriod from '@/components/reporting/QuarterPeriod.vue'
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { auth } from '@/stores/auth.js'
@@ -150,6 +151,8 @@ onMounted(loadData)
         </div>
       </div>
 
+      <QuarterPeriod v-if="auth.user?.branch?.id" :branch-id="auth.user.branch.id" settings-only />
+
       <!-- Loading State -->
       <p v-if="loading" class="loading-note">Loading branch data…</p>
 
@@ -173,7 +176,7 @@ onMounted(loadData)
           <div class="stat-tile">
             <div class="stat-tile-value">{{ averageAttendanceRate === null ? '—' : `${averageAttendanceRate}%` }}</div>
             <div class="stat-tile-label">Average attendance</div>
-            <div class="stat-tile-sub">Finalised sessions this quarter</div>
+            <div class="stat-tile-sub">Finalised sessions this calendar quarter</div>
           </div>
 
           <div class="stat-tile">

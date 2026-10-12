@@ -12,6 +12,7 @@ from django.contrib import admin
 """
 
 urlpatterns = [
+    path("api/audit/", include("audit.urls")),
     path("admin/", admin.site.urls),
     path("api/auth/", include("users.urls")),
     path("api/participants/", include("participants.urls")),

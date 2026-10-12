@@ -11,6 +11,26 @@ from sessions.models import AttendanceRecord, ProgrammeSession
 from .scope import resolve_report_scope
 
 
+REASON_LABELS = dict(AttendanceRecord.AbsenceReason.choices)
+REASON_LABELS["not_recorded"] = "Not recorded or unrecognised"
+
+
+def _reason_counts():
+    return {reason: 0 for reason in REASON_LABELS}
+
+
+def _reason_breakdown(counts):
+    total = sum(counts.values())
+    return {
+        "total_absences": total,
+        "breakdown": [
+            {"reason": reason, "label": label, "count": counts[reason],
+             "percent_of_absences": round(100 * counts[reason] / total, 2) if total else None}
+            for reason, label in REASON_LABELS.items()
+        ],
+    }
+
+
 def _session_scope(user, start_date, end_date, branch_id):
     branch_id = resolve_report_scope(user, start_date, end_date, branch_id)
     sessions = ProgrammeSession.objects.filter(date__range=(start_date, end_date))
@@ -63,11 +83,20 @@ def attendance_statistics(*, user, start_date, end_date, branch_id=None):
     sessions, branch_id = _session_scope(user, start_date, end_date, branch_id)
     # Two attendance queries regardless of session count: grouped session counts
     # and a distinct-person count. Never fetch an entire register per session.
+    reason_annotations = {
+        f"reason_{reason}": Count("attendance", filter=Q(
+            attendance__status=AttendanceRecord.Status.ABSENT, attendance__absence_reason=reason))
+        for reason in AttendanceRecord.AbsenceReason.values
+    }
+    reason_annotations["reason_not_recorded"] = Count("attendance", filter=
+        Q(attendance__status=AttendanceRecord.Status.ABSENT) &
+        ~Q(attendance__absence_reason__in=AttendanceRecord.AbsenceReason.values))
     rows = list(sessions.order_by("date", "id").values(
         "id", "date", "attendance_finalised",
     ).annotate(
         present=Count("attendance", filter=Q(attendance__status=AttendanceRecord.Status.PRESENT)),
         roster=Count("attendance"),
+        **reason_annotations,
     ))
     totals = _empty_totals()
     buckets = {}
@@ -78,12 +107,18 @@ def attendance_statistics(*, user, start_date, end_date, branch_id=None):
             break
         month = date(month.year + (month.month == 12), month.month % 12 + 1, 1)
 
+    absence_counts = _reason_counts()
+    monthly_absences = {month: _reason_counts() for month in buckets}
     session_summaries = []
     finalised_ids = []
     for session in rows:
         _add_session(totals, session)
         _add_session(buckets[session["date"].strftime("%Y-%m")], session)
         if session["attendance_finalised"]:
+            for reason in REASON_LABELS:
+                count = session[f"reason_{reason}"]
+                absence_counts[reason] += count
+                monthly_absences[session["date"].strftime("%Y-%m")][reason] += count
             finalised_ids.append(session["id"])
             session_summaries.append({
                 "session_id": str(session["id"]),
@@ -111,7 +146,7 @@ def attendance_statistics(*, user, start_date, end_date, branch_id=None):
             round(current_rate - previous_rate, 2)
             if comparable and current_rate is not None and previous_rate is not None else None
         )
-        monthly.append({"month": month, **values})
+        monthly.append({"month": month, **values, "absence_reasons": _reason_breakdown(monthly_absences[month])})
         previous = values
 
     return {
@@ -123,12 +158,15 @@ def attendance_statistics(*, user, start_date, end_date, branch_id=None):
         },
         "totals": totals,
         "sessions": session_summaries,
+        "absence_reasons": _reason_breakdown(absence_counts),
         "monthly": monthly,
         "limitations": [
             "Incomplete registers are counted but excluded from attendance calculations.",
             "Finalised sessions with zero attendees are included, including sessions with no roster.",
             "Attendance rate uses roster places across finalised sessions; null means no denominator.",
             "Monthly buckets cover only dates in the selected range; boundary months may be partial.",
+            "Absence reasons count missed session places, not distinct people; repeated absences count separately.",
+            "Absence reason percentages use all recorded absences in finalised sessions, including missing reasons. Other notes are not included.",
             "Changes describe recorded attendance, not causes or programme effectiveness.",
             "This is a live-data report; later edits or deletions can change subsequent results.",
         ],

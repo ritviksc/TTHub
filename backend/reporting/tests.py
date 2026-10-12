@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from participants.models import Participant
 from reporting.services.attendance import analyse_attendance, attendance_statistics
@@ -12,6 +12,7 @@ from sessions.models import AttendanceRecord, ProgrammeSession
 from users.models import Branch, UserAccount
 
 
+@override_settings(DEFAULT_LLM_MODEL="test-model", REPORT_LLM_MODELS=["test-model"])
 class AttendanceReportingTests(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -108,6 +109,45 @@ class AttendanceReportingTests(TestCase):
         with self.assertNumQueries(3):
             self.statistics()
 
+    def test_absence_reason_split_respects_scope_status_and_finalisation(self):
+        from reporting.prompts.attendance import build_attendance_prompt
+        january = self.session(date(2026, 1, 1), ["absent"] * 3)
+        february = self.session(date(2026, 2, 1), ["absent"] * 3)
+        for session, reasons in ((january, ["no_show", "medical_appointment", "transport_issue"]),
+                                 (february, ["other", "", "legacy_value"])):
+            for person, reason in zip(self.people, reasons):
+                AttendanceRecord.objects.filter(session=session, participant=person).update(
+                    absence_reason=reason, absence_reason_other="Private health details" if reason == "other" else "")
+        incomplete = self.session(date(2026, 2, 2), ["absent"], finalised=False)
+        outside = self.session(date(2025, 12, 31), ["absent"])
+        other_branch = self.session(date(2026, 1, 2), ["absent"], branch=self.other_branch)
+        present = self.session(date(2026, 2, 3), ["present"])
+        AttendanceRecord.objects.filter(session__in=[incomplete, outside, other_branch, present]).update(absence_reason="no_show")
+        result = self.statistics()
+        split = result["absence_reasons"]
+        self.assertEqual(split["total_absences"], 6)
+        counts = {row["reason"]: row["count"] for row in split["breakdown"]}
+        self.assertEqual(counts, {"no_show": 1, "medical_appointment": 1, "transport_issue": 1, "other": 1, "not_recorded": 2})
+        self.assertEqual(split["breakdown"][-1]["percent_of_absences"], 33.33)
+        self.assertEqual([month["absence_reasons"]["total_absences"] for month in result["monthly"]], [3, 3, 0])
+        self.assertEqual(sum(counts.values()), result["totals"]["total_roster_places"] - result["totals"]["total_attendances"])
+        payload = build_attendance_prompt(result)
+        self.assertEqual(json.loads(payload)["absence_reasons"], split)
+        for private in ("Private health details", "legacy_value", str(january.pk), str(self.people[0].pk)):
+            self.assertNotIn(private, payload)
+
+    def test_absence_split_zero_denominator_and_legacy_snapshot(self):
+        from reporting.prompts.attendance import build_attendance_prompt
+        self.session(date(2026, 1, 1), ["present"])
+        result = self.statistics()
+        self.assertEqual(result["absence_reasons"]["total_absences"], 0)
+        self.assertTrue(all(row["count"] == 0 and row["percent_of_absences"] is None
+                            for row in result["absence_reasons"]["breakdown"]))
+        del result["absence_reasons"]
+        for month in result["monthly"]:
+            del month["absence_reasons"]
+        self.assertIsNone(json.loads(build_attendance_prompt(result))["absence_reasons"])
+
     @patch("reporting.services.attendance.generate", return_value="A summary.")
     def test_narrative_receives_aggregates_only(self, generate):
         session = self.session(date(2026, 1, 1), ["present"])
@@ -150,6 +190,7 @@ class AttendanceReportingTests(TestCase):
         self.assertEqual(self.statistics()["totals"]["total_attendances"], 1)
 
 
+@override_settings(DEFAULT_LLM_MODEL="test-model", REPORT_LLM_MODELS=["test-model"])
 class AttendanceReportAPITests(TestCase):
     def setUp(self):
         from rest_framework.test import APIClient
@@ -236,6 +277,7 @@ class AttendanceReportAPITests(TestCase):
         self.assertEqual(response.data["totals"]["total_sessions"], 0)
 
 
+@override_settings(DEFAULT_LLM_MODEL="test-model", REPORT_LLM_MODELS=["test-model"])
 class AttendanceTaskTests(TestCase):
     def setUp(self):
         from rest_framework.test import APIClient
@@ -259,7 +301,7 @@ class AttendanceTaskTests(TestCase):
         generate_attendance_analysis.run(str(self.job.pk))
         self.job.refresh_from_db()
         self.assertEqual(self.job.status, "succeeded")
-        explain.assert_called_once_with(self.job.statistics)
+        explain.assert_called_once_with(self.job.statistics, model="test-model")
         response = self.client.get(self.url)
         self.assertEqual(response.data["narrative"], "A saved explanation")
         self.assertEqual(response.data["statistics"], self.job.statistics)
@@ -303,6 +345,7 @@ class AttendanceTaskTests(TestCase):
 from django.test import TransactionTestCase
 
 
+@override_settings(DEFAULT_LLM_MODEL="test-model", REPORT_LLM_MODELS=["test-model"])
 class AttendanceWorkerIntegrationTests(TransactionTestCase):
     @patch("reporting.tasks.explain_attendance", return_value="Worker generated narrative")
     def test_real_worker_consumes_queued_job(self, explain):
@@ -331,4 +374,4 @@ class AttendanceWorkerIntegrationTests(TransactionTestCase):
                     time.sleep(0.1)
                 self.assertEqual(job.status, "succeeded")
                 self.assertEqual(job.narrative, "Worker generated narrative")
-                explain.assert_called_once_with(job.statistics)
+                explain.assert_called_once_with(job.statistics, model="test-model")

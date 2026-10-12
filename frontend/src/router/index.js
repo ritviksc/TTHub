@@ -24,6 +24,21 @@ const router = createRouter({
     history: createWebHistory(),
     routes: [
         {
+            path: '/branch-manager/administration', name: 'bm-administration',
+            component: () => import('@/views/BranchManager/Administration.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        {
+            path: '/branch-manager/administration/audit', name: 'bm-audit-log',
+            component: () => import('@/views/BranchManager/AuditLog.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        {
+            path: '/super-admin/administration/audit', name: 'sa-audit-log',
+            component: () => import('@/views/SuperAdmin/AuditLog.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
             path: '/super-admin/physical-assessments/:id', name: 'sa-physical-assessment',
             component: () => import('@/views/SuperAdmin/PhysicalAssessment.vue'),
             meta: { requiresAuth: true, roles: SA },
@@ -41,6 +56,11 @@ const router = createRouter({
         { path: '/super-admin/reporting/attendance', name: 'sa-attendance-report',
           component: () => import('@/views/SuperAdmin/AttendanceReporting.vue'),
           meta: { requiresAuth: true, roles: SA } },
+        ...['attendance', 'physical', 'acc'].map(reportType => ({
+          path: `/super-admin/reporting/${reportType}/history/:id?`, name: `sa-${reportType}-history`,
+          component: () => import('@/views/SuperAdmin/ReportHistory.vue'),
+          props: { reportType }, meta: { requiresAuth: true, roles: SA },
+        })),
         { path: '/super-admin/reporting/physical', name: 'sa-physical-report',
           component: () => import('@/views/SuperAdmin/PhysicalReporting.vue'),
           meta: { requiresAuth: true, roles: SA } },
@@ -50,6 +70,9 @@ const router = createRouter({
         { path: '/branch-manager/reports/physical', name: 'bm-physical-report',
           component: () => import('@/views/BranchManager/PhysicalReporting.vue'),
           meta: { requiresAuth: true, roles: BM } },
+        { path: '/super-admin/reporting/acc', name: 'sa-acc-report',
+          component: () => import('@/views/SuperAdmin/ACCReporting.vue'),
+          meta: { requiresAuth: true, roles: SA } },
         /* ---- public ---- */
         { path: '/', name: 'home', component: LandingPage },
         { path: '/about', name: 'about-us', component: AboutUs },

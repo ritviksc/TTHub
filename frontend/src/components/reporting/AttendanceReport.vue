@@ -1,6 +1,9 @@
 <script setup>
+import ModelSelector from './ModelSelector.vue'
+import QuarterPeriod from './QuarterPeriod.vue'
+import { auth } from '@/stores/auth.js'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
-import MarkdownResponse from '@/components/MarkdownResponse.vue'
+import ReportNarrative from './ReportNarrative.vue'
 import {
   getAttendanceReport, analyseAttendanceReport, getAttendanceAnalysisJob, listBranches,
 } from '@/apis.js'
@@ -10,15 +13,19 @@ import {
 
 import { waitForAnalysis } from '@/utils/analysisJobs.js'
 
-const props = defineProps({ showBranchFilter: Boolean, branchName: { type: String, default: '' } })
+const props = defineProps({ savedReport: Object, showBranchFilter: Boolean, branchName: { type: String, default: '' } })
 const dates = recentReportPeriod()
 const startDate = ref(dates.start_date)
 const endDate = ref(dates.end_date)
 const branchId = ref('')
 const branches = ref([])
 const branchError = ref(null)
-const report = ref(null)
-const narrative = ref(null)
+const report = ref(props.savedReport?.statistics ?? null)
+const narrative = ref(props.savedReport?.narrative ?? null)
+const jobId = ref(props.savedReport?.job_id ?? ''), editing = ref(false)
+const selectedModel = ref('')
+const usedModel = ref(props.savedReport?.model ?? '')
+watch(selectedModel, () => { narrative.value = null; analysisError.value = null })
 const loading = ref(false)
 const analysing = ref(false)
 const jobStatus = ref(null)
@@ -27,7 +34,7 @@ onBeforeUnmount(() => analysisController?.abort())
 const error = ref(null)
 const analysisError = ref(null)
 const demo = ref(false)
-const busy = computed(() => loading.value || analysing.value)
+const busy = computed(() => loading.value || analysing.value || editing.value)
 const scope = () => ({
   start_date: startDate.value, end_date: endDate.value,
   ...(props.showBranchFilter && branchId.value ? { branch_id: branchId.value } : {}),
@@ -47,7 +54,7 @@ const tiles = computed(() => {
 
 function messageFor(e, fallback) {
   const data = e.response?.data
-  return data?.detail ?? data?.start_date?.[0] ?? data?.end_date?.[0] ?? data?.non_field_errors?.[0] ?? fallback
+  return data?.detail ?? data?.model?.[0] ?? data?.start_date?.[0] ?? data?.end_date?.[0] ?? data?.non_field_errors?.[0] ?? fallback
 }
 
 // Never leave a narrative visible under filters that describe a different report.
@@ -79,10 +86,11 @@ async function loadReport() {
 }
 
 async function analyse() {
-  if (busy.value || !report.value?.totals.finalised_sessions) return
+  if (busy.value || !report.value?.totals.finalised_sessions || (!demo.value && !selectedModel.value)) return
   analysisError.value = null
   narrative.value = null
   if (demo.value) {
+    jobId.value = ''
     narrative.value = DEMO_NARRATIVE
     return
   }
@@ -91,7 +99,7 @@ async function analyse() {
   analysisController = new AbortController()
   const controller = analysisController
   try {
-    const queued = await analyseAttendanceReport(scope())
+    const queued = await analyseAttendanceReport({ ...scope(), model: selectedModel.value })
     if (controller.signal.aborted) return
     const result = queued.status === 'succeeded' ? queued : await waitForAnalysis(
       () => getAttendanceAnalysisJob(queued.job_id, controller.signal),
@@ -100,6 +108,8 @@ async function analyse() {
     // Display the exact statistics used for this narrative if records changed since loading.
     report.value = result.statistics
     narrative.value = result.narrative
+    jobId.value = result.job_id
+    usedModel.value = result.model
   } catch (e) {
     if (!controller.signal.aborted) {
       analysisError.value = messageFor(e, e.message || 'Analysis could not be completed. Your statistics are still available.')
@@ -130,6 +140,7 @@ async function loadBranches() {
 }
 
 onMounted(() => {
+  if (props.savedReport) return
   loadReport()
   loadBranches()
 })
@@ -138,16 +149,16 @@ onMounted(() => {
 <template>
   <div class="page-header">
     <div>
-      <h1>Attendance reporting</h1>
-      <p class="page-subtitle">{{ scopeLabel }} · Statistics load automatically. Request an AI explanation when needed.</p>
+      <h1>{{ savedReport ? 'Saved attendance report' : 'Attendance reporting' }}</h1>
+      <p v-if="!savedReport" class="page-subtitle">{{ scopeLabel }} · Statistics load automatically. Request an AI explanation when needed.</p>
     </div>
-    <button class="btn-cancel" :disabled="busy" @click="toggleDemo">
+    <button v-if="!savedReport" class="btn-cancel" :disabled="busy" @click="toggleDemo">
       {{ demo ? 'Return to live data' : 'Show demo data' }}
     </button>
   </div>
 
   <p v-if="demo" class="demo-banner" role="status">Demo preview — fictional January–March 2026 data. It is not saved or sent to the AI provider.</p>
-  <form @submit.prevent="loadReport">
+  <form v-if="!savedReport" @submit.prevent="loadReport">
     <fieldset :disabled="busy || demo">
       <legend>Report period and scope</legend>
       <p class="loading-note">Defaults to the last three months through today. Adjust the dates to include older sessions.</p>
@@ -162,6 +173,8 @@ onMounted(() => {
           <option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.name }}</option>
         </select>
       </div>
+    <QuarterPeriod :branch-id="showBranchFilter ? branchId : (auth.user?.branch?.id ?? '')"
+      @select="startDate = $event.start_date; endDate = $event.end_date" />
       <button class="btn-primary" type="submit">Refresh statistics</button>
     </fieldset>
   </form>
@@ -199,13 +212,15 @@ onMounted(() => {
     <section class="card report-section" aria-live="polite">
       <div class="page-header">
         <h2>{{ demo ? 'Example explanation' : 'AI attendance explanation' }}</h2>
-        <button class="btn-primary" :disabled="busy || !report.totals.finalised_sessions" @click="analyse">
+        <button v-if="!savedReport" class="btn-primary" :disabled="busy || (!report.totals.finalised_sessions || (!demo && !selectedModel))" @click="analyse">
           {{ analysing ? 'Analysing…' : demo ? 'Show example explanation' : 'Analyse attendance' }}
         </button>
       </div>
+      <ModelSelector v-if="!demo && !savedReport" v-model="selectedModel" :disabled="busy" />
+      <p v-if="narrative && !demo && usedModel" class="loading-note">Model: {{ usedModel }}</p>
       <p v-if="analysisError" class="form-error" role="alert">{{ analysisError }}</p>
       <p v-if="analysing" class="loading-note">{{ jobStatus === 'queued' ? 'Analysis queued. Waiting for a worker…' : 'Generating an explanation. This may take a few minutes.' }}</p>
-      <MarkdownResponse v-else-if="narrative" :text="narrative" />
+      <ReportNarrative v-else-if="narrative" :key="jobId" :text="narrative" :job-id="jobId" report-type="attendance" @saved="narrative = $event" @busy="editing = $event" />
       <p v-else>Use the button to explain the recorded trends. Statistics are available without AI.</p>
       <p v-if="narrative && !demo" class="analysis-note">This explanation is AI-generated and may vary between requests, even with the same data. Check its accuracy before using it in a formal report. Statistics are calculated from recorded attendance.</p>
     </section>

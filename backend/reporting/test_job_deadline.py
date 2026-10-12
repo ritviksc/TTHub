@@ -17,7 +17,7 @@ class JobDeadlineTests(TestCase):
             with self.subTest(model=model.__name__):
                 job = model.objects.create(requested_by=user, statistics={}, expires_at=started + timedelta(minutes=1))
                 with patch('django.utils.timezone.now', return_value=started) as now:
-                    def explain(statistics):
+                    def explain(statistics, **kwargs):
                         now.return_value = finished
                         return "Late response"
                     run_analysis_job(model, explain, str(job.pk))

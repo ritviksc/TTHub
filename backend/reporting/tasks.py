@@ -1,10 +1,14 @@
 """Background report generation. Only job IDs travel through the broker."""
 
+from audit.services import transition_job
+
 from celery import shared_task
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 
-from .models import AttendanceAnalysisJob, PhysicalAnalysisJob
+from .models import AttendanceAnalysisJob, PhysicalAnalysisJob, ACCAnalysisJob
+from .services.acc import explain_acc
 from .services.physical import explain_physical
 from .services.attendance import explain_attendance
 
@@ -13,31 +17,32 @@ def run_analysis_job(job_model, explain, job_id):
     job = job_model.objects.select_related("requested_by").filter(pk=job_id).first()
     if job is None:
         return
-    job.expire_if_needed()
+    job.expire_if_needed(source="worker")
     # Claim once so duplicate task delivery does not repeat a paid model request.
-    claimed = job_model.objects.filter(
+    job.model_name = job.model_name or (settings.DEFAULT_LLM_MODEL or "").strip()
+    claimed = transition_job(job, job_model.objects.filter(
         pk=job.pk, status=job_model.Status.QUEUED, expires_at__gt=timezone.now(),
-    ).update(status=job_model.Status.RUNNING)
+    ), "running", model_name=job.model_name)
     if not claimed:
-        job.expire_if_needed()
+        job.expire_if_needed(source="worker")
         return
     try:
         if not job.can_access(job.requested_by):
             raise PermissionDenied("Report permissions changed.")
-        narrative = explain(job.statistics)
+        narrative = explain(job.statistics, model=job.model_name or None)
     except Exception:
         # Persist a safe message; the task still fails visibly in Celery worker logs.
-        job_model.objects.filter(pk=job.pk, status="running").update(
-            status="failed", error="AI analysis could not be completed. Please try again.",
+        transition_job(job, job_model.objects.filter(pk=job.pk, status="running"),
+            "failed", reason="generation_failed", error="AI analysis could not be completed. Please try again.",
         )
         raise
     # Expiry must not depend on whether a browser happens to poll during generation.
     finished_at = timezone.now()
-    job_model.objects.filter(pk=job.pk, status="running", expires_at__lte=finished_at).update(
-        status="failed", error="Analysis timed out. Please try again.",
+    transition_job(job, job_model.objects.filter(pk=job.pk, status="running", expires_at__lte=finished_at),
+        "failed", reason="timeout", error="Analysis timed out. Please try again.",
     )
-    job_model.objects.filter(pk=job.pk, status="running", expires_at__gt=finished_at).update(
-        status="succeeded", narrative=narrative,
+    transition_job(job, job_model.objects.filter(pk=job.pk, status="running", expires_at__gt=finished_at),
+        "succeeded", narrative=narrative,
     )
 
 
@@ -49,3 +54,8 @@ def generate_attendance_analysis(job_id):
 @shared_task(ignore_result=True, soft_time_limit=240, time_limit=270)
 def generate_physical_analysis(job_id):
     run_analysis_job(PhysicalAnalysisJob, explain_physical, job_id)
+
+
+@shared_task(ignore_result=True, soft_time_limit=240, time_limit=270)
+def generate_acc_analysis(job_id):
+    run_analysis_job(ACCAnalysisJob, explain_acc, job_id)

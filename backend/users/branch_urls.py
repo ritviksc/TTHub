@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .quarters import BranchQuartersView
 from .models import UserAccount
 
 """
@@ -23,6 +24,7 @@ MANAGER = UserAccount.Role.BRANCH_MANAGER
 INSTRUCTOR = UserAccount.Role.INSTRUCTOR
 
 urlpatterns = [
+    path("<uuid:pk>/quarters/<int:year>/", BranchQuartersView.as_view()),
     path("", views.BranchListCreateView.as_view()),
     path("<uuid:pk>/", views.BranchDetailView.as_view()),
 
