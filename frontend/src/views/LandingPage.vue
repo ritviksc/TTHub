@@ -142,11 +142,12 @@ import { RouterLink } from 'vue-router'
   background-clip: text;
 }
 
-.lead {
+.page-head .lead {
   max-width: 560px;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.88);
   font-size: var(--text-lg);
   line-height: 1.6;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.9);
 }
 
 .prose {
