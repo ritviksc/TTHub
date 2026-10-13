@@ -3,11 +3,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { getSession, updateAttendance, setAttendanceFinalised } from '@/apis.js'
 import { ABSENCE_REASONS, countByStatus, formatSessionDate, initials } from '@/utils/sessions.js'
+import { auth } from '@/stores/auth.js'
 
 const route = useRoute()
 const router = useRouter()
 const sessionId = route.params.id
-const detailRoute = { name: 'in-session-detail', params: { id: sessionId } }
+const detailRoute = computed(() => ({
+  name: auth.user?.role === 'branch_manager' ? 'bm-session-detail' : 'in-session-detail',
+  params: { id: sessionId },
+}))
 
 const session = ref(null)
 const loading = ref(true)
@@ -102,7 +106,7 @@ async function setFinalised(finalised) {
       }
     }
     Object.assign(session.value, await setAttendanceFinalised(sessionId, finalised))
-    if (finalised) await router.push(detailRoute)
+    if (finalised) await router.push(detailRoute.value)
   } catch (e) {
     saveError.value = e.message || (finalised
       ? 'Could not finalise attendance. Please try again.'

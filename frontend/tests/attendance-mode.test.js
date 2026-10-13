@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import vm from 'node:vm'
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { parse, compileScript } from '@vue/compiler-sfc'
 import { ABSENCE_REASONS, countByStatus, formatSessionDate, initials } from '../src/utils/sessions.js'
 
@@ -10,13 +10,14 @@ const { descriptor } = parse(readFileSync(new URL('../src/views/Instructor/Atten
 const compiled = compileScript(descriptor, { id: 'attendance-mode-test' }).content
   .replace(/^import .*$/gm, '').replace('export default', 'const component =')
 
-async function mount({ finalised = false, fail = false } = {}) {
-  const requests = [], events = []
+async function mount({ finalised = false, fail = false, role = 'instructor' } = {}) {
+  const requests = [], events = [], destinations = []
   const record = { id: 'record', name: 'Example', status: 'absent', absence_reason: '', absence_reason_other: '' }
   const context = vm.createContext({
     ref, computed, onMounted() {}, RouterLink: {}, ABSENCE_REASONS, countByStatus, formatSessionDate, initials,
+    auth: reactive({ user: { role } }),
     useRoute: () => ({ params: { id: 'session' } }),
-    useRouter: () => ({ push: async () => events.push('navigate') }), confirm: () => true,
+    useRouter: () => ({ push: async route => { destinations.push(route); events.push('navigate') } }), confirm: () => true,
     getSession: async () => ({ attendance_finalised: finalised, attendance: [record] }),
     updateAttendance: async (session, id, changes) => {
       requests.push(changes)
@@ -29,7 +30,7 @@ async function mount({ finalised = false, fail = false } = {}) {
   vm.runInContext(compiled + '\nthis.component = component', context)
   const page = context.component.setup({}, { expose() {} })
   await page.load()
-  return { page, record: page.session.value.attendance[0], requests, events }
+  return { page, record: page.session.value.attendance[0], requests, events, destinations }
 }
 
 test('absence reasons persist without toggling attendance', async () => {
@@ -67,3 +68,16 @@ test('finalised attendance cannot edit reasons', async () => {
   await page.saveReason(record)
   assert.equal(requests.length, 0)
 })
+
+for (const [role, prefix] of [['instructor', 'in'], ['branch_manager', 'bm']]) {
+  test(`${role} reopens attendance, marks present, and returns to their session page`, async () => {
+    const { page, record, destinations } = await mount({ role, finalised: true })
+    assert.equal(page.detailRoute.value.name, `${prefix}-session-detail`)
+    await page.setFinalised(false)
+    await page.toggle(record)
+    assert.equal(record.status, 'present')
+    await page.setFinalised(true)
+    assert.equal(destinations[0].name, `${prefix}-session-detail`)
+    assert.equal(destinations[0].params.id, 'session')
+  })
+}

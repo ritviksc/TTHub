@@ -82,7 +82,7 @@ class SessionDetailView(generics.RetrieveDestroyAPIView):
 
 
 class AttendanceRecordDetailView(generics.GenericAPIView):
-    permission_classes = ANY_STAFF
+    permission_classes = [IsInstructor | IsBranchManager]
     serializer_class = AttendanceRecordSerializer
 
     def get_object(self):
@@ -95,9 +95,6 @@ class AttendanceRecordDetailView(generics.GenericAPIView):
 
     @transaction.atomic
     def patch(self, request, *args, **kwargs):
-        if request.user.role != UserAccount.Role.INSTRUCTOR:
-            raise PermissionDenied("Only an Instructor can record attendance.")
-
         # Serialise edits and finalisation against the same session row.
         session = get_object_or_404(
             ProgrammeSession.objects.select_for_update(),
@@ -113,7 +110,7 @@ class AttendanceRecordDetailView(generics.GenericAPIView):
 
 
 class AttendanceFinalisationView(generics.GenericAPIView):
-    permission_classes = [IsInstructor]
+    permission_classes = [IsInstructor | IsBranchManager]
     serializer_class = AttendanceFinalisationSerializer
 
     @transaction.atomic

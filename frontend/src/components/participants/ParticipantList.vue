@@ -1,12 +1,82 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
-import { listParticipants } from '@/apis.js'
+import { RouterLink, useRouter } from 'vue-router'
+import { createParticipant, listParticipants } from '@/apis.js'
+import { auth } from '@/stores/auth.js'
+import { programmeToday } from '@/utils/sessions.js'
+
+const router = useRouter()
 
 const participants = ref([])
 const loading = ref(true)
 const error = ref('')
 const search = ref('')
+const canEnrol = computed(() => ['branch_manager', 'instructor'].includes(auth.user?.role))
+const canRecordGpConsent = computed(() => auth.user?.role === 'branch_manager')
+const enrolmentDialog = ref(null)
+const newParticipant = ref({})
+const saving = ref(false)
+const createError = ref('')
+const fieldErrors = ref({})
+const fields = [
+  { name: 'first_name', label: 'First name', required: true, max: 150 },
+  { name: 'last_name', label: 'Last name', required: true, max: 150 },
+  { name: 'preferred_name', label: 'Preferred name', max: 150 },
+  { name: 'date_of_birth', label: 'Date of birth', type: 'date' },
+  { name: 'email', label: 'Email', type: 'email', max: 254 },
+  { name: 'phone', label: 'Phone', type: 'tel', max: 30 },
+  { name: 'emergency_contact_name', label: 'Emergency contact name', max: 255 },
+  { name: 'emergency_contact_phone', label: 'Emergency contact phone', type: 'tel', max: 30 },
+  { name: 'joined_on', label: 'Date joined', type: 'date' },
+]
+
+function openEnrolment() {
+  newParticipant.value = Object.fromEntries(fields.map(field => [field.name, '']))
+  Object.assign(newParticipant.value, { joined_on: programmeToday(), gp_consent_given: false, gp_consent_date: '' })
+  createError.value = ''
+  fieldErrors.value = {}
+  enrolmentDialog.value.showModal()
+}
+
+function closeEnrolment() {
+  if (!saving.value) enrolmentDialog.value.close()
+}
+
+async function submitEnrolment() {
+  if (saving.value) return
+  createError.value = ''
+  fieldErrors.value = {}
+  if (!auth.user?.branch?.id) {
+    createError.value = 'You must be assigned to a branch to enrol participants.'
+    return
+  }
+  const payload = Object.fromEntries(fields.map(field => [field.name,
+    field.type === 'date' ? newParticipant.value[field.name] || null : newParticipant.value[field.name].trim(),
+  ]))
+  if (canRecordGpConsent.value) {
+    payload.gp_consent_given = newParticipant.value.gp_consent_given
+    payload.gp_consent_date = payload.gp_consent_given ? newParticipant.value.gp_consent_date || null : null
+  }
+  saving.value = true
+  let participant
+  try {
+    participant = await createParticipant(payload)
+  } catch (e) {
+    const data = e.response?.data
+    if (data && typeof data === 'object') {
+      fieldErrors.value = Object.fromEntries(Object.entries(data).map(([field, messages]) =>
+        [field, Array.isArray(messages) ? messages.join(' ') : String(messages)],
+      ))
+    }
+    createError.value = fieldErrors.value.detail || fieldErrors.value.non_field_errors || 'Could not enrol this participant. Check the details and try again.'
+    return
+  } finally {
+    saving.value = false
+  }
+  participants.value.unshift(participant)
+  closeEnrolment()
+  await router.push({ name: 'participant-detail', params: { id: participant.id } })
+}
 
 const filteredParticipants = computed(() => {
   const query = search.value.toLowerCase().trim()
@@ -59,6 +129,36 @@ onMounted(loadParticipants)
 
 <template>
   <div class="dash-page">
+    <dialog ref="enrolmentDialog" class="modal enrolment-dialog" aria-labelledby="enrolment-title" @cancel.prevent="closeEnrolment">
+      <form @submit.prevent="submitEnrolment">
+        <h2 id="enrolment-title">Enrol participant</h2>
+        <p>Branch: {{ auth.user?.branch?.name || 'No branch assigned' }}</p>
+        <fieldset :disabled="saving">
+          <div class="form-row">
+            <div v-for="field in fields" :key="field.name" class="form-group">
+              <label :for="`enrol-${field.name}`">{{ field.label }}</label>
+              <input :id="`enrol-${field.name}`" v-model="newParticipant[field.name]" :type="field.type || 'text'" :required="field.required" :maxlength="field.max" :max="field.name === 'date_of_birth' ? programmeToday() : undefined" :aria-invalid="!!fieldErrors[field.name]" :aria-describedby="fieldErrors[field.name] ? `enrol-error-${field.name}` : undefined" :autofocus="field.name === 'first_name'" />
+              <p v-if="fieldErrors[field.name]" :id="`enrol-error-${field.name}`" class="form-error">{{ fieldErrors[field.name] }}</p>
+            </div>
+          </div>
+          <template v-if="canRecordGpConsent">
+            <p><label><input v-model="newParticipant.gp_consent_given" type="checkbox" /> GP consent recorded</label></p>
+            <p v-if="fieldErrors.gp_consent_given" class="form-error">{{ fieldErrors.gp_consent_given }}</p>
+            <div v-if="newParticipant.gp_consent_given" class="form-group">
+              <label for="enrol-gp-date">Date GP consent was given</label>
+              <input id="enrol-gp-date" v-model="newParticipant.gp_consent_date" type="date" :max="programmeToday()" required :aria-invalid="!!fieldErrors.gp_consent_date" :aria-describedby="fieldErrors.gp_consent_date ? 'enrol-error-gp-date' : undefined" />
+              <p v-if="fieldErrors.gp_consent_date" id="enrol-error-gp-date" class="form-error">{{ fieldErrors.gp_consent_date }}</p>
+            </div>
+          </template>
+          <p>Photos and supporting documents can be added to the participant's record after enrolment.</p>
+          <p v-if="createError" class="form-error" role="alert">{{ createError }}</p>
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" @click="closeEnrolment">Cancel</button>
+            <button type="submit" class="btn-primary">{{ saving ? 'Enrolling…' : 'Enrol participant' }}</button>
+          </div>
+        </fieldset>
+      </form>
+    </dialog>
 
     <main class="content">
 
@@ -75,6 +175,7 @@ onMounted(loadParticipants)
         <div class="participant-count">
           {{ participants.length }} participants
         </div>
+        <button v-if="canEnrol" class="btn-primary" @click="openEnrolment">+ Enrol participant</button>
 
       </div>
 
@@ -191,6 +292,13 @@ onMounted(loadParticipants)
 </template>
 
 <style scoped>
+.enrolment-dialog { border: none; max-width: calc(100vw - 32px); max-height: 85vh; overflow-y: auto; color: var(--text); }
+.enrolment-dialog::backdrop { background: var(--ink); opacity: 0.6; }
+.enrolment-dialog fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+@media (max-width: 560px) {
+  .enrolment-dialog .form-row { grid-template-columns: 1fr; }
+}
+
 .participant-count {
   color: var(--text-muted);
   font-size: var(--text-base);

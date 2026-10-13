@@ -176,6 +176,11 @@ const router = createRouter({
             component: () => import('@/views/Instructor/SessionDetail.vue'),
             meta: { requiresAuth: true, roles: BM },
         },
+        {
+            path: '/branch-manager/sessions/:id/attendance', name: 'bm-attendance-mode',
+            component: () => import('@/views/Instructor/AttendanceMode.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
         { path: '/branch-manager/participants', name: 'bm-participants', component: () => import('@/views/BranchManager/Participants.vue'), meta: { requiresAuth: true, roles: BM } },
         {
             path: '/branch-manager/instructors', name: 'bm-instructors',
