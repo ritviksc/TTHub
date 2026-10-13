@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import vm from 'node:vm'
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, createSSRApp, compile } from 'vue'
+import { renderToString } from 'vue/server-renderer'
 import { parse, compileScript } from '@vue/compiler-sfc'
 import { routeAccess } from '../src/router/access.js'
 import { ATTENDANCE_STATUSES, ABSENCE_REASONS, countByStatus, formatSessionDate, initials } from '../src/utils/sessions.js'
@@ -12,7 +13,7 @@ const compiled = compileScript(descriptor, { id: 'session-attendance-access-test
   .replace(/^import[\s\S]*?from ['"][^'"]+['"];?$/gm, '').replace('export default', 'const component =')
 
 for (const [role, prefix] of [['instructor', 'in'], ['branch_manager', 'bm']]) {
-  test(`${role} can enter attendance mode from session details`, () => {
+  test(`${role} can enter attendance mode and sees each absence reason once`, async () => {
     const context = vm.createContext({
       ref, computed, onMounted() {}, RouterLink: {}, ATTENDANCE_STATUSES, ABSENCE_REASONS,
       countByStatus, formatSessionDate, initials, auth: reactive({ user: { role } }),
@@ -28,6 +29,19 @@ for (const [role, prefix] of [['instructor', 'in'], ['branch_manager', 'bm']]) {
     assert.equal(page.attendanceModeRoute.value.query.review, undefined)
     page.session.value = { attendance_finalised: true }
     assert.equal(page.attendanceModeRoute.value.query.review, '1')
+    const record = { id: 'record', participant_id: 'person', name: 'Example', status: 'absent', absence_reason: 'transport_issue', absence_reason_other: '' }
+    page.loading.value = false
+    page.session.value = { attendance_finalised: true, activity: 'Class', date: '2026-10-13', time: '09:00', attendance: [record] }
+    for (const finalised of [true, false]) {
+      page.session.value.attendance_finalised = finalised
+      const app = createSSRApp({ setup: () => ({ ...page }), render: compile(descriptor.template.content) })
+      app.component('RouterLink', { render: () => null })
+      const html = await renderToString(app)
+      assert.equal(html.split('Transport issue').length - 1, 1)
+      assert.ok(html.includes('Status for Example'))
+      assert.ok(html.includes('Absence reason for Example'))
+      assert.equal(html.includes('class="not-applicable"'), false)
+    }
   })
 }
 

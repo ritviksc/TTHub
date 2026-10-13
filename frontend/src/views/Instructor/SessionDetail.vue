@@ -205,7 +205,7 @@ async function handleDelete() {
                   :aria-label="`Other absence reason for ${record.name}`"
                   @change="saveRecord(record, { absence_reason: 'other', absence_reason_other: $event.target.value })"
                 />
-                <span v-else class="not-applicable">{{ absenceReasonLabel(record) }}</span>
+                <span v-else-if="record.status !== 'absent' || !canRecordAttendance" class="not-applicable">{{ absenceReasonLabel(record) }}</span>
               </td>
             </tr>
             <tr v-if="!visibleAttendance.length">
@@ -246,6 +246,8 @@ async function handleDelete() {
   border-color: var(--teal);
   box-shadow: 0 0 0 3px var(--teal-tint);
 }
+
+.data-table select:disabled { appearance: none; }
 
 /* Colour the status so the table can be scanned at a glance. */
 .status-select.present {
