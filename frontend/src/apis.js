@@ -3,7 +3,8 @@ import Cookies from "js-cookie"
 import { parseNdjson } from "./utils/help.js"
 export const MAX_ATTEMPTS = 3
 export const TIMEOUT_ERROR = "ETIMEDOUT"
-export const API_BASE = "http://localhost:8000/api"
+// Vite substitutes this public setting at build time; include /api in the URL.
+export const API_BASE = (import.meta.env?.VITE_API_BASE_URL?.trim() || "http://localhost:8000/api").replace(/\/+$/, "")
 
 const api = axios.create({
   baseURL: API_BASE,
