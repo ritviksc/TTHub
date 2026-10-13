@@ -24,7 +24,7 @@ load_dotenv(BASE_DIR.parent/".env")
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-pbxm-#iwl5pa9&mm3sa0b_zhc19q4_-1)_p@dmde+ei#%ese25'
+# SECRET_KEY = 'django-insecure-pbxm-#iwl5pa9&mm3sa0b_zhc19q4_-1)_p@dmde+ei#%ese25'
 
 # LLM variables - load the once, and use throughout apps
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -46,9 +46,13 @@ DB_USERNAME = os.getenv("DB_USERNAME")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+SECRET_KEY = os.environ["SECRET_KEY"]
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv("ALLOWED_HOSTS", "").split(",")
+    if host.strip()
+]
 
 
 # Application definition

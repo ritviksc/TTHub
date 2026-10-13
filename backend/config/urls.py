@@ -1,5 +1,6 @@
 from django.urls import path, include
 from django.contrib import admin
+from .views import health_check
 
 # Specfic URLS will be used for the backend
 # For each URL, a corresponding view is provided
@@ -12,6 +13,7 @@ from django.contrib import admin
 """
 
 urlpatterns = [
+    path("health", health_check, name="health_check"),
     path("api/audit/", include("audit.urls")),
     path("admin/", admin.site.urls),
     path("api/auth/", include("users.urls")),
