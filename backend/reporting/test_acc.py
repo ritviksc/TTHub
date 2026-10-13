@@ -54,6 +54,27 @@ class ACCReportTests(TestCase):
         outside_period = {**self.scope, "start_date": "2026-02-01"}
         self.assertEqual(self.client.get("/api/reporting/acc/sources/", outside_period).data["count"], 0)
 
+    def test_feedback_created_by_each_role_enters_report_sources_only_with_consent(self):
+        included = {str(self.feedback.pk)}
+        for role in UserAccount.Role.values:
+            user = self.admin if role == 'super_admin' else UserAccount.objects.create_user(
+                username=f"feedback-{role}", email=f"feedback-{role}@example.com", role=role, branch=self.branch,
+            )
+            self.client.force_authenticate(user)
+            for consent in (False, True):
+                response = self.client.post('/api/participants/feedback/', {
+                    'participant': str(self.person.pk), 'quote': 'A recorded experience.',
+                    'date': '2026-01-12', 'consent': consent,
+                }, format='json')
+                self.assertEqual(response.status_code, 201, response.data)
+                if consent:
+                    included.add(str(response.data['id']))
+        self.client.force_authenticate(self.admin)
+        response = self.client.get('/api/reporting/acc/sources/', self.scope)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({row['id'] for row in response.data['results']}, included)
+        self.assertEqual(response.data['count'], len(included))
+
     def test_generation_snapshot_privacy_history_and_editing(self):
         job = self.queue()
         prompt = build_acc_prompt(job.statistics)

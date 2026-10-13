@@ -393,6 +393,46 @@ class FeedbackTests(TestCase):
         self.assertFalse(response.data['consent'])
         self.assertEqual(response.data['session'], self.session.pk)
 
+    def test_all_roles_save_subject_combinations_with_server_owned_identity_and_reload(self):
+        for user in (self.manager, self.instructor, self.admin):
+            for participant, session in ((self.person, None), (None, self.session), (self.person, self.session)):
+                with self.subTest(role=user.role, participant=participant, session=session):
+                    self.client.force_authenticate(user)
+                    response = self.client.post('/api/participants/feedback/', {
+                        'participant': str(participant.pk) if participant else None,
+                        'session': str(session.pk) if session else None,
+                        'quote': '  A short story about the class.  ', 'date': timezone.localdate(),
+                        'branch': str(self.b.pk), 'recorded_by': str(self.other.pk), 'source': 'Forged',
+                    }, format='json')
+                    self.assertEqual(response.status_code, 201, response.data)
+                    entry = Feedback.objects.get(pk=response.data['id'])
+                    self.assertEqual(entry.branch, self.a)
+                    self.assertEqual(entry.recorded_by, user)
+                    self.assertEqual(entry.source, participant.full_name if participant else session.activity)
+                    self.assertEqual(entry.quote, 'A short story about the class.')
+                    self.assertFalse(entry.consent)
+                    fresh_client = APIClient()
+                    fresh_client.force_authenticate(user)
+                    saved = next(row for row in fresh_client.get('/api/participants/feedback/').data if row['id'] == str(entry.pk))
+                    self.assertEqual(saved['quote'], entry.quote)
+                    fresh_client.force_authenticate(self.other)
+                    self.assertEqual(fresh_client.get('/api/participants/feedback/').data, [])
+
+    def test_super_admin_records_feedback_in_any_branch_without_bypassing_consent(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.post('/api/participants/feedback/', {
+            **self.payload, 'participant': str(self.foreign_person.pk), 'consent': False,
+        }, format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+        entry = Feedback.objects.get(pk=response.data['id'])
+        self.assertEqual(entry.branch, self.b)
+        self.assertEqual(entry.recorded_by, self.admin)
+        self.assertFalse(entry.consent)
+        self.client.force_authenticate(self.manager)
+        self.assertEqual(self.client.get('/api/participants/feedback/').data, [])
+        self.client.force_authenticate(self.other)
+        self.assertEqual(self.client.get('/api/participants/feedback/').data[0]['id'], str(entry.pk))
+
     def test_admin_cannot_mix_branches_and_future_dates_are_rejected(self):
         self.client.force_authenticate(self.admin)
         response = self.client.post('/api/participants/feedback/', {

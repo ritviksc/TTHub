@@ -139,6 +139,11 @@ const router = createRouter({
             meta: { requiresAuth: true, roles: SA },
         },
         {
+            path: '/super-admin/feedback', name: 'sa-feedback',
+            component: () => import('@/views/Feedback.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
             path: '/super-admin/reporting', name: 'sa-reporting',
             component: () => import('@/views/SuperAdmin/Reporting.vue'),
             meta: { requiresAuth: true, roles: SA },
@@ -199,7 +204,7 @@ const router = createRouter({
         },
         {
             path: '/branch-manager/feedback', name: 'bm-feedback',
-            component: () => import('@/views/BranchManager/Feedback.vue'),
+            component: () => import('@/views/Feedback.vue'),
             meta: { requiresAuth: true, roles: BM },
         },
         {
@@ -245,7 +250,7 @@ const router = createRouter({
         {
             path: '/instructor/feedback',
             name: 'in-feedback',
-            component: () => import('@/views/Instructor/Feedback.vue'),
+            component: () => import('@/views/Feedback.vue'),
             meta: { requiresAuth: true, roles: IN },
         },
         {
