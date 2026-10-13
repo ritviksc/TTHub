@@ -106,6 +106,31 @@
   background: var(--surface-sunken);
   transform: translateY(-1px);
 }
+
+.dash-page .btn-cancel.btn-small {
+  padding: 5px 12px;
+  font-size: var(--text-xs);
+}
+
+.dash-page .btn-cancel.btn-reactivate {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.dash-page .btn-cancel.btn-reactivate:hover:not(:disabled) {
+  border-color: var(--success);
+  background: var(--success-bg);
+}
+
+.dash-page .btn-cancel.btn-deactivate {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.dash-page .btn-cancel.btn-deactivate:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
  
 /* Filter pills */
 .dash-page .pills {

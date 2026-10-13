@@ -6,11 +6,14 @@ import {
   listBranches,
   listStaff,
   deactivateStaff,
+  reactivateStaff,
 } from "@/apis.js";
 
 const users = ref([]);
 const loadError = ref(null);
 const loading = ref(true);
+const changingStatus = ref(false);
+const actionError = ref(null);
 
 const activeFilter = ref("All");
 const filters = ["All", "Branch Managers", "Instructors", "Super Admins"];
@@ -107,15 +110,21 @@ async function submitCreateStaff() {
   }
 }
 
-/* ---- deactivate ---- */
+/* ---- account status ---- */
 
-async function handleDeactivate(id) {
-  if (!confirm("Deactivate this account?")) return;
+async function handleToggleActive(user) {
+  if (changingStatus.value) return;
+  const action = user.is_active ? 'deactivate' : 'reactivate';
+  if (!confirm(user.is_active ? "Deactivate this account?" : "Reactivate this account? They will be able to sign in again.")) return;
+  changingStatus.value = true;
+  actionError.value = null;
   try {
-    await deactivateStaff(id);
-    await load();
+    const result = await (user.is_active ? deactivateStaff : reactivateStaff)(user.id);
+    user.is_active = result.is_active;
   } catch (e) {
-    loadError.value = "Could not deactivate this account.";
+    actionError.value = e.response?.data?.detail ?? `Could not ${action} this account.`;
+  } finally {
+    changingStatus.value = false;
   }
 }
 </script>
@@ -201,6 +210,7 @@ async function handleDeactivate(id) {
       </div>
 
       <div v-if="loadError" class="form-error">{{ loadError }}</div>
+      <div v-if="actionError" class="form-error" role="alert">{{ actionError }}</div>
 
        <!-- Role pills + branch dropdown sit in one row -->
       <div class="filter-bar">
@@ -256,11 +266,12 @@ async function handleDeactivate(id) {
               </span>
             </td>
             <td class="edit-cell">
-              <a
-                v-if="user.is_active"
-                href="#"
-                @click.prevent="handleDeactivate(user.id)"
-                >Deactivate</a
+              <button
+                class="btn-cancel btn-small"
+                :class="user.is_active ? 'btn-deactivate' : 'btn-reactivate'"
+                :disabled="changingStatus"
+                @click="handleToggleActive(user)"
+                >{{ user.is_active ? 'Deactivate' : 'Reactivate' }}</button
               >
             </td>
           </tr>

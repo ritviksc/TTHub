@@ -1,12 +1,14 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { auth } from '@/stores/auth.js'
-import { listParticipants, listSessions, listFeedback, createFeedback } from '@/apis.js'
+import { listBranches, listParticipants, listSessions, listFeedback, createFeedback } from '@/apis.js'
 import { programmeToday } from '@/utils/sessions.js'
 
 const activeFilter = ref('all')
 const search = ref('')
-const showModal = ref(false)
+const feedbackDialog = ref(null)
+const branches = ref([])
+const branchFilter = ref('')
 const participants = ref([])
 const sessions = ref([])
 const feedbackList = ref([])
@@ -14,21 +16,34 @@ const loading = ref(true)
 const loadError = ref(null)
 const saving = ref(false)
 const newEntryError = ref(null)
-const branchName = computed(() => auth.user?.branch?.name ?? 'Your branch')
-const emptyEntry = () => ({ quote: '', participant: '', session: '', date: programmeToday(), consent: false })
+const isSuperAdmin = computed(() => auth.user?.role === 'super_admin')
+const branchName = computed(() => isSuperAdmin.value ? 'all branches' : auth.user?.branch?.name ?? 'Your branch')
+const emptyEntry = () => ({ quote: '', participant: '', session: '', date: programmeToday(), consent: false,
+  branch: isSuperAdmin.value ? branchFilter.value : auth.user?.branch?.id ?? '' })
 const newEntry = ref(emptyEntry())
+const entryParticipants = computed(() => participants.value.filter(person => person.branch === newEntry.value.branch))
+const entrySessions = computed(() => sessions.value.filter(session => session.branch === newEntry.value.branch))
+watch(() => newEntry.value.branch, () => {
+  newEntry.value.participant = ''
+  newEntry.value.session = ''
+}, { flush: 'sync' })
 
 async function loadFeedback() {
   loading.value = true
   loadError.value = null
   feedbackList.value = []
+  participants.value = []
+  sessions.value = []
+  branches.value = []
   try {
-    const [entries, people, classes] = await Promise.all([
+    const [entries, people, classes, branchList] = await Promise.all([
       listFeedback(), listParticipants(), listSessions(),
+      isSuperAdmin.value ? listBranches() : Promise.resolve([]),
     ])
     feedbackList.value = entries
     participants.value = people
     sessions.value = classes
+    branches.value = branchList
   } catch {
     loadError.value = 'Could not load feedback. Please try again.'
   } finally {
@@ -37,33 +52,49 @@ async function loadFeedback() {
 }
 
 function openModal() {
+  if (loading.value || loadError.value || saving.value) return
   newEntry.value = emptyEntry()
   newEntryError.value = null
-  showModal.value = true
+  feedbackDialog.value.showModal()
 }
 
 function closeModal() {
   if (saving.value) return
-  showModal.value = false
+  feedbackDialog.value.close()
   newEntryError.value = null
 }
 
 async function handleAddFeedback() {
-  if (saving.value) return
+  if (saving.value || loading.value || loadError.value) return
   newEntryError.value = null
+  if (!newEntry.value.quote.trim()) {
+    newEntryError.value = 'Enter a quote or short story.'
+    return
+  }
+  if (!newEntry.value.branch) {
+    newEntryError.value = isSuperAdmin.value ? 'Choose a branch first.' : 'You must belong to a branch to record feedback.'
+    return
+  }
   if (!newEntry.value.participant && !newEntry.value.session) {
     newEntryError.value = 'Choose a participant or session.'
+    return
+  }
+  if ((newEntry.value.participant && !entryParticipants.value.some(person => person.id === newEntry.value.participant)) ||
+      (newEntry.value.session && !entrySessions.value.some(session => session.id === newEntry.value.session))) {
+    newEntryError.value = 'Choose a participant and session from the selected branch.'
     return
   }
   saving.value = true
   try {
     const entry = await createFeedback({
-      ...newEntry.value,
+      quote: newEntry.value.quote.trim(),
+      date: newEntry.value.date,
+      consent: newEntry.value.consent,
       participant: newEntry.value.participant || null,
       session: newEntry.value.session || null,
     })
     feedbackList.value.unshift(entry)
-    showModal.value = false
+    feedbackDialog.value.close()
   } catch (error) {
     const data = error.response?.data
     newEntryError.value = data ? Object.values(data).flat().join(' ') : 'Could not save feedback. Please try again.'
@@ -72,12 +103,18 @@ async function handleAddFeedback() {
   }
 }
 
+const scopedFeedback = computed(() => feedbackList.value.filter(entry =>
+  !isSuperAdmin.value || !branchFilter.value || entry.branch === branchFilter.value,
+))
+function feedbackBranch(entry) {
+  return branches.value.find(branch => branch.id === entry.branch)?.name ?? ''
+}
 const filteredFeedback = computed(() => {
   const query = search.value.toLowerCase().trim()
-  return feedbackList.value.filter(f => {
+  return scopedFeedback.value.filter(f => {
     if (activeFilter.value === 'with' && !f.consent) return false
     if (activeFilter.value === 'without' && f.consent) return false
-    return !query || [f.quote, f.source, f.recordedBy].some(value => (value || '').toLowerCase().includes(query))
+    return !query || [f.quote, f.source, f.recordedBy, feedbackBranch(f)].some(value => (value || '').toLowerCase().includes(query))
   })
 })
 
@@ -99,24 +136,31 @@ onMounted(loadFeedback)
 
       <!-- Controls: Filters & Search -->
       <div class="controls-row">
+        <div v-if="isSuperAdmin" class="form-group">
+          <label for="feedback-branch-filter">Branch</label>
+          <select id="feedback-branch-filter" v-model="branchFilter" :disabled="loading || !!loadError">
+            <option value="">All branches</option>
+            <option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.name }}</option>
+          </select>
+        </div>
         <div class="pills">
           <button
             :class="['pill', { active: activeFilter === 'all' }]"
             @click="activeFilter = 'all'"
           >
-            All ({{ feedbackList.length }})
+            All ({{ scopedFeedback.length }})
           </button>
           <button
             :class="['pill', { active: activeFilter === 'with' }]"
             @click="activeFilter = 'with'"
           >
-            With quote consent ({{ feedbackList.filter(f => f.consent).length }})
+            With quote consent ({{ scopedFeedback.filter(f => f.consent).length }})
           </button>
           <button
             :class="['pill', { active: activeFilter === 'without' }]"
             @click="activeFilter = 'without'"
           >
-            Without consent ({{ feedbackList.filter(f => !f.consent).length }})
+            Without consent ({{ scopedFeedback.filter(f => !f.consent).length }})
           </button>
         </div>
 
@@ -126,6 +170,7 @@ onMounted(loadFeedback)
             type="search"
             class="search-input"
             placeholder="Search quotes or participants…"
+            aria-label="Search feedback"
           />
         </div>
       </div>
@@ -155,6 +200,7 @@ onMounted(loadFeedback)
           <div class="feedback-meta">
             <span class="feedback-source">
               <strong>{{ item.source }}</strong> · {{ item.date }} · recorded by {{ item.recordedBy }}
+              <template v-if="isSuperAdmin"> · {{ feedbackBranch(item) }}</template>
             </span>
 
             <span
@@ -167,30 +213,39 @@ onMounted(loadFeedback)
       </div>
 
       <!-- New Feedback Entry Modal -->
-      <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
-        <div class="modal" role="dialog" aria-labelledby="modal-title">
+      <dialog ref="feedbackDialog" class="modal feedback-dialog" aria-labelledby="modal-title" @cancel.prevent="closeModal">
           <div class="modal-header">
             <h2 id="modal-title">Record feedback entry</h2>
             <button class="modal-close" aria-label="Close" @click="closeModal">&times;</button>
           </div>
 
           <form @submit.prevent="handleAddFeedback">
-            <fieldset :disabled="saving" class="feedback-fields">
+            <fieldset :disabled="saving || loading || !!loadError" class="feedback-fields">
             <p class="modal-desc">
-              Record a participant quote or qualitative observation from a session or check-in.
+              Record a participant quote or qualitative observation from a session or check-in. Choose a participant, a session, or both.
             </p>
 
-            <div v-if="newEntryError" class="form-error" style="margin-bottom: 16px;">
+            <div v-if="newEntryError" class="form-error" style="margin-bottom: 16px;" role="alert">
               {{ newEntryError }}
             </div>
 
+            <div v-if="isSuperAdmin" class="form-group">
+              <label for="feedback-entry-branch">Branch</label>
+              <select id="feedback-entry-branch" v-model="newEntry.branch" required autofocus>
+                <option value="" disabled>Choose a branch</option>
+                <option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.name }}</option>
+              </select>
+            </div>
+            <p v-else>Branch: {{ branchName }}</p>
+
             <div class="form-group">
-              <label for="feedback-quote">Quote / Feedback text</label>
+              <label for="feedback-quote">Quote / short story</label>
               <textarea
                 id="feedback-quote"
                 v-model="newEntry.quote"
                 rows="4"
                 required
+                :autofocus="!isSuperAdmin"
                 placeholder="What did the participant share? e.g. 'I was able to walk without my stick this week…'"
               ></textarea>
             </div>
@@ -198,16 +253,16 @@ onMounted(loadFeedback)
             <div class="form-row">
               <div class="form-group">
                 <label for="feedback-participant">Participant</label>
-                <select id="feedback-participant" v-model="newEntry.participant">
-                  <option value="">Choose a participant (or a session below)</option>
-                  <option v-for="p in participants" :key="p.id" :value="p.id">{{ p.full_name }}</option>
+                <select id="feedback-participant" v-model="newEntry.participant" :disabled="!newEntry.branch">
+                  <option value="">Choose a participant</option>
+                  <option v-for="p in entryParticipants" :key="p.id" :value="p.id">{{ p.full_name }}</option>
                 </select>
               </div>
               <div class="form-group">
                 <label for="feedback-session">Session</label>
-                <select id="feedback-session" v-model="newEntry.session">
+                <select id="feedback-session" v-model="newEntry.session" :disabled="!newEntry.branch">
                   <option value="">No session selected</option>
-                  <option v-for="s in sessions" :key="s.id" :value="s.id">{{ s.date }} · {{ s.activity }}</option>
+                  <option v-for="s in entrySessions" :key="s.id" :value="s.id">{{ s.date }} · {{ s.activity }}</option>
                 </select>
               </div>
 
@@ -229,7 +284,7 @@ onMounted(loadFeedback)
                   v-model="newEntry.consent"
                   type="checkbox"
                 />
-                <span>Participant has given consent for this quote to be included in reports</span>
+                <span>Consent is recorded for this feedback to be included in reports</span>
               </label>
             </div>
 
@@ -239,8 +294,7 @@ onMounted(loadFeedback)
             </div>
             </fieldset>
           </form>
-        </div>
-      </div>
+      </dialog>
 
     </main>
   </div>
@@ -252,6 +306,7 @@ onMounted(loadFeedback)
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
 }
+.feedback-dialog::backdrop { background: var(--ink); opacity: 0.6; }
 
 /* Fieldsets and grid items otherwise keep the controls' intrinsic width. */
 .feedback-fields {
@@ -298,10 +353,21 @@ onMounted(loadFeedback)
 .controls-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   gap: 16px;
   margin-bottom: 24px;
   flex-wrap: wrap;
+}
+
+.controls-row .form-group,
+.controls-row .pills {
+  margin-bottom: 0;
+}
+
+.controls-row select,
+.controls-row .pill,
+.controls-row .search-input {
+  min-height: 44px;
 }
 
 .search-wrap {

@@ -17,6 +17,7 @@ const NAV_ITEMS = {
     { label: 'Kapa',            to: '/super-admin/branches' },
     { label: 'Kaumātua',        to: '/super-admin/participants' },
     { label: 'Users',           to: '/super-admin/users' },
+    { label: 'Feedback',        to: '/super-admin/feedback' },
     { label: 'Reporting',       to: '/super-admin/reporting' },
     { label: 'Documents',       to: '/documents' },
     { label: 'Administration',  to: '/super-admin/administration' },

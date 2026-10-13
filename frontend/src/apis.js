@@ -108,6 +108,11 @@ export async function deactivateStaff(id) {
   return response.data
 }
 
+export async function reactivateStaff(id) {
+  const response = await api.post(`/auth/staff/${id}/reactivate/`)
+  return response.data
+}
+
 export async function getStaff(id) {
   const response = await getWithRetry(`/auth/staff/${id}/`)
   return response.data
@@ -188,6 +193,11 @@ export async function updateParticipant(id, payload) {
 
 export async function deactivateParticipant(id) {
   const response = await api.post(`/participants/${id}/deactivate/`)
+  return response.data
+}
+
+export async function reactivateParticipant(id) {
+  const response = await api.post(`/participants/${id}/reactivate/`)
   return response.data
 }
 

@@ -79,6 +79,8 @@ for (const [name, args] of [
   ['updatePhysicalAssessmentDate', ['assessment-id', '2026-01-01', 0]],
   ['completePhysicalAssessment', ['assessment-id', 0]],
   ['createSession', [{ activity: 'Class' }]],
+  ['reactivateStaff', ['staff-id']],
+  ['reactivateParticipant', ['participant-id']],
   ['updateAttendance', ['session-id', 'record-id', { status: 'present' }]],
   ['deleteSession', ['session-id']],
   ['analyseAttendanceReport', [{ start_date: '2026-01-01', end_date: '2026-03-31' }]],
@@ -94,6 +96,20 @@ for (const [name, args] of [
     respond = async () => { attempts++; throw failure }
     await assert.rejects(api[name](...args), error => error === failure)
     assert.equal(attempts, 1)
+  })
+}
+
+for (const [name, url] of [
+  ['reactivateStaff', '/auth/staff/record-id/reactivate/'],
+  ['reactivateParticipant', '/participants/record-id/reactivate/'],
+]) {
+  test(`${name} posts to the dedicated reactivation endpoint and returns its status`, async () => {
+    respond = async config => {
+      assert.equal(config.method, 'post')
+      assert.equal(config.url, url)
+      return { data: { id: 'record-id', is_active: true }, status: 200, headers: {}, config }
+    }
+    assert.deepEqual(await api[name]('record-id'), { id: 'record-id', is_active: true })
   })
 }
 

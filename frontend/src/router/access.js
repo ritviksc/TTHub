@@ -19,8 +19,7 @@ export function routeAccess(to, user) {
   if (unknown || (to.meta?.roles && !to.meta.roles.includes(user.role))) {
     return { name: 'not-authorised', replace: true }
   }
-  // Retain the role-specific participant pages introduced on master.
-  const participantRoute = { super_admin: 'sa-participant-detail', instructor: 'in-participant-detail' }[user.role]
+  const participantRoute = { super_admin: 'sa-participant-detail', branch_manager: 'bm-participant-detail', instructor: 'in-participant-detail' }[user.role]
   if (to.name === 'participant-detail' && participantRoute) {
     return { name: participantRoute, params: to.params, replace: true }
   }

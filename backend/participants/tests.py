@@ -277,6 +277,34 @@ class ParticipantAccessTests(TestCase):
         self.assertIn("branch", response.data)
 
 
+class ParticipantEnrolmentTests(TestCase):
+    def test_both_branch_roles_enrol_in_own_branch_and_new_session_includes_participant(self):
+        from django.utils import timezone
+        from sessions.models import ProgrammeSession
+        other = Branch.objects.create(name="Other branch")
+        client = APIClient()
+        for role in (UserAccount.Role.INSTRUCTOR, UserAccount.Role.BRANCH_MANAGER):
+            with self.subTest(role=role):
+                branch = Branch.objects.create(name=role)
+                user = UserAccount.objects.create_user(username=role, email=f"{role}@example.com", role=role, branch=branch)
+                client.force_authenticate(user)
+                response = client.post("/api/participants/", {
+                    "first_name": "Aroha", "last_name": "Example", "date_of_birth": None,
+                    "joined_on": timezone.localdate(), "branch": str(other.pk),
+                }, format="json")
+                self.assertEqual(response.status_code, 201, response.data)
+                participant = Participant.objects.get(pk=response.data["id"])
+                self.assertEqual(participant.branch_id, branch.pk)
+                self.assertTrue(participant.is_active)
+                self.assertEqual(client.get(f"/api/participants/{participant.pk}/").status_code, 200)
+                created = client.post("/api/sessions/", {
+                    "date": timezone.localdate(), "time": "09:00", "activity": "Class",
+                }, format="json")
+                self.assertEqual(created.status_code, 201, created.data)
+                session = ProgrammeSession.objects.get(pk=created.data["id"])
+                self.assertEqual(list(session.attendance.values_list("participant_id", flat=True)), [participant.pk])
+
+
 class ParticipantHistoryRegressionTests(TestCase):
     def setUp(self):
         self.branch = Branch.objects.create(name="History regressions")
@@ -365,6 +393,46 @@ class FeedbackTests(TestCase):
         self.assertFalse(response.data['consent'])
         self.assertEqual(response.data['session'], self.session.pk)
 
+    def test_all_roles_save_subject_combinations_with_server_owned_identity_and_reload(self):
+        for user in (self.manager, self.instructor, self.admin):
+            for participant, session in ((self.person, None), (None, self.session), (self.person, self.session)):
+                with self.subTest(role=user.role, participant=participant, session=session):
+                    self.client.force_authenticate(user)
+                    response = self.client.post('/api/participants/feedback/', {
+                        'participant': str(participant.pk) if participant else None,
+                        'session': str(session.pk) if session else None,
+                        'quote': '  A short story about the class.  ', 'date': timezone.localdate(),
+                        'branch': str(self.b.pk), 'recorded_by': str(self.other.pk), 'source': 'Forged',
+                    }, format='json')
+                    self.assertEqual(response.status_code, 201, response.data)
+                    entry = Feedback.objects.get(pk=response.data['id'])
+                    self.assertEqual(entry.branch, self.a)
+                    self.assertEqual(entry.recorded_by, user)
+                    self.assertEqual(entry.source, participant.full_name if participant else session.activity)
+                    self.assertEqual(entry.quote, 'A short story about the class.')
+                    self.assertFalse(entry.consent)
+                    fresh_client = APIClient()
+                    fresh_client.force_authenticate(user)
+                    saved = next(row for row in fresh_client.get('/api/participants/feedback/').data if row['id'] == str(entry.pk))
+                    self.assertEqual(saved['quote'], entry.quote)
+                    fresh_client.force_authenticate(self.other)
+                    self.assertEqual(fresh_client.get('/api/participants/feedback/').data, [])
+
+    def test_super_admin_records_feedback_in_any_branch_without_bypassing_consent(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.post('/api/participants/feedback/', {
+            **self.payload, 'participant': str(self.foreign_person.pk), 'consent': False,
+        }, format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+        entry = Feedback.objects.get(pk=response.data['id'])
+        self.assertEqual(entry.branch, self.b)
+        self.assertEqual(entry.recorded_by, self.admin)
+        self.assertFalse(entry.consent)
+        self.client.force_authenticate(self.manager)
+        self.assertEqual(self.client.get('/api/participants/feedback/').data, [])
+        self.client.force_authenticate(self.other)
+        self.assertEqual(self.client.get('/api/participants/feedback/').data[0]['id'], str(entry.pk))
+
     def test_admin_cannot_mix_branches_and_future_dates_are_rejected(self):
         self.client.force_authenticate(self.admin)
         response = self.client.post('/api/participants/feedback/', {
@@ -386,7 +454,7 @@ class FeedbackTests(TestCase):
         self.client.force_authenticate(self.other)
         self.assertEqual(self.client.get('/api/participants/feedback/').data, [])
 
-    def test_dashboard_contracts_and_manager_read_only_attendance(self):
+    def test_dashboard_contracts_and_manager_attendance_access(self):
         people = self.client.get('/api/participants/').data
         self.assertTrue(people[0]['gp_consent_given'])
         self.person.gp_consent_given = False
@@ -396,7 +464,7 @@ class FeedbackTests(TestCase):
         self.assertEqual(sessions[0]['created_by'], self.instructor.pk)
         self.assertEqual(self.client.get(f'/api/sessions/{self.session.pk}/').status_code, 200)
         self.assertEqual(self.client.patch(f'/api/sessions/{self.session.pk}/attendance-state/',
-                                          {'attendance_finalised': True}, format='json').status_code, 403)
+                                          {'attendance_finalised': True}, format='json').status_code, 200)
 
     def test_feedback_blocks_branch_deletion_after_all_people_transfer(self):
         self.client.post('/api/participants/feedback/', self.payload, format='json')

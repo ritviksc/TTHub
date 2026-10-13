@@ -82,7 +82,7 @@ class SessionDetailView(generics.RetrieveDestroyAPIView):
 
 
 class AttendanceRecordDetailView(generics.GenericAPIView):
-    permission_classes = ANY_STAFF
+    permission_classes = [IsInstructor | IsBranchManager]
     serializer_class = AttendanceRecordSerializer
 
     def get_object(self):
@@ -95,25 +95,26 @@ class AttendanceRecordDetailView(generics.GenericAPIView):
 
     @transaction.atomic
     def patch(self, request, *args, **kwargs):
-        if request.user.role != UserAccount.Role.INSTRUCTOR:
-            raise PermissionDenied("Only an Instructor can record attendance.")
-
         # Serialise edits and finalisation against the same session row.
         session = get_object_or_404(
             ProgrammeSession.objects.select_for_update(),
             pk=self.kwargs["pk"], branch=request.user.branch,
         )
-        if session.attendance_finalised:
-            return Response({"detail": "Reopen attendance before editing."}, status=409)
         attendance = self.get_object()
         serializer = self.get_serializer(attendance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        # Reasons can be reviewed without removing a finalised register from reports.
+        if session.attendance_finalised and (
+            attendance.status != AttendanceRecord.Status.ABSENT
+            or set(serializer.validated_data) - {"absence_reason", "absence_reason_other"}
+        ):
+            return Response({"detail": "Reopen attendance before changing attendance status."}, status=409)
         serializer.save()
         return Response(serializer.data)
 
 
 class AttendanceFinalisationView(generics.GenericAPIView):
-    permission_classes = [IsInstructor]
+    permission_classes = [IsInstructor | IsBranchManager]
     serializer_class = AttendanceFinalisationSerializer
 
     @transaction.atomic

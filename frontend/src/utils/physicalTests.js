@@ -37,6 +37,23 @@ export function resultText(row) {
   const label = OUTCOMES[row.outcome]
   return row.value === null || row.value === undefined ? label : `${row.value} ${row.exercise === 'chair' ? 'stands' : 'seconds'}${row.outcome === 'arms_used' ? ' — arms needed' : ''}`
 }
+export function assessmentComparison(assessments) {
+  const completed = assessments.filter(row => row.status === 'completed').sort((a, b) =>
+    a.assessed_on.localeCompare(b.assessed_on) || a.completed_at.localeCompare(b.completed_at),
+  )
+  const baseline = completed[0] || null
+  const latest = completed.length > 1 ? completed.at(-1) : null
+  const rows = Object.keys(LABELS).map(exercise => {
+    const first = baseline?.results.find(row => row.exercise === exercise)
+    const last = latest?.results.find(row => row.exercise === exercise)
+    const comparable = [first, last].every(row => row &&
+      ['measured', 'arms_used'].includes(row.outcome) && row.value !== null && row.value !== undefined,
+    )
+    return { exercise, baseline: first, latest: last,
+      change: comparable ? Number((last.value - first.value).toFixed(2)) : null }
+  })
+  return { baseline, latest, rows }
+}
 export function emptyResult(exercise) {
   return { exercise, outcome: 'measured', value: null, notes: '', walking_aid: '' }
 }

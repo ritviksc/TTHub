@@ -139,6 +139,11 @@ const router = createRouter({
             meta: { requiresAuth: true, roles: SA },
         },
         {
+            path: '/super-admin/feedback', name: 'sa-feedback',
+            component: () => import('@/views/Feedback.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
             path: '/super-admin/reporting', name: 'sa-reporting',
             component: () => import('@/views/SuperAdmin/Reporting.vue'),
             meta: { requiresAuth: true, roles: SA },
@@ -182,7 +187,22 @@ const router = createRouter({
             component: () => import('@/views/Instructor/SessionDetail.vue'),
             meta: { requiresAuth: true, roles: BM },
         },
+        {
+            path: '/branch-manager/sessions/:id/attendance', name: 'bm-attendance-mode',
+            component: () => import('@/views/Instructor/AttendanceMode.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
         { path: '/branch-manager/participants', name: 'bm-participants', component: () => import('@/views/BranchManager/Participants.vue'), meta: { requiresAuth: true, roles: BM } },
+        {
+            path: '/branch-manager/participants/:id', name: 'bm-participant-detail',
+            component: () => import('@/views/BranchManager/ParticipantDetail.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        {
+            path: '/branch-manager/participants/:id/attendance', name: 'bm-participant-attendance',
+            component: () => import('@/views/BranchManager/ParticipantAttendance.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
         {
             path: '/branch-manager/instructors', name: 'bm-instructors',
             component: () => import('@/views/BranchManager/Instructors.vue'),
@@ -190,7 +210,7 @@ const router = createRouter({
         },
         {
             path: '/branch-manager/feedback', name: 'bm-feedback',
-            component: () => import('@/views/BranchManager/Feedback.vue'),
+            component: () => import('@/views/Feedback.vue'),
             meta: { requiresAuth: true, roles: BM },
         },
         {
@@ -236,7 +256,7 @@ const router = createRouter({
         {
             path: '/instructor/feedback',
             name: 'in-feedback',
-            component: () => import('@/views/Instructor/Feedback.vue'),
+            component: () => import('@/views/Feedback.vue'),
             meta: { requiresAuth: true, roles: IN },
         },
         {

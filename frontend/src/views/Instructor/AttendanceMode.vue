@@ -3,11 +3,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { getSession, updateAttendance, setAttendanceFinalised } from '@/apis.js'
 import { ABSENCE_REASONS, countByStatus, formatSessionDate, initials } from '@/utils/sessions.js'
+import { auth } from '@/stores/auth.js'
 
 const route = useRoute()
 const router = useRouter()
 const sessionId = route.params.id
-const detailRoute = { name: 'in-session-detail', params: { id: sessionId } }
+const detailRoute = computed(() => ({
+  name: auth.user?.role === 'branch_manager' ? 'bm-session-detail' : 'in-session-detail',
+  params: { id: sessionId },
+}))
 
 const session = ref(null)
 const loading = ref(true)
@@ -15,6 +19,7 @@ const loadError = ref(null)
 const saveError = ref(null)
 const saving = ref(false)
 const reasonDrafts = ref({})
+const reviewing = computed(() => route.query.review === '1' && session.value?.attendance_finalised === true)
 
 const counts = computed(() => countByStatus(session.value?.attendance))
 
@@ -65,7 +70,7 @@ async function persistReason(record) {
 }
 
 async function saveReason(record) {
-  if (saving.value || session.value.attendance_finalised) return
+  if (saving.value || !reviewing.value || record.status !== 'absent') return
   saving.value = true
   saveError.value = null
   try { await persistReason(record) }
@@ -96,13 +101,13 @@ async function setFinalised(finalised) {
   saving.value = true
   saveError.value = null
   try {
-    if (finalised) {
+    if (reviewing.value) {
       for (const record of session.value.attendance.filter(r => r.status === 'absent')) {
         await persistReason(record)
       }
     }
     Object.assign(session.value, await setAttendanceFinalised(sessionId, finalised))
-    if (finalised) await router.push(detailRoute)
+    if (finalised) await router.push(detailRoute.value)
   } catch (e) {
     saveError.value = e.message || (finalised
       ? 'Could not finalise attendance. Please try again.'
@@ -134,15 +139,17 @@ function participantName(record) {
       <template v-else>
         <div class="page-header">
           <div>
-            <h1>Attendance mode</h1>
+            <h1>{{ reviewing ? 'Review attendance' : 'Attendance mode' }}</h1>
             <p class="page-subtitle">{{ session.activity }} · {{ formatSessionDate(session.date) }}</p>
           </div>
-          <button v-if="session.attendance_finalised" class="btn-primary" :disabled="saving" @click="setFinalised(false)">
-            {{ saving ? 'Reopening…' : 'Reopen attendance' }}
-          </button>
-          <button v-else class="btn-primary" :disabled="saving" @click="setFinalised(true)">
-            {{ saving ? 'Saving…' : 'Done' }}
-          </button>
+          <div class="attendance-actions">
+            <button v-if="session.attendance_finalised" class="btn-cancel" :disabled="saving" @click="setFinalised(false)">
+              {{ saving ? 'Reopening…' : 'Reopen attendance' }}
+            </button>
+            <button v-if="reviewing || !session.attendance_finalised" class="btn-primary" :disabled="saving" @click="setFinalised(true)">
+              {{ saving ? 'Saving…' : 'Done' }}
+            </button>
+          </div>
         </div>
 
         <p class="page-subtitle">{{ session.attendance_finalised ? 'Attendance finalised' : 'Attendance not finalised' }}</p>
@@ -164,8 +171,8 @@ function participantName(record) {
             <span class="person-name">{{ participantName(record) }}</span>
             <span class="person-status">{{ cardLabel(record) }}</span>
           </button>
-          <form v-if="record.status === 'absent'" class="absence-form" @submit.prevent="saveReason(record)">
-            <fieldset :disabled="saving || session.attendance_finalised">
+          <form v-if="reviewing && record.status === 'absent'" class="absence-form" @submit.prevent="saveReason(record)">
+            <fieldset :disabled="saving">
               <label :for="`reason-${record.id}`">Absence reason for {{ participantName(record) }}</label>
               <select :id="`reason-${record.id}`" v-model="reasonDrafts[record.id].absence_reason">
                 <option value="">Select reason</option>
@@ -175,7 +182,7 @@ function participantName(record) {
                 <label :for="`other-${record.id}`">Describe the reason</label>
                 <input :id="`other-${record.id}`" v-model="reasonDrafts[record.id].absence_reason_other" type="text" required />
               </template>
-              <button v-if="!session.attendance_finalised" type="submit" class="btn-primary">Save reason</button>
+              <button type="submit" class="btn-primary">Save reason</button>
             </fieldset>
           </form>
           </div>
@@ -188,6 +195,8 @@ function participantName(record) {
 </template>
 
 <style scoped>
+.attendance-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
 .counter {
   font-size: var(--text-xl);
   color: var(--text-secondary);

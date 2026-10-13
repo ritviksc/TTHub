@@ -75,12 +75,17 @@ class ParticipantDetailView(generics.RetrieveUpdateAPIView):
 
 class ParticipantDeactivateView(generics.GenericAPIView):
     permission_classes = ANY_STAFF
+    active = False
 
     def post(self, request, pk):
         participant = get_object_or_404(participants_for(request.user), pk=pk)
-        participant.is_active = False
+        participant.is_active = self.active
         participant.save()
         return Response({"id": str(participant.id), "is_active": participant.is_active})
+
+
+class ParticipantReactivateView(ParticipantDeactivateView):
+    active = True
 
 
 class ParticipantFileView(generics.GenericAPIView):

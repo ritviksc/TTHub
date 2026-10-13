@@ -21,7 +21,13 @@ const loadError = ref(null)
 const saveError = ref(null)
 const statusFilter = ref('all')
 const isInstructor = computed(() => auth.user?.role === 'instructor')
+const canRecordAttendance = computed(() => ['instructor', 'branch_manager'].includes(auth.user?.role))
 const listRouteName = computed(() => isInstructor.value ? 'in-sessions' : 'bm-sessions')
+const attendanceModeRoute = computed(() => ({
+  name: isInstructor.value ? 'in-attendance-mode' : 'bm-attendance-mode',
+  params: { id: sessionId },
+  query: session.value?.attendance_finalised ? { review: '1' } : {},
+}))
 
 const counts = computed(() => countByStatus(session.value?.attendance))
 
@@ -119,16 +125,16 @@ async function handleDelete() {
             </p>
           </div>
           <button
-            v-if="isInstructor"
+            v-if="canRecordAttendance"
             class="btn-primary"
-            @click="router.push({ name: 'in-attendance-mode', params: { id: sessionId } })"
+            @click="router.push(attendanceModeRoute)"
           >
             {{ session.attendance_finalised ? 'Review attendance' : 'Attendance mode' }}
           </button>
         </div>
 
         <p class="page-subtitle">
-          {{ session.attendance_finalised ? 'Attendance finalised. Reopen in attendance mode to make corrections.' : 'Attendance not finalised. Use Done in attendance mode to finalise.' }}
+          {{ session.attendance_finalised ? 'Attendance finalised. Use Review attendance to edit absence reasons, or reopen attendance to change who was present.' : 'Attendance not finalised. Use Done in attendance mode to finalise.' }}
         </p>
 
         <div class="stat-grid">
@@ -169,7 +175,7 @@ async function handleDelete() {
               </td>
               <td>
                 <select
-                  :disabled="!isInstructor || session.attendance_finalised"
+                  :disabled="!canRecordAttendance || session.attendance_finalised"
                   :value="record.status"
                   :class="['status-select', record.status]"
                   :aria-label="`Status for ${record.name}`"
@@ -180,7 +186,7 @@ async function handleDelete() {
               </td>
               <td>
                 <select
-                  v-if="record.status === 'absent' && isInstructor"
+                  v-if="record.status === 'absent' && canRecordAttendance"
                   :disabled="session.attendance_finalised"
                   :value="record.absence_reason"
                   :aria-label="`Absence reason for ${record.name}`"
@@ -191,7 +197,7 @@ async function handleDelete() {
                 </select>
                 <input
                   v-if="record.absence_reason === 'other'"
-                  :disabled="!isInstructor || session.attendance_finalised"
+                  :disabled="!canRecordAttendance || session.attendance_finalised"
                   :value="record.absence_reason_other"
                   class="other-reason"
                   type="text"
@@ -199,7 +205,7 @@ async function handleDelete() {
                   :aria-label="`Other absence reason for ${record.name}`"
                   @change="saveRecord(record, { absence_reason: 'other', absence_reason_other: $event.target.value })"
                 />
-                <span v-else class="not-applicable">{{ absenceReasonLabel(record) }}</span>
+                <span v-else-if="record.status !== 'absent' || !canRecordAttendance" class="not-applicable">{{ absenceReasonLabel(record) }}</span>
               </td>
             </tr>
             <tr v-if="!visibleAttendance.length">
@@ -240,6 +246,8 @@ async function handleDelete() {
   border-color: var(--teal);
   box-shadow: 0 0 0 3px var(--teal-tint);
 }
+
+.data-table select:disabled { appearance: none; }
 
 /* Colour the status so the table can be scanned at a glance. */
 .status-select.present {

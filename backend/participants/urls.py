@@ -8,6 +8,7 @@ POST   /api/participants/                    create
 GET    /api/participants/<uuid>/             retrieve
 PATCH  /api/participants/<uuid>/             edit
 POST   /api/participants/<uuid>/deactivate/  soft delete
+POST   /api/participants/<uuid>/reactivate/  restore active status
 """
 
 urlpatterns = [
@@ -18,4 +19,5 @@ urlpatterns = [
     path("", views.ParticipantListCreateView.as_view()),
     path("<uuid:pk>/", views.ParticipantDetailView.as_view()),
     path("<uuid:pk>/deactivate/", views.ParticipantDeactivateView.as_view()),
+    path("<uuid:pk>/reactivate/", views.ParticipantReactivateView.as_view()),
 ]
