@@ -144,15 +144,20 @@ class StaffDetailView(
 
 class StaffDeactivateView(generics.GenericAPIView):
     permission_classes = [IsSuperAdmin | IsBranchManager]
+    active = False
 
     @transaction.atomic
     def post(self, request, pk):
         staff = get_object_or_404(staff_queryset_for(request.user).select_for_update(), pk=pk)
         before = staff_snapshot(staff)
-        staff.is_active = False
+        staff.is_active = self.active
         staff.save()
         staff_changed(request, staff, before)
         return Response({"id": str(staff.id), "is_active": staff.is_active})
+
+
+class StaffReactivateView(StaffDeactivateView):
+    active = True
 
 
 ACTIVE_MANAGERS = UserAccount.objects.filter(

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { getParticipant, updateParticipant, deactivateParticipant, downloadGpDocument } from '@/apis.js'
+import { getParticipant, updateParticipant, deactivateParticipant, reactivateParticipant, downloadGpDocument } from '@/apis.js'
 import { initials, programmeToday } from '@/utils/sessions.js'
 import ParticipantAttendance from './ParticipantAttendance.vue'
 import AssessmentHistory from '@/components/physicalTests/AssessmentHistory.vue'
@@ -25,7 +25,7 @@ const maximumConsentDate = ref(programmeToday())
 const downloading = ref(false)
 const photoInput = ref(null)
 const documentInput = ref(null)
-const confirmDeactivate = ref(false)
+const confirmStatusChange = ref(false)
 const fields = [
   { name: 'first_name', label: 'First name', required: true, max: 150 },
   { name: 'last_name', label: 'Last name', required: true, max: 150 },
@@ -108,16 +108,20 @@ async function download() {
   }
 }
 
-async function deactivate() {
+async function changeStatus() {
+  if (saving.value) return
+  const active = participant.value.is_active
   saving.value = true
   error.value = success.value = ''
   try {
-    await deactivateParticipant(props.participantId)
-    participant.value.is_active = false
-    confirmDeactivate.value = false
-    success.value = 'Participant deactivated. Their attendance history is retained.'
+    const result = await (active ? deactivateParticipant : reactivateParticipant)(props.participantId)
+    participant.value.is_active = result.is_active
+    confirmStatusChange.value = false
+    success.value = active
+      ? 'Participant deactivated. Their attendance history is retained.'
+      : 'Participant reactivated. They can be included in new sessions.'
   } catch (e) {
-    error.value = e.response?.data?.detail ?? 'Could not deactivate this participant.'
+    error.value = e.response?.data?.detail ?? `Could not ${active ? 'deactivate' : 'reactivate'} this participant.`
   } finally {
     saving.value = false
   }
@@ -203,15 +207,16 @@ async function deactivate() {
         <DocumentList :participant-id="participantId" can-upload />
       </section>
       <ParticipantAttendance v-if="page !== 'details'" :participant-id="participantId" />
-      <section v-if="page !== 'attendance' && participant.is_active" class="card">
+      <section v-if="page !== 'attendance'" class="card">
         <h2>Participant status</h2>
-        <p>Deactivating prevents inclusion in new sessions and preserves existing attendance history.</p>
-        <template v-if="confirmDeactivate">
-          <p>Deactivate {{ participant.full_name }}?</p>
-          <button class="btn-primary" :disabled="saving" @click="deactivate">Confirm deactivation</button>
-          <button class="btn-cancel" :disabled="saving" @click="confirmDeactivate = false">Cancel</button>
+        <p v-if="participant.is_active">Deactivating prevents inclusion in new sessions and preserves existing attendance history.</p>
+        <p v-else>Reactivating allows this participant to be included in new sessions. Their attendance history is retained.</p>
+        <template v-if="confirmStatusChange">
+          <p>{{ participant.is_active ? 'Deactivate' : 'Reactivate' }} {{ participant.full_name }}?</p>
+          <button class="btn-primary" :disabled="saving" @click="changeStatus">{{ saving ? 'Saving…' : participant.is_active ? 'Confirm deactivation' : 'Confirm reactivation' }}</button>
+          <button class="btn-cancel" :disabled="saving" @click="confirmStatusChange = false">Cancel</button>
         </template>
-        <button v-else class="btn-cancel" :disabled="saving" @click="confirmDeactivate = true">Deactivate participant</button>
+        <button v-else :class="participant.is_active ? 'btn-cancel' : 'btn-primary'" :disabled="saving" @click="confirmStatusChange = true">{{ participant.is_active ? 'Deactivate participant' : 'Reactivate participant' }}</button>
       </section>
     </template>
   </div>

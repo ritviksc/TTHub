@@ -48,7 +48,7 @@ test('branch manager pages render both navigation buttons and separate details f
         return { id, full_name: 'Aroha Example', first_name: 'Aroha', last_name: 'Example',
           branch_name: 'Our branch', is_active: true, gp_consent_given: false, photo_consent_given: false }
       },
-      updateParticipant() {}, deactivateParticipant() {}, downloadGpDocument() {},
+      updateParticipant() {}, deactivateParticipant() {}, reactivateParticipant() {}, downloadGpDocument() {},
     })
     vm.runInContext(compiled + '\nthis.component = component', context)
     const state = context.component.setup(props, { expose() {} })

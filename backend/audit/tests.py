@@ -57,8 +57,8 @@ class AuditTests(TestCase):
         self.assertEqual(event.details['changes']['branch_id'], {'before': str(self.branch.pk), 'after': str(self.other.pk)})
         self.client.post(f'/api/auth/staff/{self.instructor.pk}/deactivate/')
         self.client.patch(f'/api/auth/staff/{self.instructor.pk}/', {'is_active': True}, format='json')
-        # Account reactivation is not an existing API capability. Ignored fields
-        # must not create a fictional change event.
+        # Status changes use dedicated endpoints. Ignored PATCH fields must not
+        # create a fictional change event.
         self.assertFalse(AuditEvent.objects.filter(action='staff.reactivated').exists())
         response = self.client.delete(f'/api/branches/{self.other.pk}/instructors/{self.instructor.pk}/')
         self.assertEqual(response.status_code, 200)

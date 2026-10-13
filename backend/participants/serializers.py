@@ -70,7 +70,7 @@ class ParticipantSerializer(serializers.ModelSerializer):
             "photo_consent_date",
         ]
         # is_active is read-only here on purpose: it changes through the
-        # deactivate endpoint, the same way staff accounts do.
+        # deactivate/reactivate endpoints, the same way staff accounts do.
         read_only_fields = ["id", "is_active", "gp_document_uploaded_at"]
         extra_kwargs = {"branch": {"required": False}}
 

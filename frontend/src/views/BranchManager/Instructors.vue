@@ -1,13 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { listStaff, createStaffAccount, deactivateStaff, listSessions } from '@/apis.js'
+import { listStaff, createStaffAccount, deactivateStaff, reactivateStaff, listSessions } from '@/apis.js'
 import { auth } from '@/stores/auth.js'
 
 const instructors = ref([])
 const sessions = ref([])
 const loading = ref(true)
 const loadError = ref(null)
+const changingStatus = ref(false)
 const search = ref('')
 const activeFilter = ref('all') // 'all', 'active', 'inactive'
 
@@ -146,16 +147,20 @@ async function handleCreateInstructor() {
 }
 
 async function handleToggleActive(instructor) {
+  if (changingStatus.value) return
   const action = instructor.is_active ? 'deactivate' : 'reactivate'
   if (!confirm(`Are you sure you want to ${action} ${instructor.first_name || instructor.email}?`)) {
     return
   }
 
+  changingStatus.value = true
   try {
-    await deactivateStaff(instructor.id)
-    await load()
+    const result = await (instructor.is_active ? deactivateStaff : reactivateStaff)(instructor.id)
+    instructor.is_active = result.is_active
   } catch (err) {
     alert(`Could not ${action} instructor. Please try again.`)
+  } finally {
+    changingStatus.value = false
   }
 }
 </script>
@@ -263,19 +268,13 @@ async function handleToggleActive(instructor) {
               </td>
               <td style="text-align: right;">
                 <button
-                  v-if="inst.is_active"
                   class="btn-cancel btn-small"
+                  :class="inst.is_active ? 'btn-deactivate' : 'btn-reactivate'"
+                  :disabled="changingStatus"
                   @click="handleToggleActive(inst)"
                 >
-                  Deactivate
+                  {{ inst.is_active ? 'Deactivate' : 'Reactivate' }}
                 </button>
-                <RouterLink
-                  v-else
-                  :to="{ name: 'staff-detail', params: { id: inst.id } }"
-                  class="btn-secondary btn-small"
-                >
-                  Manage
-                </RouterLink>
               </td>
             </tr>
           </tbody>
@@ -444,11 +443,6 @@ async function handleToggleActive(instructor) {
 .table-card {
   padding: 0;
   overflow: hidden;
-}
-
-.btn-small {
-  padding: 6px 12px;
-  font-size: var(--text-xs);
 }
 
 .modal-header {

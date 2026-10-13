@@ -5,6 +5,7 @@ import {
   getStaff,
   updateStaff,
   deactivateStaff,
+  reactivateStaff,
   listBranches,
 } from "@/apis.js";
 import { auth } from "@/stores/auth.js";
@@ -22,7 +23,7 @@ const editing = ref(false);
 const draft = ref({});
 const saveError = ref(null);
 const saving = ref(false);
-const deactivating = ref(false);
+const changingStatus = ref(false);
 
 const isSuperAdmin = computed(() => auth.user?.role === "super_admin");
 
@@ -130,20 +131,24 @@ async function save() {
   }
 }
 
-async function handleDeactivate() {
+async function handleToggleActive() {
+  if (changingStatus.value) return;
+  const active = staff.value.is_active;
   const name =
     `${staff.value.first_name} ${staff.value.last_name}`.trim() ||
     staff.value.email;
 
-  if (!confirm(`Deactivate ${name}? They will no longer be able to sign in.`)) {
+  if (!confirm(active
+    ? `Deactivate ${name}? They will no longer be able to sign in.`
+    : `Reactivate ${name}? They will be able to sign in again.`)) {
     return;
   }
 
-  deactivating.value = true;
+  changingStatus.value = true;
   saveError.value = null;
 
   try {
-    const result = await deactivateStaff(staffId);
+    const result = await (active ? deactivateStaff : reactivateStaff)(staffId);
 
     staff.value = {
       ...staff.value,
@@ -151,9 +156,9 @@ async function handleDeactivate() {
     };
   } catch (error) {
     saveError.value =
-      error.response?.data?.detail ?? "Could not deactivate this account.";
+      error.response?.data?.detail ?? `Could not ${active ? 'deactivate' : 'reactivate'} this account.`;
   } finally {
-    deactivating.value = false;
+    changingStatus.value = false;
   }
 }
 </script>
@@ -213,15 +218,14 @@ async function handleDeactivate() {
 
           <div v-if="!editing" class="header-actions">
             <button
-              v-if="staff.is_active"
-              class="btn-danger"
-              :disabled="deactivating"
-              @click="handleDeactivate"
+              :class="staff.is_active ? 'btn-danger' : 'btn-secondary'"
+              :disabled="changingStatus"
+              @click="handleToggleActive"
             >
-              {{ deactivating ? "Deactivating…" : "Deactivate" }}
+              {{ changingStatus ? "Saving…" : staff.is_active ? "Deactivate" : "Reactivate" }}
             </button>
 
-            <button class="btn-primary" @click="startEdit">Edit details</button>
+            <button class="btn-primary" :disabled="changingStatus" @click="startEdit">Edit details</button>
           </div>
         </div>
 

@@ -5,12 +5,12 @@
   Linked from:  Users.vue :each user's name is a RouterLink to this page
  
   Shows: name, role, branch, email, active status
-  Actions: deactivate account
+  Actions: deactivate or reactivate account
 -->
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { listStaff, deactivateStaff } from '@/apis.js'
+import { listStaff, deactivateStaff, reactivateStaff } from '@/apis.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +22,7 @@ const user = ref(null)
 const loading = ref(true)
 const loadError = ref(null)
 const actionError = ref(null)
+const changingStatus = ref(false)
 // --- state ---
 // ROLE_LABELS maps database codes to readable strings e.g. 'branch_manager' → 'Branch Manager'
 const ROLE_LABELS = {
@@ -43,14 +44,19 @@ onMounted(async () => {
   }
 })
 // --- actions ---
-// Deactivates the account then redirects back to the users list
-async function handleDeactivate() {
-  if (!confirm('Deactivate this account?')) return
+async function handleToggleActive() {
+  if (changingStatus.value) return
+  const active = user.value.is_active
+  if (!confirm(active ? 'Deactivate this account?' : 'Reactivate this account? They will be able to sign in again.')) return
+  changingStatus.value = true
+  actionError.value = null
   try {
-    await deactivateStaff(user.value.id)
-    router.push('/super-admin/users')
+    const result = await (active ? deactivateStaff : reactivateStaff)(user.value.id)
+    user.value.is_active = result.is_active
   } catch (e) {
-    actionError.value = 'Could not deactivate this account.'
+    actionError.value = `Could not ${active ? 'deactivate' : 'reactivate'} this account.`
+  } finally {
+    changingStatus.value = false
   }
 }
 </script>
@@ -70,11 +76,11 @@ async function handleDeactivate() {
             <p class="page-subtitle">{{ ROLE_LABELS[user.role] ?? user.role }}</p>
           </div>
           <button
-            v-if="user.is_active"
-            class="btn-cancel"
-            @click="handleDeactivate"
+            :class="user.is_active ? 'btn-cancel' : 'btn-primary'"
+            :disabled="changingStatus"
+            @click="handleToggleActive"
           >
-            Deactivate account
+            {{ changingStatus ? 'Saving…' : user.is_active ? 'Deactivate account' : 'Reactivate account' }}
           </button>
         </div>
 
