@@ -63,6 +63,12 @@ UserAccount.objects.create_user(
 exit()
 ```
 
+## Wipe backend
+```
+cd backend
+python manage.py flush
+```
+
 ## Testing
 
 To run tests for system components (in their directory) use:
