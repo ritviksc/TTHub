@@ -26,6 +26,7 @@ const listRouteName = computed(() => isInstructor.value ? 'in-sessions' : 'bm-se
 const attendanceModeRoute = computed(() => ({
   name: isInstructor.value ? 'in-attendance-mode' : 'bm-attendance-mode',
   params: { id: sessionId },
+  query: session.value?.attendance_finalised ? { review: '1' } : {},
 }))
 
 const counts = computed(() => countByStatus(session.value?.attendance))
@@ -133,7 +134,7 @@ async function handleDelete() {
         </div>
 
         <p class="page-subtitle">
-          {{ session.attendance_finalised ? 'Attendance finalised. Reopen in attendance mode to make corrections.' : 'Attendance not finalised. Use Done in attendance mode to finalise.' }}
+          {{ session.attendance_finalised ? 'Attendance finalised. Use Review attendance to edit absence reasons, or reopen attendance to change who was present.' : 'Attendance not finalised. Use Done in attendance mode to finalise.' }}
         </p>
 
         <div class="stat-grid">

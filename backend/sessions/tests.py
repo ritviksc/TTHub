@@ -196,3 +196,37 @@ class AttendanceFinalisationTests(TestCase):
 
     def test_state_is_required(self):
         self.assertEqual(self.client.patch(self.state_url, {}, format="json").status_code, 400)
+
+    def test_finalised_absence_reasons_can_be_reviewed_by_both_branch_roles(self):
+        self.session.attendance_finalised = True
+        self.session.save()
+        for role in (UserAccount.Role.INSTRUCTOR, UserAccount.Role.BRANCH_MANAGER):
+            with self.subTest(role=role):
+                user = UserAccount.objects.create_user(username=f"review-{role}", email=f"review-{role}@example.com", role=role, branch=self.branch)
+                self.client.force_authenticate(user)
+                response = self.client.patch(self.record_url, {
+                    "absence_reason": "other", "absence_reason_other": "Family commitment",
+                }, format="json")
+                self.assertEqual(response.status_code, 200, response.data)
+                self.record.refresh_from_db()
+                self.session.refresh_from_db()
+                self.assertEqual(self.record.status, "absent")
+                self.assertEqual(self.record.absence_reason_other, "Family commitment")
+                self.assertTrue(self.session.attendance_finalised)
+                self.assertEqual(self.client.patch(self.record_url, {
+                    "absence_reason": "other", "absence_reason_other": "",
+                }, format="json").status_code, 400)
+                self.assertEqual(self.client.patch(self.record_url, {
+                    "status": "present", "absence_reason": "",
+                }, format="json").status_code, 409)
+
+    def test_finalised_present_record_cannot_be_given_an_absence_reason(self):
+        self.session.attendance_finalised = True
+        self.session.save()
+        self.record.status = "present"
+        self.record.save()
+        self.assertEqual(self.client.patch(self.record_url, {
+            "absence_reason": "no_show",
+        }, format="json").status_code, 409)
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.absence_reason, "")

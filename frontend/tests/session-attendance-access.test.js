@@ -25,6 +25,9 @@ for (const [role, prefix] of [['instructor', 'in'], ['branch_manager', 'bm']]) {
     assert.equal(page.attendanceModeRoute.value.name, `${prefix}-attendance-mode`)
     assert.equal(page.attendanceModeRoute.value.params.id, 'session')
     assert.equal(page.listRouteName.value, `${prefix}-sessions`)
+    assert.equal(page.attendanceModeRoute.value.query.review, undefined)
+    page.session.value = { attendance_finalised: true }
+    assert.equal(page.attendanceModeRoute.value.query.review, '1')
   })
 }
 
