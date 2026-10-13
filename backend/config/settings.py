@@ -268,3 +268,8 @@ STORAGES = {
     },
 }
 
+# WARNING: This is for demo purposes since we can't host a celery/redis instance right now :(
+CELERY_TASK_ALWAYS_EAGER = (
+    os.getenv("CELERY_TASK_ALWAYS_EAGER", "False").lower() == "true"
+)
+
