@@ -72,11 +72,10 @@ test('an unrecognised role does not create a redirect loop', async () => {
 })
 
 
-test('participant bookmarks retain master role-specific profiles after access checks', () => {
+test('participant bookmarks open each role’s participant details after access checks', () => {
   const to = { name: 'participant-detail', params: { id: 'participant-id' }, meta: { requiresAuth: true, roles: ['super_admin', 'instructor', 'branch_manager'] } }
-  for (const [role, name] of [['super_admin', 'sa-participant-detail'], ['instructor', 'in-participant-detail']]) {
+  for (const [role, name] of [['super_admin', 'sa-participant-detail'], ['branch_manager', 'bm-participant-detail'], ['instructor', 'in-participant-detail']]) {
     assert.deepEqual(routeAccess(to, { role }), { name, params: to.params, replace: true })
   }
-  assert.equal(routeAccess(to, { role: 'branch_manager' }), true)
   assert.deepEqual(routeAccess(to, null), { name: 'home', replace: true })
 })

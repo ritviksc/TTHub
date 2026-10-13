@@ -183,6 +183,16 @@ const router = createRouter({
         },
         { path: '/branch-manager/participants', name: 'bm-participants', component: () => import('@/views/BranchManager/Participants.vue'), meta: { requiresAuth: true, roles: BM } },
         {
+            path: '/branch-manager/participants/:id', name: 'bm-participant-detail',
+            component: () => import('@/views/BranchManager/ParticipantDetail.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        {
+            path: '/branch-manager/participants/:id/attendance', name: 'bm-participant-attendance',
+            component: () => import('@/views/BranchManager/ParticipantAttendance.vue'),
+            meta: { requiresAuth: true, roles: BM },
+        },
+        {
             path: '/branch-manager/instructors', name: 'bm-instructors',
             component: () => import('@/views/BranchManager/Instructors.vue'),
             meta: { requiresAuth: true, roles: BM },
