@@ -160,3 +160,21 @@ test('staff promotion clears the hidden branch without mutating the edit form', 
   await api.updateStaff('staff-id', payload)
   assert.equal(payload.branch, 'old-branch-id')
 })
+
+test('JSON CSRF tokens are sent on writes and refreshed after login and reload', async () => {
+  respond = async config => {
+    if (config.url === '/auth/csrf/') return { data: { csrfToken: 'before-login' }, config }
+    if (config.url === '/auth/login/') {
+      assert.equal(config.headers.get('X-CSRFToken'), 'before-login')
+      assert.equal(config.withXSRFToken, false)
+      return { data: { csrfToken: 'after-login' }, config }
+    }
+    if (config.url === '/auth/me/') return { data: { csrfToken: 'after-reload' }, config }
+    assert.equal(config.headers.get('X-CSRFToken'), 'after-reload')
+    return { data: {}, config }
+  }
+  await api.fetchCsrfCookie()
+  await api.login('example@example.com', 'test')
+  await api.fetchMe()
+  await api.logout()
+})

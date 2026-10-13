@@ -18,6 +18,21 @@ const api = axios.create({
     }
 });
 
+// Backend cookies are unreadable on a separate frontend hostname. Keep the
+// masked token in memory; login rotates it and /me restores it after reload.
+let csrfToken = ""
+api.interceptors.response.use(response => {
+  if (response.data?.csrfToken) csrfToken = response.data.csrfToken
+  return response
+})
+api.interceptors.request.use(config => {
+  if (csrfToken && !["get", "head", "options"].includes(config.method)) {
+    config.headers.set("X-CSRFToken", csrfToken)
+    config.withXSRFToken = false
+  }
+  return config
+})
+
 // Helper function to pause execution for 'ms' milliseconds
 function sleep(ms) {
   return new Promise(function (resolve) {
@@ -53,8 +68,7 @@ function getWithRetry(url, config) {
   return withRetry(null, () => api.get(url, config))
 }
 
-// fetch Crsf token and store it as a cookie
-// for future requests
+// Fetch the cookie and the masked token used by subsequent writes.
 export async function fetchCsrfCookie() {
   await getWithRetry("/auth/csrf/")
 }
@@ -262,7 +276,7 @@ export async function streamHelp(question, history, { signal, onEvent }) {
   const response = await fetch(`${API_BASE}/help/chat/`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json", "X-CSRFToken": Cookies.get("csrftoken") ?? "" },
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken || Cookies.get("csrftoken") || "" },
     body: JSON.stringify({ question, history }),
     signal,
   })

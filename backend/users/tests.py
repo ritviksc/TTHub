@@ -95,10 +95,17 @@ class AccountBoundaryTests(TestCase):
         client = APIClient(enforce_csrf_checks=True)
         payload = {"email": "admin@example.com", "password": "SafePass123!"}
         self.assertEqual(client.post("/api/auth/login/", payload, format="json").status_code, 403)
-        client.get("/api/auth/csrf/")
-        token = client.cookies["csrftoken"].value
+        token = client.get("/api/auth/csrf/").data["csrfToken"]
         response = client.post("/api/auth/login/", payload, format="json", HTTP_X_CSRFTOKEN=token)
         self.assertEqual(response.status_code, 200)
+
+        # Login rotates the secret. A separate frontend must get the new
+        # masked token from JSON, without reading the backend's cookie.
+        login_token = response.data["csrfToken"]
+        self.assertNotEqual(token, login_token)
+        self.assertEqual(client.post("/api/auth/logout/", HTTP_X_CSRFTOKEN=token).status_code, 403)
+        reloaded_token = client.get("/api/auth/me/").data["csrfToken"]
+        self.assertEqual(client.post("/api/auth/logout/", HTTP_X_CSRFTOKEN=reloaded_token).status_code, 200)
 
     def test_unassigned_manager_cannot_list_or_deactivate_unassigned_staff(self):
         self.client.force_authenticate(self.manager)

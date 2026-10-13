@@ -63,6 +63,14 @@ RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
 if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
+# Separate Render sites need cross-site cookies over HTTPS. Local HTTP keeps
+# Django's Lax defaults. Custom deployments can explicitly opt in as well.
+CROSS_SITE_COOKIES = os.getenv("CROSS_SITE_COOKIES", "true" if RENDER_EXTERNAL_HOSTNAME else "false").lower() == "true"
+SESSION_COOKIE_SECURE = CROSS_SITE_COOKIES
+CSRF_COOKIE_SECURE = CROSS_SITE_COOKIES
+SESSION_COOKIE_SAMESITE = "None" if CROSS_SITE_COOKIES else "Lax"
+CSRF_COOKIE_SAMESITE = "None" if CROSS_SITE_COOKIES else "Lax"
+
 
 # Application definition
 

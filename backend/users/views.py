@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.middleware.csrf import get_token
 from audit.services import record, staff_changed, staff_snapshot
 from collections.abc import Mapping
 
@@ -58,6 +59,7 @@ def login_view(request) -> Response:
     return Response(
         {"message": "Login succesful",
          "role": user.role,
+         "csrfToken": get_token(request),
         },
         status = status.HTTP_200_OK,
     )
@@ -67,7 +69,7 @@ def login_view(request) -> Response:
 @permission_classes([AllowAny])
 def csrf_view(request) -> Response:
     return Response(
-        {"detail": "CSRF cookie set"}
+        {"detail": "CSRF cookie set", "csrfToken": get_token(request)}
         )
  
 @api_view(["POST"])
@@ -83,6 +85,7 @@ def logout_view(request) -> Response:
 def me_view(request):
     user = request.user
     return Response({
+        "csrfToken": get_token(request),
         "email": user.email,
         "role": user.role,
         "first_name": user.first_name,
