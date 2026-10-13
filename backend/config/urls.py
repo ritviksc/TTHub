@@ -14,6 +14,7 @@ from .views import health_check
 
 urlpatterns = [
     path("health", health_check, name="health_check"),
+    path("health/", health_check),
     path("api/audit/", include("audit.urls")),
     path("admin/", admin.site.urls),
     path("api/auth/", include("users.urls")),

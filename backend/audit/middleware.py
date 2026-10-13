@@ -46,6 +46,10 @@ class AuditRequestMiddleware:
             request.audit_resource_scope = self.resource_scope(request)
 
     def __call__(self, request):
+        # Liveness probes and non-API pages need no audit identity lookup.
+        # Evaluating request.user can load a session from the database.
+        if not request.path.startswith("/api/"):
+            return self.get_response(request)
         request.audit_request_id = uuid.uuid4()
         original_actor = request.user if request.user.is_authenticated else None
         response = self.get_response(request)

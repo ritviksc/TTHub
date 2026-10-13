@@ -57,6 +57,12 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+# Render supplies its public hostname, including for default health probes.
+# Custom domains still belong in the ALLOWED_HOSTS environment variable.
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
 
 # Application definition
 

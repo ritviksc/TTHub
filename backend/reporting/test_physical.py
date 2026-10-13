@@ -215,7 +215,7 @@ class PhysicalWorkerTests(TransactionTestCase):
                 self.assertEqual(job.narrative, "Physical worker narrative")
 
 
-@override_settings(DEBUG=True)
+@override_settings(DEBUG=False, ALLOW_DEMO_SEEDING=True)
 class ReportingDemoTests(TestCase):
     def test_seed_is_repeatable_preserves_edits_and_generates_valid_cases(self):
         from .management.commands.seed_reporting_demo import demo_id
@@ -248,8 +248,8 @@ class ReportingDemoTests(TestCase):
                 serializer = GroupSerializer(data={"version": 0, "results": rows}, context={"group": group})
                 self.assertTrue(serializer.is_valid(), serializer.errors)
 
-    @override_settings(DEBUG=False)
-    def test_disabled_outside_development(self):
+    @override_settings(DEBUG=True, ALLOW_DEMO_SEEDING=False)
+    def test_disabled_without_explicit_opt_in_even_in_debug(self):
         from django.core.management.base import CommandError
         with self.assertRaises(CommandError):
             call_command("seed_reporting_demo", stdout=io.StringIO())
