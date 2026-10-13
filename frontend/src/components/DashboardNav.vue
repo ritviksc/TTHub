@@ -20,6 +20,7 @@ const NAV_ITEMS = {
     { label: 'Reporting',       to: '/super-admin/reporting' },
     { label: 'Documents',       to: '/documents' },
     { label: 'Administration',  to: '/super-admin/administration' },
+    { label: 'Help',            to: '/help' },
   ],
   branch_manager: [
     { label: 'Overview',        to: '/branch-manager/overview' },
@@ -30,6 +31,7 @@ const NAV_ITEMS = {
     { label: 'Reports',         to: '/branch-manager/reports' },
     { label: 'Administration',  to: '/branch-manager/administration' },
     { label: 'Documents',       to: '/documents' },
+    { label: 'Help',            to: '/help' },
   ],
   instructor: [
     { label: 'Home',            to: '/instructor/home' },
@@ -37,6 +39,7 @@ const NAV_ITEMS = {
     { label: 'Kaumātua',        to: '/instructor/participants' },
     { label: 'Feedback',        to: '/instructor/feedback' },
     { label: 'Documents',       to: '/documents' },
+    { label: 'Help',            to: '/help' },
   ],
 }
 

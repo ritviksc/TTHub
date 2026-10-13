@@ -149,6 +149,12 @@ const router = createRouter({
             meta: { requiresAuth: true, roles: [...SA, ...BM, ...IN] },
         },
         {
+            // One page for every role; the backend chooses which articles each role sees.
+            path: '/help', name: 'help',
+            component: () => import('@/views/Help.vue'),
+            meta: { requiresAuth: true, roles: [...SA, ...BM, ...IN] },
+        },
+        {
             path: '/super-admin/participants/:id/attendance', name: 'sa-participant-attendance',
             component: () => import('@/views/SuperAdmin/ParticipantAttendance.vue'),
             meta: { requiresAuth: true, roles: SA },

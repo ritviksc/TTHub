@@ -64,7 +64,32 @@ def generate(client: OpenAI, prompt: str, sys_prompt: str, model: str | None = N
     Returns:
         str: The generated response content from the LLM.
     """
-    
+
+    return chat(
+        client,
+        [
+            {'role': 'system', 'content': sys_prompt},
+            {'role': 'user', 'content': prompt}
+        ],
+        model=model,
+        max_tokens=max_tokens,
+        temperature=temperature,
+    )
+
+
+def chat(client: OpenAI, messages: list[dict], model: str | None = None, max_tokens: int = 100, temperature: float = 0.2, extra_body: dict | None = None) -> str:
+    """
+    Send a full message list (system rules, earlier turns and the new question)
+    and return the reply text. generate() is the single-prompt form of this call.
+    Arguments:
+        messages (list[dict]): Chat messages, each {'role': ..., 'content': ...}.
+        extra_body (dict | None): Provider-specific options, e.g. turning Qwen3
+        thinking off with {"chat_template_kwargs": {"enable_thinking": False}}.
+        Other arguments are as for generate().
+    Returns:
+        str: The generated response content from the LLM.
+    """
+
     if model is None:
         model = settings.DEFAULT_LLM_MODEL
 
@@ -72,17 +97,17 @@ def generate(client: OpenAI, prompt: str, sys_prompt: str, model: str | None = N
         raise ImproperlyConfigured(
             "Pass a model or configure DEFAULT_LLM_MODEL."
         )
-    
+
+    # Only send extra_body when asked, so existing calls stay byte-for-byte the same.
+    options = {'extra_body': extra_body} if extra_body else {}
     response = client.chat.completions.create(
         model=model,
-        messages=[
-            {'role': 'system', 'content': sys_prompt},
-            {'role': 'user', 'content': prompt}
-        ],
+        messages=messages,
         max_tokens=max_tokens,
-        temperature=temperature
+        temperature=temperature,
+        **options
     )
-   
+
     if not response.choices:
         raise ValueError("LLM returned no response choices.")
 
@@ -96,12 +121,70 @@ def generate(client: OpenAI, prompt: str, sys_prompt: str, model: str | None = N
             f"LLM response did not finish normally: {choice.finish_reason}"
         )
         
-    message_content = response.choices[0].message.content
-    
+    message_content = choice.message.content
+
     if message_content is None or not message_content.strip():
         raise ValueError("LLM returned no usable text.")
 
     return message_content
+
+
+def chat_stream(client: OpenAI, messages: list[dict], model: str | None = None, max_tokens: int = 100, temperature: float = 0.2, extra_body: dict | None = None):
+    """
+    Streaming form of chat(): returns an iterator of text pieces as the model
+    writes them. The request is sent before this returns, so connection and
+    configuration errors raise here, before anything has been shown to a user.
+    Arguments: as for chat().
+    Returns:
+        Iterator[str]: Text pieces. Iterating raises ValueError at the end if the
+        reply was cut off by max_tokens or did not finish normally.
+    """
+
+    if model is None:
+        model = settings.DEFAULT_LLM_MODEL
+
+    if not model or not model.strip():
+        raise ImproperlyConfigured(
+            "Pass a model or configure DEFAULT_LLM_MODEL."
+        )
+
+    options = {'extra_body': extra_body} if extra_body else {}
+    stream = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        stream=True,
+        **options
+    )
+    return _stream_text(stream)
+
+
+def _stream_text(stream):
+    finish_reason = None
+    try:
+        for chunk in stream:
+            # Some providers send a final usage-only chunk with no choices.
+            if not chunk.choices:
+                continue
+            choice = chunk.choices[0]
+            if choice.delta is not None and choice.delta.content:
+                yield choice.delta.content
+            if choice.finish_reason:
+                finish_reason = choice.finish_reason
+    finally:
+        # Stops generation upstream too when the reader goes away mid-answer.
+        close = getattr(stream, "close", None)
+        if close:
+            close()
+
+    if finish_reason == "length":
+        raise ValueError("LLM response reached the token limit.")
+
+    if finish_reason != "stop":
+        raise ValueError(
+            f"LLM response did not finish normally: {finish_reason}"
+        )
     
 
 def get_available_models() -> list:

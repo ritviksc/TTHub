@@ -40,6 +40,11 @@ The provider client and model-list caching task are implemented. The reporting
 flow above is the intended design: report endpoints, data aggregation, surveys,
 and report presentation are not implemented in the LLM app yet.
 
+The client also has `chat()`, which sends a full message list (and optional
+provider `extra_body`); `generate()` is now its single-prompt form. The help
+chatbot uses `chat()` and the `bge-m3` embedding model: see
+[help-chatbot.md](help-chatbot.md).
+
 ### Provider client
 
 [`backend/llm/services/client.py`](../../../backend/llm/services/client.py) handles

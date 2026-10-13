@@ -1,9 +1,12 @@
 import axios from "axios"
+import Cookies from "js-cookie"
+import { parseNdjson } from "./utils/help.js"
 export const MAX_ATTEMPTS = 3
 export const TIMEOUT_ERROR = "ETIMEDOUT"
+export const API_BASE = "http://localhost:8000/api"
 
 const api = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: API_BASE,
   withCredentials: true,
   withXSRFToken: true,
   xsrfCookieName: "csrftoken",
@@ -223,6 +226,51 @@ export async function updateDocument(id, payload) {
 export async function deleteDocument(id) {
   const response = await api.delete(`/documents/${id}/`)
   return response.data
+}
+
+/* ---- help ---- */
+
+// Articles for the signed-in user's role: [{ slug, title, order }].
+export async function listHelpArticles() {
+  const response = await getWithRetry("/help/articles/")
+  return response.data
+}
+
+export async function getHelpArticle(slug) {
+  const response = await getWithRetry(`/help/articles/${encodeURIComponent(slug)}/`)
+  return response.data
+}
+
+// Ask the help assistant. The answer streams back as newline-delimited JSON
+// events ({type: 'delta' | 'done' | 'error'}, see backend help/services/chat.py),
+// passed to onEvent as they arrive. Uses fetch because axios cannot read a
+// response while it is still arriving. Never retried: each attempt counts
+// towards the hourly limit. Abort with `signal` (the Stop button, idle timeout).
+// A non-2xx response throws an axios-shaped error ({ response: { status, data } }).
+export async function streamHelp(question, history, { signal, onEvent }) {
+  const response = await fetch(`${API_BASE}/help/chat/`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": Cookies.get("csrftoken") ?? "" },
+    body: JSON.stringify({ question, history }),
+    signal,
+  })
+  if (!response.ok) {
+    const error = new Error(`Help request failed with status ${response.status}`)
+    error.response = { status: response.status, data: await response.json().catch(() => ({})) }
+    throw error
+  }
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ""
+  for (;;) {
+    const { value, done } = await reader.read()
+    buffer += decoder.decode(value, { stream: !done })
+    const { events, rest } = parseNdjson(done ? buffer + "\n" : buffer)
+    events.forEach(onEvent)
+    buffer = rest
+    if (done) return
+  }
 }
 
 /* ---- folders ---- */
