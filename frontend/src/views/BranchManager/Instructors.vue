@@ -385,12 +385,19 @@ async function handleToggleActive(instructor) {
 
 .search-input {
   width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--ink);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-tint);
 }
 
 .user-cell {
@@ -401,13 +408,14 @@ async function handleToggleActive(instructor) {
 
 .staff-name-link {
   font-weight: 600;
-  color: var(--maroon);
+  color: var(--text);
   text-decoration: none;
+  transition: color 0.15s ease;
 }
 
 .staff-name-link:hover {
   text-decoration: underline;
-  color: var(--maroon-dark);
+  color: var(--teal);
 }
 
 .status-badge {

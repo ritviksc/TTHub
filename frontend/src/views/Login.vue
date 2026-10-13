@@ -130,7 +130,7 @@ async function handleSubmit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 16px 64px;
+  padding: 40px 16px 72px;
 }
 
 .login-wrap {
@@ -138,45 +138,96 @@ async function handleSubmit() {
   max-width: 440px;
 }
 
-.login-head { text-align: center; margin-bottom: 24px; }
-.login-head h1 { font-size: 36px; margin-bottom: 6px; }
-.login-head p { font-size: 15px; color: var(--text-muted); margin: 0; }
+.login-head {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-head h1 {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.login-head p {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin: 0;
+}
 
 .login-card {
   background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--teal);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-panel);
   padding: 32px 28px;
 }
 
-form { display: flex; flex-direction: column; gap: 18px; }
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
 
-.input-wrap { position: relative; display: flex; align-items: center; }
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .input-wrap svg {
   position: absolute;
   left: 13px;
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
   color: var(--text-muted);
   pointer-events: none;
 }
-/* .field input in public.css sets `padding: 12px 14px`, which has the same
-   specificity as `.input-wrap input` and so can win on source order and put
-   the text back under the icon. The extra class settles it. */
+
 .field .input-wrap input {
   width: 100%;
   height: 46px;
-  padding: 12px 14px 12px 40px;
+  padding: 12px 14px 12px 42px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 15px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.forgot-row { text-align: right; margin-top: -6px; }
-.forgot-row a { color: var(--text-muted); font-size: var(--text-base); }
+.field .input-wrap input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-tint);
+}
+
+.forgot-row {
+  text-align: right;
+  margin-top: -6px;
+}
+
+.forgot-row a {
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.forgot-row a:hover {
+  color: var(--teal);
+  text-decoration: underline;
+}
 
 .error-msg {
   margin: 0;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  border-radius: var(--radius);
   background: var(--danger-bg);
+  border: 1px solid rgba(184, 46, 36, 0.2);
   color: var(--danger);
   font-size: var(--text-base);
 }
@@ -184,25 +235,41 @@ form { display: flex; flex-direction: column; gap: 18px; }
 .submit-btn {
   width: 100%;
   height: 46px;
-
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-
   border: none;
   border-radius: var(--radius);
   background: var(--maroon);
   color: var(--text-on-ink);
-
   font-size: 15px;
   font-weight: 600;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
-.submit-btn:hover:not(:disabled) { background: var(--maroon-dark); }
-.submit-btn svg { width: 17px; height: 17px; }
+
+.submit-btn:hover:not(:disabled) {
+  background: var(--maroon-dark);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.submit-btn svg {
+  width: 17px;
+  height: 17px;
+}
 
 @media (max-width: 430px) {
-  .login-head h1 { font-size: 30px; }
-  .login-card { padding: 24px 20px; }
+  .login-head h1 {
+    font-size: 30px;
+  }
+  .login-card {
+    padding: 24px 20px;
+  }
 }
 </style>

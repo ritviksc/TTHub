@@ -88,12 +88,12 @@ class SessionCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         user = self.context["request"].user
-        if user.role != UserAccount.Role.INSTRUCTOR:
+        if user.role not in (UserAccount.Role.INSTRUCTOR, UserAccount.Role.BRANCH_MANAGER):
             raise serializers.ValidationError(
-                {"detail": "Only an Instructor can create a session."}
+                {"detail": "Only an Instructor or Branch Manager can create a session."}
             )
         if not user.branch_id:
-            raise serializers.ValidationError({"detail": "An Instructor must belong to a branch."})
+            raise serializers.ValidationError({"detail": "User must belong to a branch."})
         return attrs
 
 

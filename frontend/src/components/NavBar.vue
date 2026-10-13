@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import logoSrc from '@/assets/logo-mark.png'
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 
 const links = [
   { label: 'Home',       to: '/' },
@@ -28,6 +29,7 @@ const links = [
     </div>
 
     <div class="nav-right">
+      <ThemeSwitcher />
       <RouterLink to="/login" class="nav-btn nav-btn--accent">Login</RouterLink>
     </div>
   </nav>
