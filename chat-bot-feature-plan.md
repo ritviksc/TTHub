@@ -1,5 +1,14 @@
 # Help Chatbot Feature Plan (Role-scoped Docs + RAG)
 
+> **Status: implemented.** See `documentation/system/backend-component/backend/help-chatbot.md` for how it works now.
+> Changes from this plan, made because the app had moved on:
+> - One shared `/help` route for all roles, like `/documents` now is, instead of three per-role routes. The backend scopes the articles.
+> - Pure Python dot products instead of numpy (not installed), and a small front-matter parser instead of YAML.
+> - `askHelp()` uses a long timeout (200 s for now) and no retry, because the shared axios instance times out after 5 s.
+> - Throttle is `help_chat: 20/hour`. A cache outage allows the request instead of failing.
+> - `HELP_MIN_SCORE` defaults to 0.40, not 0.45. "What does kaimahi mean" scored 0.47 and off-topic questions scored ≤0.33.
+> - Sources are only the articles the answer cites. Refusals show none.
+
 ## Context
 There is no in-app help for users. Each role (Super Admin, Branch Manager, Instructor) gets a **Help page** with two parts:
 1. Written documentation for that role.
