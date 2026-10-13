@@ -48,6 +48,9 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 # SECURITY WARNING: don't run with debug turned on in production!
 SECRET_KEY = os.environ["SECRET_KEY"]
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+
+# Explicit opt-in for fictional demo data, including staging with DEBUG=False.
+ALLOW_DEMO_SEEDING = os.getenv("ALLOW_DEMO_SEEDING", "False").lower() == "true"
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv("ALLOWED_HOSTS", "").split(",")

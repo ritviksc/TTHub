@@ -24,15 +24,15 @@ def demo_id(key):
 
 
 class Command(BaseCommand):
-    help = "Create clearly labelled fictional reporting data without overwriting existing records (DEBUG only)."
+    help = "Create clearly labelled fictional reporting data without overwriting existing records (requires ALLOW_DEMO_SEEDING=True)."
 
     def add_arguments(self, parser):
         parser.add_argument("--as-of", type=date.fromisoformat, help="Last session date for the initial dataset, YYYY-MM-DD; defaults to today.")
 
     @transaction.atomic
     def handle(self, *args, **options):
-        if not settings.DEBUG:
-            raise CommandError("Demo seeding is available only with DEBUG=True.")
+        if not settings.ALLOW_DEMO_SEEDING:
+            raise CommandError("Demo seeding is disabled. Set ALLOW_DEMO_SEEDING=True to enable it.")
         end = options["as_of"] or timezone.localdate()
         if end > timezone.localdate():
             raise CommandError("The demo date cannot be in the future.")
