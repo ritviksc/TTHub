@@ -53,6 +53,10 @@ class AuditRequestMiddleware:
         if not match or not request.path.startswith("/api/"):
             return response
         route = match.route
+        # Asking the help chatbot is a POST but changes no records; logging every
+        # question would bury real writes in the audit log.
+        if route == "api/help/chat/":
+            return response
         if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
             # Statistics reads are meaningful usage; job polling is deliberately excluded.
             if request.method != "GET" or route not in {"api/reporting/attendance/", "api/reporting/physical/"}:

@@ -32,6 +32,12 @@ LLM_API_ENDPOINT = os.getenv("LLM_API_ENDPOINT")
 DEFAULT_LLM_MODEL = os.getenv("DEFAULT_LLM_MODEL")
 # Optional list of chat models offered to report administrators.
 REPORT_LLM_MODELS = [model.strip() for model in os.getenv("REPORT_LLM_MODELS", "").split(",") if model.strip()]
+# Help chatbot: answers with HELP_LLM_MODEL from docs retrieved with the
+# HELP_EMBED_MODEL embeddings (see help/services/retrieval.py).
+HELP_LLM_MODEL = os.getenv("HELP_LLM_MODEL") or DEFAULT_LLM_MODEL
+HELP_EMBED_MODEL = os.getenv("HELP_EMBED_MODEL", "ONCAMPUS/BAAI/bge-m3")
+# Chunks scoring below this cosine similarity are treated as unrelated.
+HELP_MIN_SCORE = float(os.getenv("HELP_MIN_SCORE", "0.40"))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -58,6 +64,7 @@ INSTALLED_APPS = [
     'physical_tests',
     'documents',
     'audit',
+    'help',
 ]
 
 # Send credentials with request
@@ -204,6 +211,10 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    # Only views that set throttle_scope are limited; the help chatbot calls the LLM.
+    "DEFAULT_THROTTLE_RATES": {
+        "help_chat": "20/hour",
+    },
 }
 
 # Seperate cache for django logic - use 3rd redis database in the instance running

@@ -22,6 +22,7 @@ urlpatterns = [
     path("api/reporting/", include("reporting.urls")),
     path("api/documents/", include("documents.urls")),
     path("api/folders/", include("documents.folder_urls")),
+    path("api/help/", include("help.urls")),
 
     # LLM API endpoint for generating responses from the language model
     path("api/llm/", include("llm.urls")),
