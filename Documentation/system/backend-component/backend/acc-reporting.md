@@ -1,5 +1,7 @@
 # ACC reporting drafts
 
+Source IDs remain internal to generation and validation. The report display and narrative editor omit generated source-reference lines for both new and saved drafts, and statistics and saved feedback do not show ID labels. Review the narrative against the saved feedback and figures displayed in the report.
+
 Super admins open **Reporting → Prepare ACC report**, choose inclusive dates (or a branch quarter), and select consented feedback. The source list is paginated and selections persist across pages. Each reporting copy can be redacted and attributed to a participant, whānau, kaimahi, or unknown speaker. The super admin must confirm approval for ACC reporting and AI processing; changing any selected copy or attribution clears that confirmation.
 
 The backend checks dates, branch, consent, approval, model selection, and input size before queueing. A draft accepts 1–100 sources, at most 4,000 characters per copy and 40,000 characters total. Narrow the selection if these limits are reached; sources are never silently truncated.

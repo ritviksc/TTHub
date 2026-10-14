@@ -5,6 +5,7 @@ import vm from 'node:vm'
 import { ref, computed, watch, nextTick } from 'vue'
 import { parse, compileScript } from '@vue/compiler-sfc'
 import { recentReportPeriod } from '../src/utils/reporting.js'
+import { renderMarkdown } from '../src/utils/markdown.js'
 
 const { descriptor } = parse(readFileSync(new URL('../src/views/SuperAdmin/ACCReporting.vue', import.meta.url), 'utf8'))
 const compiled = compileScript(descriptor, { id: 'acc-reporting-test' }).content
@@ -54,4 +55,24 @@ test('ACC selection requires renewed approval after edits, retains drafts on fai
   assert.equal(page.sources.value.length, 0)
   assert.equal(page.result.value, null)
   assert.equal(page.approved.value, false)
+})
+
+test('ACC reports hide saved citation lines while preserving narrative, quotations, and edits', () => {
+  const { descriptor } = parse(readFileSync(new URL('../src/components/reporting/ACCReport.vue', import.meta.url), 'utf8'))
+  const compiled = compileScript(descriptor, { id: 'acc-report-test' }).content
+    .replace(/^import .*$/gm, '').replace('export default', 'const component =')
+  const context = vm.createContext({ ref, computed, ReportNarrative: {}, LABELS: {}, formatReportNumber() {} })
+  vm.runInContext(compiled + '\nthis.component = component', context)
+  const narrative = '## Wellbeing\n\nOne participant reported walking without a stick.\n\nSources: [F-feedback](#acc-source-F-feedback), [S-attendance](#acc-source-S-attendance)\n\n## Supporting quotations\n\n> I walked without my stick.\n\n[F-feedback](#acc-source-F-feedback)\n\n[Useful context](https://example.com/report)'
+  const report = context.component.setup({ savedReport: {
+    narrative, statistics: { aggregates: { 'S-attendance': {}, 'S-physical': {} } },
+  } }, { expose() {} })
+  const html = renderMarkdown(report.displayNarrative.value)
+  assert.doesNotMatch(html, /F-feedback|S-attendance|acc-source|Sources:/)
+  assert.match(html, /One participant reported walking without a stick\./)
+  assert.match(html, /<blockquote>\s*<p>I walked without my stick\.<\/p>/)
+  assert.match(html, /href="https:\/\/example.com\/report"/)
+  assert.equal(report.narrative.value, narrative)
+  report.narrative.value = 'Reviewed narrative.\r\n\r\n[F-feedback](#acc-source-F-feedback)\r\n'
+  assert.equal(report.displayNarrative.value.trim(), 'Reviewed narrative.')
 })

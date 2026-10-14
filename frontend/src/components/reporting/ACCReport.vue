@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import ReportNarrative from './ReportNarrative.vue'
 import { LABELS } from '@/utils/physicalTests.js'
 import { formatReportNumber } from '@/utils/reporting.js'
@@ -7,6 +7,10 @@ import { formatReportNumber } from '@/utils/reporting.js'
 const props = defineProps({ savedReport: { type: Object, required: true } })
 defineEmits(['busy'])
 const narrative = ref(props.savedReport.narrative)
+// Saved drafts retain evidence references internally; omit their generated citation lines in the report and editor.
+const displayNarrative = computed(() => narrative.value.replace(
+  /^(?:Sources: )?\[[^\]\n]+\]\(#acc-source-[^)\n]+\)(?:, \[[^\]\n]+\]\(#acc-source-[^)\n]+\))*\r?$/gm, '',
+))
 const snapshot = props.savedReport.statistics
 const attendance = snapshot.aggregates['S-attendance']
 const physical = snapshot.aggregates['S-physical']
@@ -16,7 +20,7 @@ const physical = snapshot.aggregates['S-physical']
   <div>
     <h1>ACC report draft</h1>
     <p class="page-subtitle">{{ snapshot.scope_label }} · {{ snapshot.scope.start_date }} to {{ snapshot.scope.end_date }}</p>
-    <p class="loading-note">Review the evidence, source references, and wording before using this draft. Saving edits does not approve it for submission.</p>
+    <p class="loading-note">Review the evidence and wording before using this draft. Saving edits does not approve it for submission.</p>
     <section id="acc-source-S-attendance" class="card report-section">
       <h2>Recorded participation</h2>
       <div class="stat-grid">
@@ -24,10 +28,10 @@ const physical = snapshot.aggregates['S-physical']
           <div class="stat-tile-value">{{ value }}</div><div class="stat-tile-label">{{ label }}</div>
         </div>
       </div>
-      <p>Source: S-attendance. Attendance counts use finalised registers.</p>
+      <p>Attendance counts use finalised registers.</p>
       <div id="acc-source-S-enrolments">
         <p><strong>New enrolments: {{ snapshot.aggregates['S-enrolments'].new_enrolments }}</strong></p>
-        <p>Source: S-enrolments. {{ snapshot.aggregates['S-enrolments'].limitations }}</p>
+        <p>{{ snapshot.aggregates['S-enrolments'].limitations }}</p>
       </div>
     </section>
     <section id="acc-source-S-physical" class="card report-section">
@@ -40,20 +44,19 @@ const physical = snapshot.aggregates['S-physical']
           <td>{{ formatReportNumber(change.mean_change, change.exercise === 'chair' ? ' stands' : ' s') }}</td>
         </tr></tbody>
       </table></div>
-      <p>Source: S-physical. Recorded changes do not establish programme causation.</p>
+      <p>Recorded changes do not establish programme causation.</p>
       <details><summary>Testing definitions and limitations</summary><ul><li v-for="item in physical.limitations" :key="item">{{ item }}</li></ul></details>
     </section>
     <section class="card report-section">
       <h2>Feedback and delivery narrative</h2>
       <p v-if="savedReport.model" class="loading-note">Model: {{ savedReport.model }}</p>
-      <ReportNarrative :text="narrative" :job-id="savedReport.job_id" report-type="acc" @saved="narrative = $event" @busy="$emit('busy', $event)" />
+      <ReportNarrative :text="displayNarrative" :job-id="savedReport.job_id" report-type="acc" @saved="narrative = $event" @busy="$emit('busy', $event)" />
     </section>
     <section class="card report-section">
       <h2>Saved feedback sources</h2>
-      <p>Reporting copies approved for this draft. Source IDs connect the narrative to this saved evidence.</p>
+      <p>Reporting copies approved for this draft.</p>
       <article v-for="source in snapshot.sources" :id="`acc-source-${source.id}`" :key="source.id" class="source">
         <h3>{{ source.branch }} · {{ source.date }} · {{ source.speaker }}</h3>
-        <p class="source-id">{{ source.id }}</p>
         <p class="source-text">{{ source.text }}</p>
         <details v-if="source.original_text !== source.text"><summary>Original recorded feedback (not sent to AI)</summary><p class="source-text">{{ source.original_text }}</p></details>
       </article>
@@ -67,5 +70,4 @@ const physical = snapshot.aggregates['S-physical']
 .table-scroll { overflow-x: auto; }
 .source { border-top: 1px solid var(--border); padding: 16px 0; scroll-margin-top: 24px; }
 .source-text { white-space: pre-wrap; }
-.source-id { overflow-wrap: anywhere; font-size: var(--text-sm); }
 </style>
