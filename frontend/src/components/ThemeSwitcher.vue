@@ -2,6 +2,11 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { THEMES, currentTheme, applyTheme } from '@/utils/theme.js'
 
+const props = defineProps({
+  // 'popover' is a button with a menu; 'list' renders the options inline for use inside another menu.
+  variant: { type: String, default: 'popover' },
+})
+
 const open = ref(false)
 const switcherRef = ref(null)
 
@@ -25,7 +30,7 @@ function onClickOutside(e) {
 }
 
 onMounted(() => {
-  document.addEventListener('click', onClickOutside)
+  if (props.variant === 'popover') document.addEventListener('click', onClickOutside)
 })
 
 onBeforeUnmount(() => {
@@ -34,7 +39,23 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="switcherRef" class="theme-switcher">
+  <div v-if="variant === 'list'" class="theme-list" role="group" aria-label="Color theme">
+    <button
+      v-for="t in THEMES"
+      :key="t.id"
+      type="button"
+      :class="['theme-option', { active: currentTheme === t.id }]"
+      @click.stop="selectTheme(t.id)"
+    >
+      <span class="swatch" :style="{ backgroundColor: t.color }"></span>
+      <div class="theme-info">
+        <span class="option-name">{{ t.name }}</span>
+        <span class="option-desc">{{ t.desc }}</span>
+      </div>
+      <span v-if="currentTheme === t.id" class="check">✓</span>
+    </button>
+  </div>
+  <div v-else ref="switcherRef" class="theme-switcher">
     <button
       type="button"
       class="theme-btn"
@@ -47,7 +68,7 @@ onBeforeUnmount(() => {
         class="theme-dot"
         :style="{ backgroundColor: activeTheme.color }"
       ></span>
-      <span class="theme-icon">🎨</span>
+      <span class="theme-label">Theme</span>
       <span class="theme-chevron" :class="{ 'is-open': open }">▾</span>
     </button>
 
@@ -116,8 +137,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 6px currentColor;
 }
 
-.theme-icon {
-  font-size: 13px;
+.theme-label {
   line-height: 1;
 }
 

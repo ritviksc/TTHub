@@ -1,15 +1,6 @@
 <script setup>
-import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
-
-const notice = ref(null)
-
-function showNotice(title) {
-  notice.value = `${title} is managed via automated system exports and administrative migrations.`
-  setTimeout(() => {
-    notice.value = null
-  }, 4000)
-}
+import { ADMIN_LABEL } from '@/utils/nav.js'
 </script>
 
 <template>
@@ -17,20 +8,16 @@ function showNotice(title) {
     <main class="content">
       <div class="page-header">
         <div>
-          <h1>Administration</h1>
+          <h1>{{ ADMIN_LABEL }}</h1>
           <p class="page-subtitle" style="margin-bottom: 0;">Low-frequency national settings and records.</p>
         </div>
       </div>
 
-      <div v-if="notice" class="form-success" style="margin-bottom: 24px;" role="status">
-        ✓ {{ notice }}
-      </div>
-
       <div class="card-grid">
         <div class="card">
-          <h3>Vocabularies</h3>
-          <p>The shared absence reasons and physical-test measures every branch selects from.</p>
-          <a href="#" @click.prevent="showNotice('Vocabularies')">Review records →</a>
+          <h3>Users</h3>
+          <p>Add staff and manage accounts, roles and access across every kapa.</p>
+          <RouterLink :to="{ name: 'sa-users' }">Manage users →</RouterLink>
         </div>
         <div class="card">
           <h3>Audit log</h3>
@@ -38,9 +25,9 @@ function showNotice(title) {
           <RouterLink :to="{ name: 'sa-audit-log' }">Open →</RouterLink>
         </div>
         <div class="card">
-          <h3>Exports</h3>
-          <p>De-identified research data, ready for external analysis.</p>
-          <a href="#" @click.prevent="showNotice('Data export')">Generate export →</a>
+          <h3>Documents</h3>
+          <p>Organisation-wide files, and files for each kapa.</p>
+          <RouterLink :to="{ name: 'documents' }">Open documents →</RouterLink>
         </div>
       </div>
     </main>

@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 
 export const THEMES = [
+  { id: 'classic',  name: 'Classic',        color: '#54463b', desc: 'Original Pounamu & Kōkōwai' },
   { id: 'sapphire', name: 'Royal Sapphire', color: '#2563eb', desc: 'Electric Cobalt & Crisp Slate' },
   { id: 'pounamu',  name: 'Oceanic Pounamu', color: '#0d9488', desc: 'Vibrant Sea Teal & Slate' },
   { id: 'emerald',  name: 'Emerald Health',  color: '#059669', desc: 'Fresh Kawakawa Vitality' },
@@ -16,7 +17,7 @@ function getInitialTheme() {
       return saved
     }
   }
-  return 'sapphire'
+  return 'classic'
 }
 
 export const currentTheme = ref(getInitialTheme())

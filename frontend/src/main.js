@@ -7,6 +7,7 @@ import './assets/main.css'
 import './assets/nav.css'
 import './assets/public.css'
 import './assets/dashboard.css'
+import './assets/theme-classic.css'
 import { loadUser } from './stores/auth.js'
 
 // Load the session before mount, or you get a flash of the public bar on every refresh
