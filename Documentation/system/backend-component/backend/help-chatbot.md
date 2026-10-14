@@ -1,5 +1,35 @@
 # Help page and chatbot
 
+## Quick start
+
+Connect to the university VPN if you are off campus. The chatbot needs the LLM server. Then, with `.venv` activated:
+
+```powershell
+cd backend
+python manage.py migrate            # creates the HelpChunk table
+python manage.py build_help_index   # embeds the articles for the chatbot
+python manage.py runserver
+```
+
+In a second terminal:
+
+```powershell
+cd frontend
+npm run dev
+```
+
+Sign in and open **Help** (`/help`). The root `.env` must have `LLM_API_ENDPOINT`, `OPENAI_API_KEY` and `DEFAULT_LLM_MODEL` (or `HELP_LLM_MODEL`). Django also needs these local settings, or it stops with `KeyError: 'SECRET_KEY'`:
+
+```
+SECRET_KEY=<any long random string>
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+DJANGO_CACHE=redis://localhost:6379/3
+```
+
+- **Run `build_help_index` again after every pull or edit that changes `backend/help/content/`.** The index lives in your local `db.sqlite3`, which git does not share. Without it, the chatbot answers from old text, or replies "couldn't find that" to everything. Re-runs are quick: only changed chunks are embedded again.
+- **Redis and Celery are not needed for help.** Answers stream straight from Django. Redis only rate-limits the chat; if it is down, questions are still allowed. Celery is only for AI reports. `scripts/dev.sh` starts both anyway, which is fine.
+
 Every role has a **Help** item in the nav (`/help`). The page is two equal halves:
 
 - **Left: documentation.** A file-explorer tree (role folder › section › article). Opening an article switches the panel to a reader with a breadcrumb, **← All articles**, and Previous/Next within the section.
