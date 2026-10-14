@@ -1,89 +1,80 @@
 # Seeding test data
 
-For the complete staff-to-reporting demo, use **`seed_reporting_demo`** instead. It includes a super admin, adult participants, sessions and assessments, and preserves existing records on reruns. See [physical-reporting.md](physical-reporting.md). The older command below is retained unchanged.
+`seed_test_data` is a Django management command that fills the database with
+a year of fictional data, so every page and feature has something to show. It
+covers the last 365 days plus three weeks of upcoming sessions, which is
+enough to prepare a yearly ACC report.
 
-`seed_test_data` is a Django management command that populates the database
-with fixed test data for local testing / demoing. It always creates the same
-shape of data — no options to tweak counts:
+`seed_reporting_demo` is a separate, smaller fixture with stable IDs (see
+[physical-reporting.md](physical-reporting.md)). The two commands don't share
+any data and neither one touches the other's records.
 
-- 2 branches: Dunedin, Christchurch
-- 60 participants total, 30 per branch
-- 4 staff accounts: 1 Branch Manager + 1 Instructor per branch
+## What it creates
 
-## Prerequisites
+| Area | Data |
+| --- | --- |
+| Branches | Dunedin (Otago), Christchurch (Canterbury), Wellington (Wellington), Auckland Central and North Shore (both Auckland). |
+| Staff | 2 super admins. Each branch has 1 manager (2 at Auckland Central) and 2 instructors (3 at Auckland Central). Christchurch also has a deactivated instructor who left partway through the year. |
+| Participants | 158 people aged 60–92. Some records are complete, some partial and some minimal. About 60% joined before the year started and the rest joined during it. 12 are inactive (for reactivation). |
+| Photos and consent | Every participant has a real profile photo from `participants/management/seed_photos/`: 23 free-licence Unsplash portraits, matched to the participant's name and reused across participants. Every participant has photo consent. GP consent varies: some have a consent date and most of those have a GP consent PDF. |
+| Sessions | 1–2 classes a week per branch for the whole year, with a break over Christmas. A few recent registers are left open, and each branch has upcoming sessions. |
+| Attendance | Each person has their own attendance rate, with a dip in winter. Absences use every reason, including "Other" with a note, and a few have no reason recorded. |
+| Physical tests | A baseline and then roughly quarterly follow-ups that show improvement, no change or decline. Every outcome appears (measured, unable, arms used, not attempted, skipped), along with walking aids and a few drafts in progress. Every result is checked through the app's own `GroupSerializer` rules. |
+| Feedback | About 190 entries across the year, covering all three shapes: about a participant, about a session, and about a participant at a session. About 75% have reporting consent, so they can be picked for an ACC report. |
+| Quarters | Dunedin and Auckland Central have custom reporting quarters for this year and last year. The other branches use calendar quarters. |
+| Documents | Organisation folders (Policies, Training with a subfolder, ACC Reporting) and branch folders (Rosters, Risk Assessments, Newsletters by year), all holding readable placeholder PDFs. Some participants also have their own documents. |
+| Report history | Saved attendance and physical reports for the last three calendar quarters (national and per branch), a branch manager's report, and one failed job. Their statistics are real; the written summaries come from templates. ACC reports aren't pre-made, so you can generate them yourself. |
+
+Audit events can't be deleted, so the command doesn't create any. The audit
+log fills up as the app is used.
+
+## Usage
 
 From `backend/`, with your virtualenv active and migrations applied:
 
 ```
-pip install -r requirements.txt
-python manage.py migrate
+ALLOW_DEMO_SEEDING=True python manage.py seed_test_data
 ```
 
-## Usage
+The command refuses to run unless `ALLOW_DEMO_SEEDING=True`, which can be set
+in the environment or in `.env`. That's the same flag `seed_reporting_demo`
+uses, so the command can also seed the deployed demo site. It takes about 30
+seconds.
+
+If the seeded branches already exist, it stops. To wipe them and seed again:
 
 ```
-python manage.py seed_test_data
+ALLOW_DEMO_SEEDING=True python manage.py seed_test_data --reset
 ```
 
-Branches and staff accounts are looked up with `get_or_create` (by name /
-email), so running it again won't duplicate them. Participants aren't
-deduplicated, so running it again adds another 30 participants to each
-branch.
+`--reset` deletes everything attached to the five seeded branches and the
+seeded staff accounts, including their uploaded files. It finds them by their
+fixed IDs, never by name, so other branches and accounts are left alone. Using
+the same `--seed N` (default 345) gives the same data every time.
 
-### Removing seeded data
+## Logins
 
-```
-python manage.py seed_test_data --clear
-```
+Every account uses the password `TestPass123!`. The command prints the full
+list when it finishes.
 
-Deletes the seeded participants and staff accounts, then the branches
-themselves (in that order — both `Participant.branch` and
-`UserAccount.branch` are `on_delete=PROTECT`, so Django refuses to delete a
-branch that's still referenced). Combine with a plain run to wipe and
-reseed in one go:
+| Role | Email |
+| --- | --- |
+| Super Admin | `superadmin1@example.com`, `superadmin2@example.com` |
+| Branch Manager | `manager1.<branch>@example.com`, plus `manager2.auckland-central@example.com` |
+| Instructor | `instructor1.<branch>@example.com`, `instructor2.<branch>@example.com`, plus `instructor3.auckland-central@example.com` |
+| Deactivated instructor | `instructor3.christchurch@example.com` |
 
-```
-python manage.py seed_test_data --clear && python manage.py seed_test_data
-```
+`<branch>` is one of `dunedin`, `christchurch`, `wellington`,
+`auckland-central` or `north-shore`.
 
-## Staff accounts
-
-| Role | Email | Password |
-| --- | --- | --- |
-| Branch Manager | `manager.dunedin@example.com` | `TestPass123!` |
-| Instructor | `instructor.dunedin@example.com` | `TestPass123!` |
-| Branch Manager | `manager.christchurch@example.com` | `TestPass123!` |
-| Instructor | `instructor.christchurch@example.com` | `TestPass123!` |
-
-Each Branch Manager owns their branch via `UserAccount.branch`, the same FK
-the app uses everywhere else to scope a manager/instructor to a branch —
-there's no separate "ownership" field.
-
-It does not create a Super Admin account. If you need one, create it
-separately (e.g. `python manage.py createsuperuser` plus setting
-`role="super_admin"`).
-
-## Where it lives, and why the extra files
+## Where it lives
 
 ```
-backend/participants/management/__init__.py
-backend/participants/management/commands/__init__.py
-backend/participants/management/commands/seed_test_data.py
+backend/participants/management/commands/seed_test_data.py   the command
+backend/participants/management/seed_content.py              names, quotes, folder layout, PDF helper
+backend/participants/management/seed_photos/                 participant photos (sources in CREDITS.md)
 ```
 
-This is Django's required layout for a custom `manage.py` subcommand, not
-project-specific structure:
-
-- Django looks for commands inside a `management/commands/` directory in each
-  installed app. Every `.py` file in there (other than `__init__.py`) is
-  registered as a subcommand named after the file — `seed_test_data.py`
-  becomes `python manage.py seed_test_data`.
-- The two `__init__.py` files just mark `management/` and
-  `management/commands/` as regular Python packages so Django's command
-  loader can import them reliably. They're empty on purpose — nothing needs
-  to go in them.
-- You may also see `__pycache__/` folders appear alongside these files after
-  running the command. Those are auto-generated, compiled-bytecode caches
-  Python creates on import to speed up the next run. They aren't source code,
-  aren't required, and are already covered by `.gitignore` — safe to ignore
-  or delete; Python recreates them as needed.
+Django registers every `.py` file in an app's `management/commands/`
+directory as a `manage.py` subcommand named after the file. The fixed text is
+kept in `seed_content.py` so the command reads as a list of steps.
