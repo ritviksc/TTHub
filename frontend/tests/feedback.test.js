@@ -7,6 +7,7 @@ import { renderToString } from 'vue/server-renderer'
 import { parse, compileScript } from '@vue/compiler-sfc'
 import { routeAccess } from '../src/router/access.js'
 import { programmeToday, initials } from '../src/utils/sessions.js'
+import { NAV, ADMIN_LABEL, HELP_LINK, ROLE_LABELS, isUnder } from '../src/utils/nav.js'
 
 const { descriptor } = parse(readFileSync(new URL('../src/views/Feedback.vue', import.meta.url), 'utf8'))
 const compiled = compileScript(descriptor, { id: 'feedback-test' }).content
@@ -222,8 +223,10 @@ test('all feedback routes use the shared page, keep role access, and national na
   const { descriptor: nav } = parse(readFileSync(new URL('../src/components/DashboardNav.vue', import.meta.url), 'utf8'))
   const navCode = compileScript(nav, { id: 'feedback-nav-test' }).content
     .replace(/^import .*$/gm, '').replace('export default', 'const component =')
-  const navContext = vm.createContext({ computed, ref, onMounted() {}, onUnmounted() {}, initials,
-    auth: { user: { role: 'super_admin' } }, clearUser() {}, logout() {}, ThemeSwitcher: {}, logoSrc: '', useRouter: () => ({}) })
+  const navContext = vm.createContext({ computed, ref, watch, onMounted() {}, onUnmounted() {}, initials,
+    NAV, ADMIN_LABEL, HELP_LINK, ROLE_LABELS, isUnder, NavMenu: {},
+    auth: { user: { role: 'super_admin' } }, clearUser() {}, logout() {}, ThemeSwitcher: {}, logoSrc: '',
+    useRouter: () => ({}), useRoute: () => ({ fullPath: '/' }) })
   vm.runInContext(navCode + '\nthis.component = component', navContext)
   const navigation = navContext.component.setup({}, { expose() {} })
   assert.ok(navigation.navItems.value.some(item => item.label === 'Feedback' && item.to === '/super-admin/feedback'))
