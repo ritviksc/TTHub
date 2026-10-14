@@ -351,6 +351,7 @@ async function submitCreateParticipant() {
 .avatar-cell .photo {
   display: block;
   width: 36px;
+  min-width: 36px; /* stop the narrow table cell squashing the photo */
   height: 36px;
   border-radius: 50%;
   object-fit: cover;

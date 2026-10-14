@@ -39,7 +39,7 @@ npm install
 npm run dev
 ```
 
-For the backend, follow the root [README.md](../../README.md) and [venv-setup.md](../backend/venv-setup.md), then load test data with [seed_test_data.md](../backend/seed_test_data.md). The seed command creates branch manager and instructor logins. It doesn't create a super admin, so make one using the steps in the README.
+For the backend, follow the root [README.md](../../README.md) and [venv-setup.md](../backend/venv-setup.md), then load test data with [seed_test_data.md](../backend/seed_test_data.md). The seed command creates super admin, branch manager and instructor logins.
 
 Always open your AI tool from the repo root (the `Group_4` folder), not from inside `frontend/` and not from a different project.
 

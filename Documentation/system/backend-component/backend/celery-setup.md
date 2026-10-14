@@ -30,7 +30,8 @@ From the repository root:
 source .venv/bin/activate
 cd backend
 python manage.py migrate
-celery -A config worker --loglevel=info --concurrency=1
+celery -A config worker --loglevel=info --concurrency=1 #(for windows) celery -A config worker --loglevel=info --pool=solo
+
 ```
 
 Run Django and the frontend in separate terminals as usual. The worker needs the same database, broker and LLM environment configuration as Django. Restart the worker after changing task code. One worker process avoids unnecessary write contention with the development SQLite database. Celery Beat is not needed: these jobs are requested by users.

@@ -49,7 +49,7 @@ This creates a dedicated dataset, without modifying existing non-demo records:
 - 50 completed assessments, two drafts and four participants without assessment records. Each branch has nine people with completed testing, one draft-only person and two untested people.
 - Repeated measurements with increases, decreases, chair-arm zeros, inability outcomes and skipped balance stages.
 
-The command runs only with `DEBUG=True`. It uses stable IDs and a fixed random seed. Reruns preserve existing records, edits, passwords and the initial dataset dates. There is no destructive clear option. An optional `--as-of YYYY-MM-DD` sets the initial last-session date; future dates and changing an existing dataset's anchor are rejected. It does not invoke the old `seed_test_data` command, which has different behaviour.
+The command runs only with `DEBUG=True`. It uses stable IDs and a fixed random seed. Reruns preserve existing records, edits, passwords and the initial dataset dates. There is no destructive clear option. An optional `--as-of YYYY-MM-DD` sets the initial last-session date; future dates and changing an existing dataset's anchor are rejected. It does not invoke `seed_test_data`, which seeds a separate, larger year-long dataset (see [seed_test_data.md](seed_test_data.md)).
 
 New demo accounts use **`DemoReports123!`**:
 
