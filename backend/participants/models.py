@@ -75,12 +75,19 @@ class Participant(models.Model):
 
 class Feedback(models.Model):
     """Branch-owned evidence with durable participant/session references."""
+    class Speaker(models.TextChoices):
+        KAUMATUA = "kaumātua", "Kaumātua"
+        KAIMAHI = "kaimahi", "Kaimahi"
+        WHANAU = "whānau", "Whānau"
+        UNKNOWN = "unknown", "Unknown"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     branch = models.ForeignKey('users.Branch', on_delete=models.PROTECT)
     participant = models.ForeignKey(Participant, null=True, blank=True, on_delete=models.PROTECT)
     session = models.ForeignKey('programme_sessions.ProgrammeSession', null=True, blank=True, on_delete=models.PROTECT)
     quote = models.TextField()
     source = models.CharField(max_length=400)
+    speaker = models.CharField(max_length=8, choices=Speaker.choices, default=Speaker.UNKNOWN)
     date = models.DateField()
     consent = models.BooleanField(default=False)
     recorded_by = models.ForeignKey('users.UserAccount', on_delete=models.PROTECT)

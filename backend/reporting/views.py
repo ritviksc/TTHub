@@ -164,7 +164,7 @@ class ACCSourcesView(APIView):
         page = paginator.paginate_queryset(sources, request)
         return paginator.get_paginated_response([
             {"id": str(source.pk), "text": source.quote, "date": source.date.isoformat(),
-             "branch": source.branch.name, "speaker": "unknown"} for source in page
+             "branch": source.branch.name, "speaker": source.speaker} for source in page
         ])
 
 

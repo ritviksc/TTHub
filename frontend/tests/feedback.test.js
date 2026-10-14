@@ -7,6 +7,7 @@ import { renderToString } from 'vue/server-renderer'
 import { parse, compileScript } from '@vue/compiler-sfc'
 import { routeAccess } from '../src/router/access.js'
 import { programmeToday, initials } from '../src/utils/sessions.js'
+import { FEEDBACK_SPEAKERS, feedbackSpeakerLabel } from '../src/utils/feedback.js'
 
 const { descriptor } = parse(readFileSync(new URL('../src/views/Feedback.vue', import.meta.url), 'utf8'))
 const compiled = compileScript(descriptor, { id: 'feedback-test' }).content
@@ -30,7 +31,7 @@ async function mount(role = 'instructor', options = {}) {
     return rows
   }
   const context = vm.createContext({
-    ref, computed, reactive, watch, onMounted() {}, programmeToday,
+    ref, computed, reactive, watch, onMounted() {}, programmeToday, FEEDBACK_SPEAKERS, feedbackSpeakerLabel,
     auth: reactive({ user: { role, branch: role === 'super_admin' ? null : { id: 'a', name: 'Harbour' } } }),
     listFeedback: async () => read('feedback', scoped(stored)),
     listParticipants: async () => read('people', scoped(people)),
@@ -70,6 +71,7 @@ for (const role of ['instructor', 'branch_manager', 'super_admin']) {
       assert.equal(state.requests[0].participant, participant || null)
       assert.equal(state.requests[0].session, session || null)
       assert.equal(state.requests[0].consent, false)
+      assert.equal(state.requests[0].speaker, 'unknown')
       assert.equal(state.requests[0].date, programmeToday())
       assert.equal('branch' in state.requests[0], false)
       assert.equal('recorded_by' in state.requests[0], false)
@@ -151,11 +153,12 @@ test('every failed required read is shown as an error and blocks recording until
 test('failed saves retain entered text and consent, and duplicate submissions cannot close a pending form', async () => {
   const state = await mount('instructor', { create: async () => { throw { response: { data: { quote: ['Could not save this entry.'] } } } } })
   state.page.openModal()
-  Object.assign(state.page.newEntry.value, { quote: 'Keep my story.', participant: 'pa', consent: true })
+  Object.assign(state.page.newEntry.value, { quote: 'Keep my story.', participant: 'pa', consent: true, speaker: 'kaimahi' })
   await state.page.handleAddFeedback()
   assert.equal(state.closes, 0)
   assert.equal(state.page.newEntry.value.quote, 'Keep my story.')
   assert.equal(state.page.newEntry.value.consent, true)
+  assert.equal(state.page.newEntry.value.speaker, 'kaimahi')
   assert.equal(state.page.newEntryError.value, 'Could not save this entry.')
   let finish
   state.control.create = () => new Promise(resolve => { finish = resolve })
@@ -170,6 +173,25 @@ test('failed saves retain entered text and consent, and duplicate submissions ca
   assert.equal(state.page.saving.value, false)
 })
 
+test('feedback captures the speaker type once and displays it after reloading', async () => {
+  for (const [speaker, label] of Object.entries(FEEDBACK_SPEAKERS)) {
+    const state = await mount('instructor')
+    state.page.openModal()
+    assert.equal(state.page.newEntry.value.speaker, 'unknown')
+    Object.assign(state.page.newEntry.value, { quote: 'A recorded experience.', participant: 'pa', speaker })
+    await state.page.handleAddFeedback()
+    assert.equal(state.requests[0].speaker, speaker)
+    await state.page.loadFeedback()
+    assert.equal(state.page.feedbackList.value[0].speaker, speaker)
+    const html = await render(state.page)
+    assert.ok(html.includes(`value="${speaker}"`))
+    assert.ok(html.includes(label))
+    assert.ok(html.includes('Who gave this feedback?'))
+    state.page.openModal()
+    assert.equal(state.page.newEntry.value.speaker, 'unknown')
+  }
+})
+
 test('empty text and missing subjects are rejected, and branch staff cannot select foreign subjects', async () => {
   const state = await mount('branch_manager')
   state.page.openModal()
@@ -178,7 +200,7 @@ test('empty text and missing subjects are rejected, and branch staff cannot sele
   assert.match(state.page.newEntryError.value, /Enter a quote/)
   state.page.newEntry.value.quote = 'Story'
   await state.page.handleAddFeedback()
-  assert.match(state.page.newEntryError.value, /participant or session/)
+  assert.match(state.page.newEntryError.value, /kaumātua or session/)
   state.page.newEntry.value.participant = 'pb'
   await state.page.handleAddFeedback()
   assert.match(state.page.newEntryError.value, /selected branch/)
