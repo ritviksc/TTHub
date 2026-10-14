@@ -39,7 +39,6 @@ class AnalysisModelSerializer(serializers.Serializer):
 class ACCSourceSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     text = serializers.CharField(max_length=4000, trim_whitespace=False)
-    speaker = serializers.ChoiceField(choices=["unknown", "participant", "whānau", "kaimahi"])
 
     def validate_text(self, value):
         if not value.strip():

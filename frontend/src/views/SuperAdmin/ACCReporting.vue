@@ -7,6 +7,7 @@ import { waitForAnalysis } from '@/utils/analysisJobs.js'
 import QuarterPeriod from '@/components/reporting/QuarterPeriod.vue'
 import ModelSelector from '@/components/reporting/ModelSelector.vue'
 import ACCReport from '@/components/reporting/ACCReport.vue'
+import { feedbackSpeakerLabel } from '@/utils/feedback.js'
 
 const dates = recentReportPeriod()
 const startDate = ref(dates.start_date), endDate = ref(dates.end_date), branchId = ref('')
@@ -50,7 +51,7 @@ async function generate() {
   generating.value = true; error.value = ''; status.value = 'queued'; result.value = null
   try {
     const job = await generateACCReport({ ...scope(), model: model.value, approved_for_acc_and_ai: approved.value,
-      sources: sources.value.map(({ id, text, speaker }) => ({ id, text, speaker })) })
+      sources: sources.value.map(({ id, text }) => ({ id, text })) })
     if (signal.aborted) return
     const completed = job.status === 'succeeded' ? job : await waitForAnalysis(
       () => getACCAnalysisJob(job.job_id, signal), { signal, onStatus: value => { status.value = value } },
@@ -93,7 +94,7 @@ onMounted(async () => {
         <fieldset :disabled="busy">
           <label v-for="source in candidates.results" :key="source.id" class="feedback-option">
             <input type="checkbox" :checked="!!selected[source.id]" @change="select(source, $event.target.checked)" />
-            <span><strong>{{ source.branch }} · {{ source.date }}</strong><span class="source-text">{{ source.text }}</span></span>
+            <span><strong>{{ source.branch }} · {{ source.date }} · {{ feedbackSpeakerLabel(source.speaker) }}</strong><span class="source-text">{{ source.text }}</span></span>
           </label>
           <div v-if="candidates.count" class="actions">
             <button type="button" class="btn-cancel" :disabled="!candidates.previous" @click="load(page - 1)">Previous</button>
@@ -103,15 +104,17 @@ onMounted(async () => {
         </fieldset>
       </section>
       <form @submit.prevent="generate"><fieldset :disabled="busy">
-        <section v-if="sources.length" class="card report-section"><h2>Review selected text</h2>
-          <p>{{ sources.length }} selected · {{ characters.toLocaleString() }} / 40,000 characters. Maximum 100 items and 4,000 characters per item.</p>
-          <p>Remove names and other identifying details from each reporting copy. Keep the original meaning. Speaker attribution starts as unknown; select a role only when you know who was speaking.</p>
-          <div v-for="source in sources" :key="source.id" class="source-editor">
-            <p><strong>{{ source.branch }} · {{ source.date }}</strong></p>
-            <div class="form-group"><label :for="`speaker-${source.id}`">Who was speaking?</label><select :id="`speaker-${source.id}`" v-model="source.speaker"><option value="unknown">Unknown</option><option value="participant">Participant</option><option value="whānau">Whānau</option><option value="kaimahi">Kaimahi</option></select></div>
-            <div class="form-group"><label :for="`copy-${source.id}`">Reporting copy (redact identifying details only)</label><textarea :id="`copy-${source.id}`" v-model="source.text" rows="5" maxlength="4000" required /></div>
-            <button type="button" class="btn-cancel" @click="delete selected[source.id]">Remove from draft</button>
-          </div>
+        <section v-if="sources.length" class="card report-section">
+          <details class="feedback-review">
+            <summary><h2>Review selected text ({{ sources.length }} selected)</h2></summary>
+            <p>{{ sources.length }} selected · {{ characters.toLocaleString() }} / 40,000 characters. Maximum 100 items and 4,000 characters per item.</p>
+            <p>Remove names and other identifying details from each reporting copy. Keep the original meaning. Speaker types are carried through from the recorded feedback automatically.</p>
+            <details v-for="source in sources" :key="source.id" class="source-editor">
+              <summary>{{ source.branch }} · {{ source.date }} · {{ feedbackSpeakerLabel(source.speaker) }}</summary>
+              <div class="form-group"><label :for="`copy-${source.id}`">Reporting copy (redact identifying details only)</label><textarea :id="`copy-${source.id}`" v-model="source.text" rows="5" maxlength="4000" required /></div>
+              <button type="button" class="btn-cancel" @click="delete selected[source.id]">Remove from draft</button>
+            </details>
+          </details>
           <label class="feedback-option"><input v-model="approved" type="checkbox" /><span>I confirm the selected reporting copies are approved for ACC reporting and AI processing, and I have removed unnecessary identifying details.</span></label>
         </section>
         <ModelSelector v-model="model" :disabled="busy" />
@@ -131,6 +134,9 @@ legend { margin-bottom: 12px; }
 .feedback-option input { width: auto; flex-shrink: 0; margin-top: 4px; }
 .source-text { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
 .source-editor { border-top: 1px solid var(--border); padding: 16px 0; }
+.feedback-review > summary, .source-editor > summary { cursor: pointer; font-weight: 600; }
+.feedback-review > summary h2 { display: inline; }
+.feedback-review[open] > summary, .source-editor[open] > summary { margin-bottom: 12px; }
 textarea { width: 100%; resize: vertical; }
 .actions { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 </style>

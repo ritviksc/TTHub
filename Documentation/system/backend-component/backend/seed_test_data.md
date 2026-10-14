@@ -2,6 +2,16 @@
 
 For the complete staff-to-reporting demo, use **`seed_reporting_demo`** instead. It includes a super admin, adult participants, sessions and assessments, and preserves existing records on reruns. See [physical-reporting.md](physical-reporting.md). The older command below is retained unchanged.
 
+## ACC reporting samples
+
+From `backend/`, run `ALLOW_DEMO_SEEDING=True .venv/bin/python manage.py seed_acc_demo` against your local demo database. An optional `--as-of YYYY-MM-DD` sets the initial last-session date; reruns keep that date and preserve existing data, edits, passwords and consent flags.
+
+This adds three branches: **DEMO Whangārei** (20 participants), **DEMO Heretaunga** (25), and **DEMO Ōtepoti** (30). Each has 12 finalised weekly sessions, varied attendance and absence reasons, and 10 feedback examples. The report period spans 77 days through the initial last-session date. Six, five and eight participants respectively have joined dates inside that period; the remaining sample registrations predate it. Rosters only include participants registered by the session date.
+
+Feedback excerpts come from the supplied ACC reference images and cover connection, reported wellbeing, cultural delivery, training/hui, testing barriers, requests for change, missed classes and an ACC experience. Branch/participant associations and reporting consent are simulated; `source` labels record the image/item and identify the examples as **DEMO**. They are not real testimony or verified health outcomes. No AI call is made, and the ACC report layout is unchanged by seeding.
+
+Select **All branches** (or one sample branch), use the dates printed by the command, and load consented feedback in **Prepare an ACC report**. Existing saved reports retain their original statistics snapshots.
+
 `seed_test_data` is a Django management command that populates the database
 with fixed test data for local testing / demoing. It always creates the same
 shape of data — no options to tweak counts:

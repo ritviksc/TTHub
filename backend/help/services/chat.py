@@ -41,8 +41,7 @@ def _sources(answer_text, matches):
 
 def build_messages(role, matches, question, history=()):
     return [
-        {"role": "system", "content": system_prompt(role)},
-        {"role": "system", "content": context_message(matches)},
+        {"role": "system", "content": system_prompt(role) + "\n\n" + context_message(matches)},
         *({"role": turn["role"], "content": turn["content"]} for turn in history),
         {"role": "user", "content": question},
     ]
