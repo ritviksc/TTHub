@@ -1,57 +1,34 @@
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute, RouterLink } from 'vue-router'
 import logoSrc from '@/assets/logo-mark.png'
 import { auth, clearUser } from '@/stores/auth.js'
 import { logout } from '@/apis.js'
 import { initials } from '@/utils/sessions.js'
+import { NAV, ADMIN_LABEL, HELP_LINK, ROLE_LABELS, isUnder } from '@/utils/nav.js'
+import { THEMES, currentTheme } from '@/utils/theme.js'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
+import NavMenu from '@/components/NavMenu.vue'
 
 const router = useRouter()
+const route = useRoute()
 const loggingOut = ref(false)
 const logoutError = ref(null)
+const mobileOpen = ref(false)
+const themeOpen = ref(false)
 
-const NAV_ITEMS = {
-  super_admin: [
-    { label: 'National overview', to: '/super-admin/overview' },
-    { label: 'Kapa',            to: '/super-admin/branches' },
-    { label: 'Kaumātua',        to: '/super-admin/participants' },
-    { label: 'Users',           to: '/super-admin/users' },
-    { label: 'Feedback',        to: '/super-admin/feedback' },
-    { label: 'Reporting',       to: '/super-admin/reporting' },
-    { label: 'Documents',       to: '/documents' },
-    { label: 'Administration',  to: '/super-admin/administration' },
-    { label: 'Help',            to: '/help' },
-  ],
-  branch_manager: [
-    { label: 'Overview',        to: '/branch-manager/overview' },
-    { label: 'Sessions',        to: '/branch-manager/sessions' },
-    { label: 'Kaumātua',        to: '/branch-manager/participants' },
-    { label: 'Kaimahi',         to: '/branch-manager/instructors' },
-    { label: 'Feedback',        to: '/branch-manager/feedback' },
-    { label: 'Reports',         to: '/branch-manager/reports' },
-    { label: 'Administration',  to: '/branch-manager/administration' },
-    { label: 'Documents',       to: '/documents' },
-    { label: 'Help',            to: '/help' },
-  ],
-  instructor: [
-    { label: 'Home',            to: '/instructor/home' },
-    { label: 'Sessions',        to: '/instructor/sessions' },
-    { label: 'Kaumātua',        to: '/instructor/participants' },
-    { label: 'Feedback',        to: '/instructor/feedback' },
-    { label: 'Documents',       to: '/documents' },
-    { label: 'Help',            to: '/help' },
-  ],
-}
+const activeTheme = computed(() => THEMES.find(t => t.id === currentTheme.value) ?? THEMES[0])
 
-const ROLE_LABELS = {
-  super_admin: 'Super Admin',
-  branch_manager: 'Branch Manager',
-  instructor: 'Kaimahi',
-}
-
-const navItems  = computed(() => NAV_ITEMS[auth.user?.role] ?? [])
+const navItems  = computed(() => NAV[auth.user?.role]?.links ?? [])
+const adminMenu = computed(() => NAV[auth.user?.role]?.admin ?? null)
 const roleLabel = computed(() => ROLE_LABELS[auth.user?.role] ?? '')
+
+// Administration stays highlighted on the pages it links to, e.g. Users.
+const adminActive = computed(() => {
+  const admin = adminMenu.value
+  if (!admin || !route?.path) return false
+  return [admin.to, ...admin.children.map(item => item.to)].some(to => isUnder(route.path, to))
+})
 
 // Super Admin works nationally; the other two are scoped to their branch.
 const scope = computed(() =>
@@ -89,6 +66,9 @@ async function handleLogout() {
     loggingOut.value = false
   }
 }
+
+watch(() => route?.fullPath, () => { mobileOpen.value = false })
+
 const handleScroll = () => {
   const nav = document.querySelector('.app-nav')
   if (nav) nav.classList.toggle('scrolled', window.scrollY > 10)
@@ -108,7 +88,7 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
       </span>
     </div>
 
-    <div class="nav-links">
+    <div class="nav-links nav-links--collapsible">
       <RouterLink
         v-for="item in navItems"
         :key="item.to"
@@ -117,19 +97,80 @@ onUnmounted(() => window.removeEventListener('scroll', handleScroll))
       >
         {{ item.label }}
       </RouterLink>
+      <RouterLink
+        v-if="adminMenu"
+        :to="adminMenu.to"
+        :class="['nav-link', { 'nav-link--active': adminActive }]"
+      >
+        {{ ADMIN_LABEL }}
+      </RouterLink>
     </div>
 
     <div class="nav-right">
-      <ThemeSwitcher />
-      <div class="nav-user-pill" :title="`${userName} (${roleLabel})`">
-        <span class="user-avatar">{{ initials(userName) }}</span>
-        <span class="nav-user">{{ shortName }}</span>
-      </div>
-      <span v-if="logoutError" class="logout-error" role="alert">{{ logoutError }}</span>
-      <button class="nav-btn nav-btn--logout" :disabled="loggingOut" :title="loggingOut ? 'Logging out…' : 'Log out'" @click="handleLogout">
-        <span class="logout-icon">⎋</span>
-        <span class="logout-text">{{ loggingOut ? 'Logging out…' : 'Log out' }}</span>
+      <RouterLink :to="HELP_LINK.to" class="nav-icon-btn nav-help">{{ HELP_LINK.label }}</RouterLink>
+
+      <NavMenu
+        :aria-label="`Account: ${userName}`"
+        align="right"
+        trigger-class="nav-user-pill"
+        hover
+      >
+        <template #trigger>
+          <span class="user-avatar">{{ initials(userName) }}</span>
+          <span class="nav-user">{{ shortName }}</span>
+        </template>
+        <div class="nav-account">
+          <span class="nav-account__name">{{ userName }}</span>
+          <span class="nav-account__meta">{{ roleLabel }} · {{ scope }}</span>
+        </div>
+        <span v-if="logoutError" class="logout-error" role="alert">{{ logoutError }}</span>
+        <button
+          type="button"
+          class="nav-menu__item nav-menu__item--logout"
+          role="menuitem"
+          :disabled="loggingOut"
+          @click="handleLogout"
+        >
+          <span class="logout-icon">⎋</span>
+          {{ loggingOut ? 'Logging out…' : 'Log out' }}
+        </button>
+        <div class="nav-submenu" @pointerenter="themeOpen = true" @pointerleave="themeOpen = false">
+          <button
+            type="button"
+            class="nav-menu__item nav-submenu__trigger"
+            role="menuitem"
+            aria-haspopup="menu"
+            :aria-expanded="themeOpen"
+            @click.stop="themeOpen = !themeOpen"
+          >
+            <span class="nav-submenu__swatch" :style="{ backgroundColor: activeTheme.color }"></span>
+            Theme
+            <span class="nav-submenu__value">{{ activeTheme.name }}</span>
+            <span class="nav-submenu__arrow" aria-hidden="true">‹</span>
+          </button>
+          <div v-if="themeOpen" class="nav-menu__panel nav-submenu__panel" role="menu">
+            <ThemeSwitcher variant="list" />
+          </div>
+        </div>
+      </NavMenu>
+
+      <button
+        type="button"
+        class="nav-icon-btn nav-hamburger"
+        :aria-expanded="mobileOpen"
+        aria-controls="nav-mobile-panel"
+        aria-label="Menu"
+        @click="mobileOpen = !mobileOpen"
+      >
+        {{ mobileOpen ? '✕' : '☰' }}
       </button>
+    </div>
+
+    <div v-if="mobileOpen" id="nav-mobile-panel" class="nav-mobile">
+      <RouterLink v-for="item in navItems" :key="item.to" :to="item.to" class="nav-menu__item">
+        {{ item.label }}
+      </RouterLink>
+      <RouterLink v-if="adminMenu" :to="adminMenu.to" class="nav-menu__item">{{ ADMIN_LABEL }}</RouterLink>
     </div>
   </nav>
 </template>

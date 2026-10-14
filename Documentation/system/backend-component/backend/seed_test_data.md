@@ -6,8 +6,9 @@ covers the last 365 days plus three weeks of upcoming sessions, which is
 enough to prepare a yearly ACC report.
 
 `seed_reporting_demo` is a separate, smaller fixture with stable IDs (see
-[physical-reporting.md](physical-reporting.md)). The two commands don't share
-any data and neither one touches the other's records.
+[physical-reporting.md](physical-reporting.md)), and `seed_acc_demo` adds ACC
+reporting samples (see [ACC reporting samples](#acc-reporting-samples)). The
+commands don't share any data and none of them touches another's records.
 
 ## What it creates
 
@@ -66,6 +67,16 @@ list when it finishes.
 
 `<branch>` is one of `dunedin`, `christchurch`, `wellington`,
 `auckland-central` or `north-shore`.
+
+## ACC reporting samples
+
+From `backend/`, run `ALLOW_DEMO_SEEDING=True .venv/bin/python manage.py seed_acc_demo` against your local demo database. An optional `--as-of YYYY-MM-DD` sets the initial last-session date; reruns keep that date and preserve existing data, edits, passwords and consent flags.
+
+This adds three branches: **DEMO Whangārei** (20 participants), **DEMO Heretaunga** (25), and **DEMO Ōtepoti** (30). Each has 12 finalised weekly sessions, varied attendance and absence reasons, and 10 feedback examples. The report period spans 77 days through the initial last-session date. Six, five and eight participants respectively have joined dates inside that period; the remaining sample registrations predate it. Rosters only include participants registered by the session date.
+
+Feedback excerpts come from the supplied ACC reference images and cover connection, reported wellbeing, cultural delivery, training/hui, testing barriers, requests for change, missed classes and an ACC experience. Branch/participant associations and reporting consent are simulated; `source` labels record the image/item and identify the examples as **DEMO**. They are not real testimony or verified health outcomes. No AI call is made, and the ACC report layout is unchanged by seeding.
+
+Select **All branches** (or one sample branch), use the dates printed by the command, and load consented feedback in **Prepare an ACC report**. Existing saved reports retain their original statistics snapshots.
 
 ## Where it lives
 

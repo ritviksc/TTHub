@@ -4,7 +4,7 @@ import { createRouter, createMemoryHistory } from 'vue-router'
 import { createAccessGuard, dashboardRoute, routeAccess } from '../src/router/access.js'
 
 const Page = { render: () => null }
-const destinations = { super_admin: 'sa-users', branch_manager: 'bm-overview', instructor: 'in-home' }
+const destinations = { super_admin: 'sa-overview', branch_manager: 'bm-overview', instructor: 'in-home' }
 function makeRouter(session) {
   const routes = [
     { path: '/', name: 'home', component: Page },
@@ -46,7 +46,7 @@ for (const [role, destination] of Object.entries(destinations)) {
 
 test('signed-out protected and unknown URLs go home; login and public pages remain available', async () => {
   const router = makeRouter({ user: null })
-  for (const path of ['/sa-users', '/bm-overview', '/in-home', '/not-authorised', '/missing-page']) {
+  for (const path of ['/sa-overview', '/bm-overview', '/in-home', '/not-authorised', '/missing-page']) {
     await router.push(path)
     assert.equal(router.currentRoute.value.name, 'home')
   }
@@ -61,7 +61,7 @@ test('an expired server session redirects home on the next navigation', async ()
   const router = makeRouter(session)
   await router.push('/in-home')
   session.user = null
-  await router.push('/sa-users')
+  await router.push('/sa-overview')
   assert.equal(router.currentRoute.value.name, 'home')
 })
 

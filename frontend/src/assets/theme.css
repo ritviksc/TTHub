@@ -1,7 +1,8 @@
 /* ============================================================
    Taurite Tū — Modern Design System & Design Tokens
    Supports multi-theme switching:
-   - Default / Sapphire: Royal Sapphire & Cobalt Blue
+   - Classic (default): Original Pounamu Teal & Kōkōwai Ochre
+   - Sapphire: Royal Sapphire & Cobalt Blue (also the :root fallback)
    - Pounamu: Vibrant Oceanic Teal
    - Emerald: Fresh Kawakawa Health Green
    - Sunset: Modern Coral & Violet
@@ -79,6 +80,86 @@
   --shadow-panel:    0 4px 16px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
   --shadow-modal:    0 20px 25px -5px rgba(15, 23, 42, 0.14), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
   --shadow-glow:     0 0 16px rgba(37, 99, 235, 0.25);
+}
+
+/* ============================================================
+   Theme: Classic (the default)
+   The original Taurite Tū palette: moana/pounamu teal, warm
+   kōkōwai ochre for primary actions, deep muka ink and warm
+   linen surfaces. Unlike the other themes, --maroon stays
+   ochre rather than aliasing the primary colour. The calmer
+   component styling that goes with it is in theme-classic.css.
+   ============================================================ */
+[data-theme="classic"] {
+  /* ---- brand & primary accents (Moana / Pounamu) ---- */
+  --teal:            #0d8287;
+  --teal-dark:       #085e62;
+  --teal-light:      #269ea3;
+  --teal-tint:       #e3f3f4;
+  --teal-subtle:     #f0f8f8;
+
+  --primary:         #0d8287;
+  --primary-dark:    #085e62;
+  --primary-light:   #269ea3;
+  --primary-tint:    #e3f3f4;
+  --primary-glow:    transparent;
+
+  /* ---- primary action buttons (kōkōwai / ochre earth) ---- */
+  --maroon:          #943419;
+  --maroon-dark:     #7c2b14;
+  --maroon-light:    #ab4021;
+  --maroon-tint:     #fbeeeb;
+
+  /* ---- secondary cultural earth tokens ---- */
+  --terracotta:      #943419;
+  --terracotta-dark: #7c2b14;
+  --terracotta-tint: #fbeeeb;
+  --bark:            #54463b;   /* warm timber / muka */
+  --forest:          #236c3c;   /* kawakawa / harakeke deep green */
+  --forest-subtle:   #e8f4ec;
+  --mint:            #e4f3e8;
+  --sand-light:      #f5efe6;   /* warm natural linen */
+  --sand:            #e4ded4;
+
+  /* ---- surfaces & backgrounds ---- */
+  --bg:              #f7f4ed;
+  --surface:         #ffffff;
+  --surface-sunken:  #f0ebe2;
+  --ink:             #241c17;   /* deep muka / warm espresso black */
+  --ink-soft:        #382e27;   /* active nav pill */
+  --ink-hover:       #483c34;
+
+  /* ---- typography ---- */
+  --text:            #241c17;
+  --text-secondary:  #54463b;
+  --text-muted:      #786b60;
+  --text-faint:      #a3968a;
+  --text-on-ink:     #ffffff;
+  --text-on-ink-dim: rgba(255, 255, 255, 0.78);
+
+  /* ---- borders ---- */
+  --border:          #e4ded4;
+  --border-strong:   #c8c0b3;
+  --border-faint:    #ede7de;
+
+  /* ---- semantic indicators ---- */
+  --success:         #236c3c;
+  --success-bg:      #e8f4ec;
+  --warning:         #b36e05;
+  --warning-bg:      #fdf6e6;
+  --warning-border:  #fae3b3;
+  --warning-text:    #664000;
+  --danger:          #b82e24;
+  --danger-bg:       #fdefee;
+  --error:           #b82e24;
+  --error-bg:        #fdefee;
+
+  /* ---- elevation & shadows (warm ambient light, no glow) ---- */
+  --shadow-xs:       0 1px 2px rgba(36, 28, 23, 0.04);
+  --shadow-card:     0 1px 3px rgba(36, 28, 23, 0.05), 0 1px 2px rgba(36, 28, 23, 0.03);
+  --shadow-panel:    0 4px 18px rgba(36, 28, 23, 0.06), 0 1px 4px rgba(36, 28, 23, 0.04);
+  --shadow-modal:    0 16px 40px rgba(36, 28, 23, 0.16), 0 4px 12px rgba(36, 28, 23, 0.08);
+  --shadow-glow:     transparent;
 }
 
 /* ============================================================

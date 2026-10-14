@@ -3,6 +3,8 @@ import Cookies from "js-cookie"
 import { parseNdjson } from "./utils/help.js"
 export const MAX_ATTEMPTS = 3
 export const TIMEOUT_ERROR = "ETIMEDOUT"
+// Synchronous report generation can wait up to 200 seconds for the LLM.
+const ANALYSIS_TIMEOUT_MS = 240000
 // Vite substitutes this public setting at build time; include /api in the URL.
 export const API_BASE = (import.meta.env?.VITE_API_BASE_URL?.trim() || "http://localhost:8000/api").replace(/\/+$/, "")
 
@@ -12,7 +14,8 @@ const api = axios.create({
   withXSRFToken: true,
   xsrfCookieName: "csrftoken",
   xsrfHeaderName: "X-CSRFToken",
-  timeout: 5000,
+  // Allow time for the hosted backend to wake up before failing the request.
+  timeout: 120000,
   transitional: {
         clarifyTimeoutError: true,
     }
@@ -384,7 +387,7 @@ export async function getACCSources(scope, page = 1) {
   return (await getWithRetry('/reporting/acc/sources/', { params: { ...scope, page } })).data
 }
 export async function generateACCReport(payload) {
-  return (await api.post('/reporting/acc/analyse/', payload)).data
+  return (await api.post('/reporting/acc/analyse/', payload, { timeout: ANALYSIS_TIMEOUT_MS })).data
 }
 export async function getACCAnalysisJob(jobId, signal) {
   return (await getWithRetry(`/reporting/acc/jobs/${jobId}/`, { signal })).data
@@ -405,8 +408,8 @@ export async function getAttendanceReport(scope) {
 }
 
 export async function analyseAttendanceReport(scope) {
-  // This only queues work. Never retry POSTs automatically: that could create two jobs.
-  const response = await api.post('/reporting/attendance/analyse/', scope)
+  // Never retry POSTs automatically: that could create two jobs.
+  const response = await api.post('/reporting/attendance/analyse/', scope, { timeout: ANALYSIS_TIMEOUT_MS })
   return response.data
 }
 
@@ -442,7 +445,7 @@ export async function getPhysicalReport(scope) {
   return (await getWithRetry('/reporting/physical/', { params: scope })).data
 }
 export async function analysePhysicalReport(scope) {
-  return (await api.post('/reporting/physical/analyse/', scope)).data
+  return (await api.post('/reporting/physical/analyse/', scope, { timeout: ANALYSIS_TIMEOUT_MS })).data
 }
 export async function getPhysicalAnalysisJob(jobId, signal) {
   return (await getWithRetry(`/reporting/physical/jobs/${jobId}/`, { signal })).data

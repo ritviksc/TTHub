@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { auth } from '@/stores/auth.js'
 import { listBranches, listParticipants, listSessions, listFeedback, createFeedback } from '@/apis.js'
 import { programmeToday } from '@/utils/sessions.js'
+import { FEEDBACK_SPEAKERS, feedbackSpeakerLabel } from '@/utils/feedback.js'
 
 const activeFilter = ref('all')
 const search = ref('')
@@ -18,7 +19,7 @@ const saving = ref(false)
 const newEntryError = ref(null)
 const isSuperAdmin = computed(() => auth.user?.role === 'super_admin')
 const branchName = computed(() => isSuperAdmin.value ? 'all branches' : auth.user?.branch?.name ?? 'Your branch')
-const emptyEntry = () => ({ quote: '', participant: '', session: '', date: programmeToday(), consent: false,
+const emptyEntry = () => ({ quote: '', participant: '', session: '', speaker: 'unknown', date: programmeToday(), consent: false,
   branch: isSuperAdmin.value ? branchFilter.value : auth.user?.branch?.id ?? '' })
 const newEntry = ref(emptyEntry())
 const entryParticipants = computed(() => participants.value.filter(person => person.branch === newEntry.value.branch))
@@ -76,12 +77,12 @@ async function handleAddFeedback() {
     return
   }
   if (!newEntry.value.participant && !newEntry.value.session) {
-    newEntryError.value = 'Choose a participant or session.'
+    newEntryError.value = 'Choose a kaumātua or session.'
     return
   }
   if ((newEntry.value.participant && !entryParticipants.value.some(person => person.id === newEntry.value.participant)) ||
       (newEntry.value.session && !entrySessions.value.some(session => session.id === newEntry.value.session))) {
-    newEntryError.value = 'Choose a participant and session from the selected branch.'
+    newEntryError.value = 'Choose a kaumātua and session from the selected branch.'
     return
   }
   saving.value = true
@@ -90,6 +91,7 @@ async function handleAddFeedback() {
       quote: newEntry.value.quote.trim(),
       date: newEntry.value.date,
       consent: newEntry.value.consent,
+      speaker: newEntry.value.speaker,
       participant: newEntry.value.participant || null,
       session: newEntry.value.session || null,
     })
@@ -129,7 +131,7 @@ onMounted(loadFeedback)
       <div class="page-header">
         <div>
           <h1>Feedback</h1>
-          <p class="page-subtitle">Participant voice, personal stories and quotes for reporting at {{ branchName }}.</p>
+          <p class="page-subtitle">Kaumātua, kaimahi and whānau voices, personal stories and quotes for reporting at {{ branchName }}.</p>
         </div>
         <button class="btn-primary" :disabled="loading || !!loadError" @click="openModal">+ New entry</button>
       </div>
@@ -199,7 +201,7 @@ onMounted(loadFeedback)
 
           <div class="feedback-meta">
             <span class="feedback-source">
-              <strong>{{ item.source }}</strong> · {{ item.date }} · recorded by {{ item.recordedBy }}
+              <strong>{{ item.source }}</strong> · {{ feedbackSpeakerLabel(item.speaker) }} · {{ item.date }} · recorded by {{ item.recordedBy }}
               <template v-if="isSuperAdmin"> · {{ feedbackBranch(item) }}</template>
             </span>
 
@@ -222,7 +224,7 @@ onMounted(loadFeedback)
           <form @submit.prevent="handleAddFeedback">
             <fieldset :disabled="saving || loading || !!loadError" class="feedback-fields">
             <p class="modal-desc">
-              Record a participant quote or qualitative observation from a session or check-in. Choose a participant, a session, or both.
+              Record feedback from a kaumātua, kaimahi or whānau member. Choose the kaumātua, session, or both that this feedback relates to.
             </p>
 
             <div v-if="newEntryError" class="form-error" style="margin-bottom: 16px;" role="alert">
@@ -246,15 +248,23 @@ onMounted(loadFeedback)
                 rows="4"
                 required
                 :autofocus="!isSuperAdmin"
-                placeholder="What did the participant share? e.g. 'I was able to walk without my stick this week…'"
+                placeholder="What did they share? e.g. 'I was able to walk without my stick this week…'"
               ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="feedback-speaker">Who gave this feedback?</label>
+              <select id="feedback-speaker" v-model="newEntry.speaker" required>
+                <option v-for="(label, value) in FEEDBACK_SPEAKERS" :key="value" :value="value">{{ label }}</option>
+              </select>
+              <p>Select the original speaker's type. Reports use this recorded type automatically.</p>
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label for="feedback-participant">Participant</label>
+                <label for="feedback-participant">Related kaumātua</label>
                 <select id="feedback-participant" v-model="newEntry.participant" :disabled="!newEntry.branch">
-                  <option value="">Choose a participant</option>
+                  <option value="">Choose a kaumātua</option>
                   <option v-for="p in entryParticipants" :key="p.id" :value="p.id">{{ p.full_name }}</option>
                 </select>
               </div>

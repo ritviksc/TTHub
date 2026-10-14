@@ -166,13 +166,7 @@
   gap: 3px;
   flex: 1 1 auto;
   min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
   padding: 2px 2px;
-}
-
-.app-nav .nav-links::-webkit-scrollbar {
-  display: none;
 }
 
 .app-nav .nav-link {
@@ -204,7 +198,8 @@
 }
 
 .app-nav .nav-link.router-link-exact-active,
-.app-nav .nav-link.router-link-active:not([href="/"]) {
+.app-nav .nav-link.router-link-active:not([href="/"]),
+.app-nav .nav-link.nav-link--active {
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.32), rgba(37, 99, 235, 0.12));
   border-color: rgba(37, 99, 235, 0.45);
   color: #ffffff;
@@ -235,7 +230,9 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-pill);
   padding: 3px 8px 3px 4px;
-  cursor: default;
+  color: var(--text-on-ink);
+  font: inherit;
+  cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0 !important;
   white-space: nowrap !important;
@@ -301,44 +298,218 @@
   text-decoration: none;
 }
 
-/* Logout button with red frosted glow & animated icon */
-.app-nav .nav-btn--logout {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: var(--text-on-ink);
+/* Dropdown menus (Administration, help, account) */
+.nav-menu {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.app-nav .nav-menu__trigger {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.nav-menu__chevron {
+  font-size: 10px;
+  opacity: 0.8;
+  transition: transform 0.2s ease;
+}
+
+.nav-menu__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.nav-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-pill);
-  padding: 5px 11px;
+  color: var(--text-on-ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-nav .nav-help {
   font-size: var(--text-xs);
   font-weight: 600;
+  text-decoration: none;
+}
+
+.app-nav .nav-help.router-link-active {
+  background: rgba(37, 99, 235, 0.28);
+  border-color: rgba(37, 99, 235, 0.45);
+}
+
+.nav-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.32);
+  transform: translateY(-1px);
+}
+
+.nav-menu__panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  min-width: 200px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: normal;
+}
+
+.nav-menu__panel--left {
+  left: 0;
+  transform-origin: top left;
+}
+
+.nav-menu__panel--right {
+  right: 0;
+  transform-origin: top right;
+}
+
+.nav-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
   cursor: pointer;
-  flex-shrink: 0 !important;
-  white-space: nowrap !important;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 0.15s ease;
 }
 
-.app-nav .nav-btn--logout:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.18);
-  border-color: rgba(239, 68, 68, 0.45);
-  color: #fca5a5;
-  box-shadow: 0 0 14px rgba(239, 68, 68, 0.35);
-  transform: translateY(-1.5px);
+.nav-menu__item:hover {
+  background: var(--surface-sunken);
+  text-decoration: none;
 }
 
-.app-nav .nav-btn--logout:active:not(:disabled) {
-  transform: translateY(0.5px) scale(0.97);
+.nav-menu__item.router-link-active {
+  background: var(--teal-tint);
+  border-color: var(--teal-light);
+  font-weight: 600;
+}
+
+.nav-menu__item--logout:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.nav-menu__panel--right {
+  width: 240px;
+}
+
+/* Theme flyout inside the account menu; opens to the left on hover */
+.nav-submenu {
+  position: relative;
+}
+
+.nav-submenu__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.nav-submenu__value {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.nav-submenu__arrow {
+  color: var(--text-muted);
+  order: -1;
+}
+
+.nav-menu__panel.nav-submenu__panel {
+  top: -7px;
+  right: calc(100% + 10px);
+  width: 250px;
+}
+
+/* Invisible bridge across the gap so the pointer can reach the flyout without it closing */
+.nav-submenu__panel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: 12px;
+}
+
+@media (max-width: 600px) {
+  .nav-menu__panel.nav-submenu__panel {
+    position: static;
+    width: auto;
+    padding: 2px 0 0;
+    border: 0;
+    box-shadow: none;
+  }
+  .nav-submenu__arrow {
+    display: none;
+  }
+}
+
+.nav-account {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.nav-account__name {
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.nav-account__meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.nav-menu__panel .logout-error {
+  color: #dc2626;
+  padding: 0 10px;
+  white-space: normal;
 }
 
 .logout-icon {
   font-size: 13px;
   line-height: 1;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.app-nav .nav-btn--logout:hover .logout-icon {
-  transform: translateX(2px);
+/* Mobile menu: hidden until the hamburger is shown at small widths */
+.app-nav .nav-hamburger,
+.app-nav .nav-mobile {
+  display: none;
 }
 
 /* Accent button (Login on public nav) */
@@ -358,34 +529,10 @@
   background: linear-gradient(135deg, var(--teal), var(--teal-dark));
 }
 
-/* Responsive breakdowns to ensure navigation items and logout NEVER overflow */
-@media (max-width: 1300px) {
-  .app-nav {
-    padding: 0 12px;
-    gap: 6px;
-  }
-  .app-nav .nav-link {
-    padding: 4px 7px;
-    font-size: 12.5px;
-  }
-  .app-nav .nav-scope {
-    max-width: 90px;
-  }
-}
-
+/* Responsive */
 @media (max-width: 1140px) {
   .app-nav .nav-scope {
     display: none;
-  }
-  .app-nav .nav-user {
-    max-width: 70px;
-  }
-  .app-nav .nav-links {
-    gap: 2px;
-  }
-  .app-nav .nav-link {
-    padding: 4px 6px;
-    font-size: 12px;
   }
 }
 
@@ -404,14 +551,36 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 860px) {
   .app-nav {
     padding: 0 8px;
     gap: 4px;
   }
-  .app-nav .nav-links {
-    gap: 1px;
+  .app-nav .nav-links--collapsible {
+    display: none !important;
   }
+  .app-nav .nav-hamburger {
+    display: inline-flex;
+  }
+  .app-nav .nav-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: calc(100vh - var(--nav-height));
+    overflow-y: auto;
+    padding: 8px 16px 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.35);
+    white-space: normal;
+  }
+}
+
+@media (max-width: 768px) {
   .app-nav .nav-link {
     padding: 4px 5px;
     font-size: 11px;
@@ -419,9 +588,6 @@
   .app-nav .nav-btn {
     padding: 4px 8px;
     font-size: var(--text-xs);
-  }
-  .app-nav .nav-btn--logout .logout-text {
-    display: none;
   }
 }
 

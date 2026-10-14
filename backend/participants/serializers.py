@@ -173,7 +173,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Feedback
-        fields = ['id', 'branch', 'participant', 'session', 'quote', 'source', 'date',
+        fields = ['id', 'branch', 'participant', 'session', 'quote', 'source', 'speaker', 'date',
                   'consent', 'recorded_by', 'recordedBy', 'created_at']
         read_only_fields = ['id', 'branch', 'source', 'recorded_by', 'created_at']
 
@@ -191,7 +191,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         participant, session = attrs.get('participant'), attrs.get('session')
         if not participant and not session:
-            raise serializers.ValidationError('Choose a participant or session.')
+            raise serializers.ValidationError('Choose a kaumātua or session.')
         if participant and session and participant.branch_id != session.branch_id:
             raise serializers.ValidationError('Participant and session must belong to the same branch.')
         if attrs['date'] > timezone.localdate():

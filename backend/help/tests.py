@@ -174,8 +174,9 @@ class AnswerTests(SimpleTestCase):
         messages = llm.call_args.args[1]
         self.assertIn("Kaimahi", messages[0]["content"])
         self.assertIn("different role", messages[0]["content"])
-        self.assertIn("[documents] General › Documents text", messages[1]["content"])
-        self.assertEqual(messages[2:], [*history, {"role": "user", "content": "Where are files?"}])
+        self.assertIn("[documents] General › Documents text", messages[0]["content"])
+        self.assertEqual([message["role"] for message in messages], ["system", "user", "assistant", "user"])
+        self.assertEqual(messages[1:], [*history, {"role": "user", "content": "Where are files?"}])
         self.assertEqual(llm.call_args.kwargs["extra_body"], {"chat_template_kwargs": {"enable_thinking": False}})
 
     def test_refusal_and_unknown_citations_have_no_sources(self):

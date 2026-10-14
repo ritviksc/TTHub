@@ -360,6 +360,7 @@ class FeedbackTests(TestCase):
         self.assertEqual(entry.branch, self.a)
         self.assertEqual(entry.recorded_by, self.manager)
         self.assertEqual(entry.source, self.person.full_name)
+        self.assertEqual(entry.speaker, Feedback.Speaker.UNKNOWN)
         second_device = APIClient()
         second_device.force_authenticate(self.instructor)
         self.assertEqual(second_device.get('/api/participants/feedback/').data[0]['id'], str(entry.pk))
@@ -403,6 +404,7 @@ class FeedbackTests(TestCase):
                         'session': str(session.pk) if session else None,
                         'quote': '  A short story about the class.  ', 'date': timezone.localdate(),
                         'branch': str(self.b.pk), 'recorded_by': str(self.other.pk), 'source': 'Forged',
+                        'speaker': 'kaumātua' if participant and not session else 'whānau' if participant else 'kaimahi',
                     }, format='json')
                     self.assertEqual(response.status_code, 201, response.data)
                     entry = Feedback.objects.get(pk=response.data['id'])
@@ -415,6 +417,8 @@ class FeedbackTests(TestCase):
                     fresh_client.force_authenticate(user)
                     saved = next(row for row in fresh_client.get('/api/participants/feedback/').data if row['id'] == str(entry.pk))
                     self.assertEqual(saved['quote'], entry.quote)
+                    self.assertEqual(saved['speaker'], 'kaumātua' if participant and not session else 'whānau' if participant else 'kaimahi')
+                    self.assertEqual(entry.speaker, saved['speaker'])
                     fresh_client.force_authenticate(self.other)
                     self.assertEqual(fresh_client.get('/api/participants/feedback/').data, [])
 
@@ -432,6 +436,14 @@ class FeedbackTests(TestCase):
         self.assertEqual(self.client.get('/api/participants/feedback/').data, [])
         self.client.force_authenticate(self.other)
         self.assertEqual(self.client.get('/api/participants/feedback/').data[0]['id'], str(entry.pk))
+
+    def test_feedback_rejects_unrecognised_speaker_types(self):
+        for speaker in ('guessed', 'participant', ''):
+            with self.subTest(speaker=speaker):
+                response = self.client.post('/api/participants/feedback/', {**self.payload, 'speaker': speaker}, format='json')
+                self.assertEqual(response.status_code, 400)
+                self.assertIn('speaker', response.data)
+        self.assertFalse(Feedback.objects.exists())
 
     def test_admin_cannot_mix_branches_and_future_dates_are_rejected(self):
         self.client.force_authenticate(self.admin)
