@@ -85,8 +85,8 @@ const router = createRouter({
         },
 
         /* ---- super admin ---- */
-        { path: '/super-admin', redirect: '/super-admin/users' },
-        { path: '/super-admin/dashboard', redirect: '/super-admin/users' },
+        { path: '/super-admin', redirect: '/super-admin/overview' },
+        { path: '/super-admin/dashboard', redirect: '/super-admin/overview' },
         {
             path: '/super-admin/users', name: 'sa-users',
             component: () => import('@/views/SuperAdmin/Users.vue'),

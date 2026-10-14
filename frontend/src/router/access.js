@@ -1,5 +1,5 @@
 const DASHBOARDS = {
-  super_admin: 'sa-users',
+  super_admin: 'sa-overview',
   branch_manager: 'bm-overview',
   instructor: 'in-home',
 }
