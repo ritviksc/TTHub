@@ -1,6 +1,6 @@
 # Help chatbot setup
 
-How to get the Help page (`/help`) and its chatbot working on a development machine. Do the [quickstart](../quickstart/README.md) first, so that Django, Redis and the frontend already run.
+How to get the Help page (`/help`) and its chatbot working on a development machine. Do the [quickstart](../quickstart/guide.md) first, so that Django, Redis and the frontend already run.
 
 The article list works without any of this. The chatbot only answers once its index is built.
 

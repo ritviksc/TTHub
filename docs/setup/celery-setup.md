@@ -38,7 +38,7 @@ celery -A config worker --loglevel=info --concurrency=1
 celery -A config worker --loglevel=info --pool=solo
 ```
 
-Run Django and the frontend in their own terminals as usual (see the [quickstart](../quickstart/README.md)). The worker needs the same database, broker and LLM settings as Django. It doesn't reload by itself, so restart it after changing task code. One worker process avoids write contention on the SQLite database. Celery Beat isn't used: every job is started by a user.
+Run Django and the frontend in their own terminals as usual (see the [quickstart](../quickstart/guide.md)). The worker needs the same database, broker and LLM settings as Django. It doesn't reload by itself, so restart it after changing task code. One worker process avoids write contention on the SQLite database. Celery Beat isn't used: every job is started by a user.
 
 ### Without a worker
 

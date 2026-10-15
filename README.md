@@ -29,7 +29,7 @@ Three roles use the app: **kaimahi** (instructors), **branch managers** and **su
 
 ## Getting started
 
-**[docs/quickstart](docs/quickstart/README.md)** walks through the whole setup, from installing the prerequisites to signing in. In short:
+**[docs/quickstart](docs/quickstart/guide.md)** walks through the whole setup, from installing the prerequisites to signing in. In short:
 
 ```bash
 # 1. Configuration: copy the template, then fill in SECRET_KEY and the LLM values
@@ -95,7 +95,7 @@ Group_4/
 
 | Folder | What's in it |
 | --- | --- |
-| [quickstart](docs/quickstart/README.md) | Full setup guide |
+| [quickstart](docs/quickstart/guide.md) | Full setup guide |
 | [setup](docs/setup) | Python environment, Celery, demo data, help chatbot |
 | [overview](docs/overview) | System overview and te reo Māori terms used in the app |
 | [features](docs/features) | How each feature behaves |
