@@ -12,10 +12,9 @@ Organisation and branch files can be organised into nested folders. Participant 
 
 ## Using the feature
 
-1. Run migrations (`python manage.py migrate`). The `documents` app adds the `Document` and `Folder` tables.
-2. Sign in and open **Documents** in the nav. The sidebar shows **Organisation** and one branch. A Super Admin switches branch with **Change ▾**, which offers search, recently opened branches, and branches grouped by region.
-3. **Upload** accepts several files at once, or you can drag files onto the list. Click a folder to open it, or click a file to download it. Each row has a **⋯** menu with Rename, Move and Delete, which only appears for people allowed to use it.
-4. On a participant's profile, the **Documents** card lists that participant's files.
+1. Sign in and open **Documents** in the nav. The sidebar shows **Organisation** and one branch. A Super Admin switches branch with **Change ▾**, which offers search, recently opened branches, and branches grouped by region.
+2. **Upload** accepts several files at once, or you can drag files onto the list. Click a folder to open it, or click a file to download it. Each row has a **⋯** menu with Rename, Move and Delete, which only appears for people allowed to use it.
+3. On a participant's profile, the **Documents** card lists that participant's files.
 
 Accepted types are PDF, JPG, PNG, DOCX and XLSX, up to 10 MB each. The file's contents are checked against its extension.
 

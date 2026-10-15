@@ -1,6 +1,6 @@
 # Frontend conventions
 
-These rules apply to all frontend code in this repo, whether you wrote it yourself or an AI assistant did. If you use an AI assistant, make it read this file before it writes anything (see [ai-assisted-coding.md](../ai-assisted-coding/ai-assisted-coding.md)). Pull requests that break these rules get sent back.
+These are the conventions the frontend code follows. Keep to them when fixing or changing anything, so the code stays consistent.
 
 ## Where things go
 
@@ -38,25 +38,25 @@ Do this instead:
 
 If you're about to copy more than about 20 lines from another view, stop and make a component.
 
-Here's a sketch of what a role's page looks like when the list is shared. `ParticipantList` doesn't exist yet. It's only here to show the shape.
+For example, the branch manager and super admin audit log pages share `components/audit/AuditLog.vue`, and each role's view only sets the props:
 
 ```vue
-<!-- views/BranchManager/Participants.vue -->
+<!-- views/BranchManager/AuditLog.vue -->
 <script setup>
+import AuditLog from '@/components/audit/AuditLog.vue'
 import { auth } from '@/stores/auth.js'
-import ParticipantList from '@/components/participants/ParticipantList.vue'
 </script>
 
-<template>
-  <div class="dash-page">
-    <main class="content">
-      <div class="page-header">
-        <h1>Participants</h1>
-      </div>
-      <ParticipantList :branch-id="auth.user.branch.id" :show-branch-filter="false" />
-    </main>
-  </div>
-</template>
+<template><AuditLog back-route="bm-administration" :branch-id="auth.user?.branch?.id" :branch-name="auth.user?.branch?.name ?? 'Your branch'" /></template>
+```
+
+```vue
+<!-- views/SuperAdmin/AuditLog.vue -->
+<script setup>
+import AuditLog from '@/components/audit/AuditLog.vue'
+</script>
+
+<template><AuditLog show-branch-filter back-route="sa-administration" /></template>
 ```
 
 ## Talking to the backend
@@ -65,7 +65,7 @@ All backend requests go through functions in `frontend/src/apis.js`.
 
 - Don't import axios in a view or component, and don't write URLs in pages.
 - If an endpoint has no function yet, add one to `apis.js` under the right section (`/* ---- participants ---- */` and so on). If its parameters aren't obvious, add a one-line comment above it, like the one on `listBranches`.
-- Wrap read-only (GET) calls in `withRetry`, for example `await withRetry(null, listParticipants, { branch: id })`. Passing `null` uses the default of 3 attempts. Don't wrap POST calls, because retrying them can create duplicates.
+- GET functions in `apis.js` already retry timeouts (up to 3 attempts) through `getWithRetry`. Don't wrap them in `withRetry` again, which multiplies the attempts. Writes (POST, PUT, PATCH, DELETE) are never retried, because a retry could create duplicates.
 - When a request fails, show the server's message if there is one and a friendly fallback if not:
 
 ```js
@@ -77,7 +77,6 @@ error.value = e.response?.data?.detail ?? 'Could not create this session.'
 - Add every page to `router/index.js` with `meta: { requiresAuth: true, roles: SA }` (or `BM` or `IN`).
 - Load pages lazily: `component: () => import('@/views/SuperAdmin/Users.vue')`.
 - Route names start with the role: `sa-`, `bm-` or `in-`.
-- When you build a page that's currently a `comingSoon(...)` placeholder, replace that line with a real route and keep the same path and name, so nav links keep working.
 - Link by route name, not by typing the path: `{ name: 'in-session-detail', params: { id } }`.
 
 ## Styling
@@ -105,7 +104,6 @@ Add a comment when:
 - the reason for the code isn't obvious from reading it
 - there's a trap someone could fall into (timezones, ordering, a backend quirk)
 - you export a function from `apis.js` or `utils/` and its inputs or return value aren't obvious
-- something is temporary, in which case start the comment with `TEMPORARY:` and say what should replace it
 
 Good comments already in the codebase:
 
@@ -137,7 +135,7 @@ As a rough guide, a 150-line page usually has somewhere between two and five com
 - Always use `<script setup>` (Composition API). Don't use the Options API.
 - Order the sections of a `.vue` file as `<script setup>`, `<template>`, then `<style scoped>`.
 
-## Checklist before opening a pull request
+## Before finishing a change
 
 - [ ] No view file renders more than one role's dashboard.
 - [ ] Nothing was copied from another view. Shared parts are components.
