@@ -1,8 +1,15 @@
 # Taurite Tū
 
-A web app for running Taurite Tū, a strength and balance programme for kaumātua (older adults). Staff use it to manage branches (kapa), participants, classes and attendance, record physical assessments, and produce reports for ACC, with optional AI-written summaries.
+A web app for running [Taurite Tū](https://www.tauritetu.co.nz/), a strength and balance programme for kaumātua (older adults). Staff use it to manage branches (kapa), participants, classes and attendance, record physical assessments, and produce reports for ACC, with optional AI-written summaries.
 
 Built by COSC345 Group 4, University of Otago.
+Group 4:
+- Ritvik Sharma
+- Jack Dunlop
+- Romero Suggate
+- Danny Madison
+- Gunit Chawla
+
 
 ## Features
 
