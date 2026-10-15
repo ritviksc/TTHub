@@ -106,3 +106,4 @@ Group_4/
 | [backend](docs/backend) | Audit log, document storage, LLM integration |
 | [frontend](docs/frontend) | Frontend coding conventions |
 | [bug-scans](docs/bug-scans) | Past code review findings |
+| [devops](docs/devops) | DevOps information - deployment & CI/CD workflow |
