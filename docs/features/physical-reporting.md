@@ -1,6 +1,6 @@
 # Physical reporting
 
-The super admin **Reporting** page (`/super-admin/reporting`) and branch manager **Reports** page (`/branch-manager/reports`) offer two reports:
+The super admin **Reports** page (`/super-admin/reporting`) and branch manager **Reports** page (`/branch-manager/reports`) offer two reports:
 
 - **Attendance** (`…/attendance`): attendance statistics and an optional AI explanation.
 - **Physical testing** (`…/physical`): a completion summary for the date range, a Yes/No and assessment count per participant, individual result graphs, exercise means and outcome counts, monthly graphs, paired changes and an optional AI explanation.

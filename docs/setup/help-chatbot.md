@@ -70,7 +70,9 @@ order: 50
 ...
 ```
 
-Edits show on the Help page straight away. **Run `python manage.py build_help_index` again before the chatbot can see them.** It only re-embeds the parts that changed.
+Edits show on the Help page straight away. **Run `python manage.py build_help_index` again before the chatbot can see them.** It only re-embeds changed chunks. This includes new Super Admin Sessions and Feedback articles, enrolment, reactivation, and the marking/review attendance workflows.
+
+Before rebuilding, run `python manage.py test help`. Keep UI labels and role restrictions accurate: Super Admins can read every article, but that does not grant them the actions described for branch staff. Do not put credentials or participant records in help articles. The builder embeds article text only; it does not need staff or programme records. It replaces the index atomically after embeddings succeed, so a failed provider request leaves the previous index intact. Other Django processes detect the rebuilt index on their next retrieval; a server restart is not normally needed.
 
 If an article has a missing title or section, an unknown key, a duplicate slug or a wrong folder, loading fails with an error that names the file.
 

@@ -14,13 +14,13 @@ The shared link `/participants/:id` redirects to the signed-in user's own page.
 
 The Details page shows and edits contact details, emergency contacts, general notes, photo consent, GP consent and active status. It also holds the participant's physical assessments (see [physical-assessments.md](physical-assessments.md)) and documents (see [document-storage.md](../backend/document-storage.md)).
 
-- All staff roles can edit basic details, record photo consent and deactivate participants they can see.
+- All staff roles can enrol participants, edit basic details, record photo consent and deactivate or reactivate participants they can see. Branch managers and instructors enrol only at their own branch; Super Admins choose a branch.
 - Super admins and branch managers record GP consent. Instructors see the GP consent status and date but can't change them or see the document.
-- Deactivating a participant keeps their attendance history.
+- Deactivating keeps attendance, assessment and document history and excludes the person from new session rosters. Reactivating allows inclusion in sessions created afterwards. Neither action rewrites existing rosters. Use Participant status on Details, then confirm the action.
 
 ## Attendance history
 
-The history lists past sessions with totals. Future sessions are left out of the summary. Attendance records default to absent until an instructor marks them.
+The history lists session records with present/absent totals and absence reasons. Only finalised registers count in its totals; unfinished entries are identified separately. Existing records remain available for inactive participants. Attendance defaults to absent until a branch manager or instructor marks it. Branch staff see only sessions belonging to their branch, including after a participant transfer; Super Admins can read the national history.
 
 ## Date rules
 
@@ -64,6 +64,6 @@ Automated tests: `python manage.py test participants sessions`.
 - `backend/participants/models.py`, `serializers.py`, `views.py`: participant fields, validation, file and history endpoints
 - `backend/participants/storage.py`: private storage and random file names
 - `backend/sessions/serializers.py`: session date rule
-- `frontend/src/components/participants/ParticipantDetail.vue`: details form, documents, photo and deactivation
+- `frontend/src/components/participants/ParticipantDetail.vue`: details form, documents, photo and participant status actions
 - `frontend/src/components/participants/ParticipantAttendance.vue`: attendance history
 - `frontend/src/router/access.js`: redirect from `/participants/:id`

@@ -284,7 +284,10 @@ To start completely fresh, delete `backend/db.sqlite3` and run `python manage.py
 
 ## Further reading
 
-- [System overview](../overview/system-overview.md)
+- [System overview and role permissions](../overview/system-overview.md)
+- [Sessions and attendance](../features/sessions-and-attendance.md)
+- [Feedback and reporting consent](../features/feedback.md)
+- [Staff accounts and reactivation](../features/staff-accounts.md)
 - [Celery setup](../setup/celery-setup.md): how AI jobs move through Redis and the worker
 - [Seed test data](../setup/seed-test-data.md)
 - [Help chatbot setup](../setup/help-chatbot.md)

@@ -8,7 +8,7 @@ When entering feedback, staff record **Who gave this feedback?**: Kaumātua, Kai
 
 ## Preparing a report
 
-1. Open **Reporting → Prepare ACC report**.
+1. Open **Reports → Prepare ACC report**.
 2. Choose inclusive dates (or a branch quarter) and optionally a branch.
 3. Select consented feedback. The list is paginated and selections are kept across pages.
 4. Review each copy and redact it if needed. The speaker type is taken from the saved feedback, not chosen here.

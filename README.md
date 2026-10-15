@@ -6,15 +6,17 @@ Built by COSC345 Group 4, University of Otago.
 
 ## Features
 
-- **Participants**: profiles, contact and emergency details, photo and GP consent, documents.
-- **Sessions and attendance**: plan classes, take the register, record absence reasons.
-- **Physical assessments**: chair stand, timed up-and-go and balance tests, compared quarter to quarter.
+- **Participants**: enrolment at the authorised branch, separate Details and Attendance history pages, consent, documents, deactivation and reactivation.
+- **Sessions and attendance**: all staff roles create sessions; Super Admins choose a branch and can filter national calendar/list views. Super Admins can mark, review, finalise and reopen attendance nationally; branch managers and instructors do the same within their own branch.
+- **Physical assessments**: chair stand, timed up-and-go and balance tests, with baseline/latest comparisons, history and trend charts.
 - **Reporting**: attendance and physical-testing statistics by branch and quarter, AI explanations, and ACC report drafts.
-- **Documents**: shared organisation and branch folders.
+- **Feedback**: quotes and short stories linked to a participant or session, with recorded speaker type and reporting consent.
+- **Staff accounts**: role and branch management, deactivation and reactivation with an audit trail.
+- **Documents**: shared organisation, branch and participant files.
 - **Help**: role-specific help articles and a help chatbot that answers from them.
 - **Audit log**: a record of who changed what.
 
-Three roles use the app: **kaimahi** (instructors), **branch managers** and **super admins**. Each one sees only what their role allows.
+Three roles use the app: **kaimahi** (instructors), **branch managers** and **super admins**. Each one sees only what their role allows. Super Admins work nationally; branch managers and instructors are restricted to their own branch. See the [permission summary](docs/overview/system-overview.md#roles-and-access).
 
 ## Tech stack
 
@@ -66,6 +68,8 @@ npm run dev
 ```
 
 Open <http://localhost:5173> and sign in as `superadmin1@example.com` with the password `TestPass123!`.
+
+The Help articles are available immediately. To update the help assistant’s knowledge after editing them, run `python manage.py build_help_index` from `backend/` with the configured LLM service reachable; see [Help chatbot setup](docs/setup/help-chatbot.md).
 
 ## Testing
 

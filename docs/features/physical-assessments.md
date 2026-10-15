@@ -28,6 +28,10 @@ The assessment date is used for date-range reporting. It can't be in the future 
 
 Completed assessments can't be reopened or corrected.
 
+## Baseline and latest results
+
+The participant Details page shows the earliest and latest completed assessments side by side, ordered by assessment date with completion/creation time as tie-breakers. Drafts are excluded. With one completed assessment, the latest column waits for a follow-up. Changes are latest minus baseline, in seconds or stands. Missing or incompatible outcomes display Not comparable; valid zero results remain zero. TUG comparisons also check walking-aid descriptions. The full history and exercise trend chart remain available. These are descriptive measurements, not clinical ratings.
+
 ## Access
 
 All three staff roles can record assessments. Instructors and branch managers see only assessments from their current branch for participants currently in that branch. Super admins see everything.

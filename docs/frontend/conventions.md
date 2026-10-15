@@ -20,9 +20,9 @@ frontend/src/
 
 Before writing anything new, check whether it already exists in `apis.js`, `utils/`, `components/` or `dashboard.css`.
 
-## One page per file, one role per page
+## Role-specific routes and shared screens
 
-A file in `views/` is one page at one URL for one role. Never put several roles' dashboards in a single file and switch between them with `v-if`. The router already decides who can see what.
+Keep dashboards role-specific. When the same workflow serves several roles, route them to one shared screen and derive its available actions and filters from the signed-in role. The backend remains the authority for access. For example, all Sessions routes share `views/Instructor/Sessions.vue` and `SessionDetail.vue`, and all Feedback routes use `views/Feedback.vue`. The folder name of a shared screen does not define its permissions.
 
 If a page goes past about 300 lines, look for parts you can pull out into components, such as a modal, a table or a side panel. `views/Instructor/Sessions.vue` is a good example. Its create form lives in `components/sessions/CreateSessionModal.vue`, which keeps the page itself short and easy to read.
 
@@ -32,9 +32,9 @@ When two or more roles need the same UI, don't copy the file into each role's fo
 
 Do this instead:
 
-1. Move the shared part into `components/<feature>/`.
-2. Use props for the parts that change between roles (which branch to show, whether the user can edit, whether to show a filter).
-3. Keep each role's view file small. It should mostly set up props and render the component.
+1. Reuse an existing shared view when the whole workflow is the same.
+2. Use `components/<feature>/` for reusable parts or for a shared screen wrapped by small role-specific views.
+3. Use props or existing role-derived capabilities for differences such as branch filters and editing access. Keep role restrictions on routes and enforce them again in the API.
 
 If you're about to copy more than about 20 lines from another view, stop and make a component.
 
@@ -76,13 +76,14 @@ error.value = e.response?.data?.detail ?? 'Could not create this session.'
 
 - Add every page to `router/index.js` with `meta: { requiresAuth: true, roles: SA }` (or `BM` or `IN`).
 - Load pages lazily: `component: () => import('@/views/SuperAdmin/Users.vue')`.
-- Route names start with the role: `sa-`, `bm-` or `in-`.
+- Role-specific route names start with `sa-`, `bm-` or `in-`. Shared routes such as `staff-detail`, `documents` and `help` retain their existing names.
+- Signed-in navigation labels, links and Administration groups live in `utils/nav.js`. Update that source when adding a destination.
 - Link by route name, not by typing the path: `{ name: 'in-session-detail', params: { id } }`.
 
 ## Styling
 
 - Wrap every logged-in page in `<div class="dash-page"><main class="content">`.
-- Use the classes in `dashboard.css` first: `page-header`, `page-subtitle`, `btn-primary`, `btn-cancel`, `pills`/`pill`, `data-table`, `status-badge`, `card`/`card-grid`, `modal-backdrop`/`modal`, `form-group`, `form-row`, `form-error`, `stat-grid`/`stat-tile`, `initials-avatar`, `loading-note`, `back-link`.
+- Use the classes in `dashboard.css` first: `page-header`, `page-subtitle`, `btn-primary`, `btn-cancel`, `btn-cancel btn-small btn-reactivate` / `btn-deactivate`, `pills`/`pill`, `data-table`, `status-badge`, `card`/`card-grid`, `modal-backdrop`/`modal`, `form-group`, `form-row`, `form-error`, `stat-grid`/`stat-tile`, `initials-avatar`, `loading-note`, `back-link`.
 - Styles that only one page needs go in that file's `<style scoped>`.
 - Every colour, font size, radius and shadow comes from a variable in `theme.css`, for example `var(--maroon)` or `var(--text-sm)`. Never write a hex code.
 - If a style is needed on more than one page, add it to `dashboard.css`. Don't create new global CSS files, and don't use inline `style="..."`.
