@@ -37,7 +37,7 @@ for (const role of roles) {
 }
 
 test('main rows stay short and only staff roles get an admin menu', () => {
-  for (const role of roles) assert.ok(NAV[role].links.length <= 5)
+  for (const role of roles) assert.ok(NAV[role].links.length <= (role === 'super_admin' ? 6 : 5))
   assert.ok(NAV.super_admin.admin && NAV.branch_manager.admin)
   assert.equal(NAV.instructor.admin, undefined)
   assert.ok(NAV.super_admin.admin.children.some(item => item.to === '/super-admin/users'))

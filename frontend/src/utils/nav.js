@@ -5,6 +5,7 @@ export const NAV = {
   super_admin: {
     links: [
       { label: 'Overview',  to: '/super-admin/overview' },
+      { label: 'Sessions',  to: '/super-admin/sessions' },
       { label: 'Kapa',      to: '/super-admin/branches' },
       { label: 'Kaumātua',  to: '/super-admin/participants' },
       { label: 'Reports',   to: '/super-admin/reporting' },

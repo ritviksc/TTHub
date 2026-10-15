@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
-import { listSessions } from '@/apis.js'
+import { listSessions, listBranches } from '@/apis.js'
 import { SESSION_PERIODS, formatSessionDate, isInPeriod } from '@/utils/sessions.js'
 import CreateSessionModal from '@/components/sessions/CreateSessionModal.vue'
 import SessionCalendar from '@/components/sessions/SessionCalendar.vue'
@@ -10,6 +10,8 @@ import { auth } from '@/stores/auth.js'
 const router = useRouter()
 
 const sessions = ref([])
+const branches = ref([])
+const branchFilter = ref('')
 const loading = ref(true)
 const loadError = ref(null)
 const period = ref('All')
@@ -18,18 +20,28 @@ const showCreate = ref(false)
 const createInitialDate = ref('')
 
 const isInstructor = computed(() => auth.user?.role === 'instructor')
-const canCreate = computed(() => ['instructor', 'branch_manager'].includes(auth.user?.role))
-const detailRouteName = computed(() => isInstructor.value ? 'in-session-detail' : 'bm-session-detail')
+const isSuperAdmin = computed(() => auth.user?.role === 'super_admin')
+const canCreate = computed(() => ['super_admin', 'instructor', 'branch_manager'].includes(auth.user?.role) && !loading.value && !loadError.value)
+const detailRouteName = computed(() => isSuperAdmin.value ? 'sa-session-detail' : isInstructor.value ? 'in-session-detail' : 'bm-session-detail')
 
+const branchSessions = computed(() => sessions.value.filter(session =>
+  !isSuperAdmin.value || !branchFilter.value || session.branch === branchFilter.value,
+))
 const visibleSessions = computed(() =>
-  sessions.value.filter(s => isInPeriod(s.date, period.value))
+  branchSessions.value.filter(s => isInPeriod(s.date, period.value))
 )
 
 /* ---- load ---- */
 
 async function load() {
+  loading.value = true
+  loadError.value = null
   try {
-    sessions.value = await listSessions()
+    const [sessionList, branchList] = await Promise.all([
+      listSessions(), isSuperAdmin.value ? listBranches() : Promise.resolve([]),
+    ])
+    sessions.value = sessionList
+    branches.value = branchList
   } catch (e) {
     loadError.value = 'Could not load sessions.'
   } finally {
@@ -50,6 +62,7 @@ function openSession(id) {
 }
 
 function openCreateModal(date = '') {
+  if (!canCreate.value) return
   createInitialDate.value = date
   showCreate.value = true
 }
@@ -72,7 +85,7 @@ function onCreated(session) {
       <div class="page-header">
         <div>
           <h1>Sessions</h1>
-          <p class="page-subtitle">Schedule sessions, view the calendar, and record participant attendance.</p>
+          <p class="page-subtitle">{{ isSuperAdmin ? 'View sessions and attendance across all branches.' : 'Schedule sessions, view the calendar, and record participant attendance.' }}</p>
         </div>
 
         <div class="header-actions">
@@ -101,13 +114,22 @@ function onCreated(session) {
         </div>
       </div>
 
-      <div v-if="loadError" class="form-error">{{ loadError }}</div>
+      <div v-if="isSuperAdmin" class="form-group branch-filter">
+        <label for="session-branch-filter">Branch</label>
+        <select id="session-branch-filter" v-model="branchFilter" :disabled="loading || !!loadError">
+          <option value="">All branches</option>
+          <option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.name }}</option>
+        </select>
+      </div>
+
+      <div v-if="loadError" class="form-error" role="alert">{{ loadError }} <button class="btn-cancel" @click="load">Retry</button></div>
       <p v-else-if="loading" class="loading-note">Loading sessions…</p>
 
       <!-- Calendar View -->
       <SessionCalendar
         v-else-if="viewMode === 'calendar'"
-        :sessions="sessions"
+        :sessions="branchSessions"
+        :show-branch="isSuperAdmin"
         :can-create="canCreate"
         @select-session="openSession"
         @create-session="openCreateModal"
@@ -127,13 +149,13 @@ function onCreated(session) {
         </div>
 
         <div v-if="!visibleSessions.length" class="empty">
-          <template v-if="sessions.length">
+          <template v-if="branchSessions.length">
             <h2>No sessions in this period</h2>
             <p>Try a wider filter to see older sessions.</p>
           </template>
           <template v-else>
             <h2>No sessions yet</h2>
-            <p>Create your first session to start recording attendance.</p>
+            <p>{{ isSuperAdmin ? 'There are no sessions recorded for the selected branch scope.' : 'Create your first session to start recording attendance.' }}</p>
             <button v-if="canCreate" class="btn-primary" @click="openCreateModal()">+ Create session</button>
           </template>
         </div>
@@ -142,6 +164,7 @@ function onCreated(session) {
           <thead>
             <tr>
               <th>Activity</th>
+              <th v-if="isSuperAdmin">Branch</th>
               <th>Date</th>
               <th>Time</th>
               <th>Attendance</th>
@@ -158,6 +181,7 @@ function onCreated(session) {
               <td>
                 <RouterLink :to="sessionRoute(session.id)" class="session-name">{{ session.activity }}</RouterLink>
               </td>
+              <td v-if="isSuperAdmin">{{ session.branch_name }}</td>
               <td>{{ formatSessionDate(session.date) }}</td>
               <td>{{ session.time }}</td>
               <td class="attendance-count">✓ {{ session.present_count }} / {{ session.roster_count }} present</td>
@@ -170,6 +194,8 @@ function onCreated(session) {
       <CreateSessionModal
         v-if="canCreate && showCreate"
         :initial-date="createInitialDate"
+        :initial-branch="isSuperAdmin ? branchFilter : ''"
+        :branches="branches"
         @close="showCreate = false"
         @created="onCreated"
       />
@@ -178,6 +204,8 @@ function onCreated(session) {
 </template>
 
 <style scoped>
+.branch-filter { max-width: 280px; }
+
 .header-actions {
   display: flex;
   align-items: center;

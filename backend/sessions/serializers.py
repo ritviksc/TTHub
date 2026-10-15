@@ -75,10 +75,17 @@ class SessionDetailSerializer(SessionListSerializer):
 
 
 class SessionCreateSerializer(serializers.ModelSerializer):
+    branch_name = serializers.CharField(source="branch.name", read_only=True)
+
     class Meta:
         model = ProgrammeSession
-        fields = ["id", "date", "time", "activity"]
+        fields = ["id", "branch", "branch_name", "date", "time", "activity"]
         read_only_fields = ["id"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.context["request"].user.role != UserAccount.Role.SUPER_ADMIN:
+            self.fields["branch"].read_only = True
 
     def validate_date(self, value):
         # The programme's local day can be one day ahead of UTC.
@@ -88,12 +95,13 @@ class SessionCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         user = self.context["request"].user
-        if user.role not in (UserAccount.Role.INSTRUCTOR, UserAccount.Role.BRANCH_MANAGER):
-            raise serializers.ValidationError(
-                {"detail": "Only an Instructor or Branch Manager can create a session."}
-            )
+        if user.role not in (UserAccount.Role.SUPER_ADMIN, UserAccount.Role.INSTRUCTOR, UserAccount.Role.BRANCH_MANAGER):
+            raise serializers.ValidationError({"detail": "Only authorised staff can create a session."})
+        if user.role == UserAccount.Role.SUPER_ADMIN:
+            return attrs
         if not user.branch_id:
             raise serializers.ValidationError({"detail": "User must belong to a branch."})
+        attrs["branch"] = user.branch
         return attrs
 
 

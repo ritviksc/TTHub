@@ -20,6 +20,7 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  showBranch: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['select-session', 'create-session'])
@@ -201,11 +202,11 @@ function onSessionClick(session) {
               v-for="session in sessionsByDate[cell.date].slice(0, 2)"
               :key="session.id"
               :class="['session-pill', { 'pill-finalised': session.attendance_finalised }]"
-              :title="`${session.time} · ${session.activity}`"
+              :title="`${showBranch ? session.branch_name + ' · ' : ''}${session.time} · ${session.activity}`"
               @click.stop="onSessionClick(session)"
             >
               <span class="pill-time">{{ session.time ? session.time.slice(0, 5) : '' }}</span>
-              <span class="pill-activity">{{ session.activity }}</span>
+              <span class="pill-activity">{{ showBranch ? `${session.branch_name} · ${session.activity}` : session.activity }}</span>
             </div>
 
             <div
@@ -252,6 +253,7 @@ function onSessionClick(session) {
             </div>
 
             <div class="card-title">{{ session.activity }}</div>
+            <div v-if="showBranch" class="card-branch">{{ session.branch_name }}</div>
 
             <div class="card-footer">
               <div v-if="session.attendance_finalised" class="status-finalised">
@@ -273,15 +275,7 @@ function onSessionClick(session) {
           <div class="empty-icon">📅</div>
           <h4>No sessions scheduled</h4>
           <p>There are no sessions recorded for this day.</p>
-          <button
-            v-if="canCreate && !isSelectedDatePast"
-            type="button"
-            class="btn-secondary"
-            @click="onAddSessionForDate(selectedDate)"
-          >
-            + Add session for this day
-          </button>
-          <span v-else-if="isSelectedDatePast" class="past-note">
+          <span v-if="isSelectedDatePast" class="past-note">
             Past dates cannot have new sessions scheduled.
           </span>
         </div>
@@ -293,7 +287,7 @@ function onSessionClick(session) {
 <style scoped>
 .calendar-container {
   display: grid;
-  grid-template-columns: 1fr 360px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 24px;
   margin-top: 16px;
   align-items: start;
@@ -301,6 +295,7 @@ function onSessionClick(session) {
 
 /* Calendar Main Grid Panel */
 .calendar-main {
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
@@ -388,7 +383,7 @@ function onSessionClick(session) {
 /* Weekday header row */
 .weekday-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -418,7 +413,7 @@ function onSessionClick(session) {
 /* Days grid */
 .days-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -653,6 +648,12 @@ function onSessionClick(session) {
   line-height: 1.3;
 }
 
+.card-branch {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
 .card-footer {
   display: flex;
   justify-content: space-between;
@@ -703,11 +704,6 @@ function onSessionClick(session) {
   color: var(--text-muted);
   margin: 0 0 16px;
   line-height: 1.4;
-}
-
-.agenda-empty .btn-secondary {
-  font-size: var(--text-xs);
-  padding: 8px 14px;
 }
 
 .past-note {

@@ -21,8 +21,9 @@ const loadError = ref(null)
 const saveError = ref(null)
 const statusFilter = ref('all')
 const isInstructor = computed(() => auth.user?.role === 'instructor')
+const isSuperAdmin = computed(() => auth.user?.role === 'super_admin')
 const canRecordAttendance = computed(() => ['instructor', 'branch_manager'].includes(auth.user?.role))
-const listRouteName = computed(() => isInstructor.value ? 'in-sessions' : 'bm-sessions')
+const listRouteName = computed(() => isSuperAdmin.value ? 'sa-sessions' : isInstructor.value ? 'in-sessions' : 'bm-sessions')
 const attendanceModeRoute = computed(() => ({
   name: isInstructor.value ? 'in-attendance-mode' : 'bm-attendance-mode',
   params: { id: sessionId },
@@ -122,6 +123,7 @@ async function handleDelete() {
             <h1>{{ session.activity }}</h1>
             <p class="page-subtitle">
               {{ formatSessionDate(session.date) }} · {{ session.time }} · {{ session.activity }}
+              <template v-if="isSuperAdmin"> · {{ session.branch_name }}</template>
             </p>
           </div>
           <button
@@ -134,7 +136,8 @@ async function handleDelete() {
         </div>
 
         <p class="page-subtitle">
-          {{ session.attendance_finalised ? 'Attendance finalised. Use Review attendance to edit absence reasons, or reopen attendance to change who was present.' : 'Attendance not finalised. Use Done in attendance mode to finalise.' }}
+          <template v-if="isSuperAdmin">{{ session.attendance_finalised ? 'Attendance finalised.' : 'Attendance not finalised. The register may still change.' }}</template>
+          <template v-else>{{ session.attendance_finalised ? 'Attendance finalised. Use Review attendance to edit absence reasons, or reopen attendance to change who was present.' : 'Attendance not finalised. Use Done in attendance mode to finalise.' }}</template>
         </p>
 
         <div class="stat-grid">
@@ -196,7 +199,7 @@ async function handleDelete() {
                   <option v-for="reason in ABSENCE_REASONS" :key="reason.value" :value="reason.value">{{ reason.label }}</option>
                 </select>
                 <input
-                  v-if="record.absence_reason === 'other'"
+                  v-if="record.absence_reason === 'other' && canRecordAttendance"
                   :disabled="!canRecordAttendance || session.attendance_finalised"
                   :value="record.absence_reason_other"
                   class="other-reason"

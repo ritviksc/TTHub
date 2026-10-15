@@ -50,8 +50,8 @@ class SessionListCreateView(generics.ListCreateAPIView):
     @transaction.atomic
     def perform_create(self, serializer):
         user = self.request.user
-        session = serializer.save(branch=user.branch, created_by=user)
-        roster = Participant.objects.filter(branch=user.branch, is_active=True)
+        session = serializer.save(created_by=user)
+        roster = Participant.objects.filter(branch=session.branch, is_active=True)
         AttendanceRecord.objects.bulk_create(
             [AttendanceRecord(session=session, participant=participant) for participant in roster]
         )

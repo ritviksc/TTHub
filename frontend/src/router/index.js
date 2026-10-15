@@ -88,6 +88,16 @@ const router = createRouter({
         { path: '/super-admin', redirect: '/super-admin/overview' },
         { path: '/super-admin/dashboard', redirect: '/super-admin/overview' },
         {
+            path: '/super-admin/sessions', name: 'sa-sessions',
+            component: () => import('@/views/Instructor/Sessions.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
+            path: '/super-admin/sessions/:id', name: 'sa-session-detail',
+            component: () => import('@/views/Instructor/SessionDetail.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
             path: '/super-admin/users', name: 'sa-users',
             component: () => import('@/views/SuperAdmin/Users.vue'),
             meta: { requiresAuth: true, roles: SA },

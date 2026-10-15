@@ -97,7 +97,7 @@ class SessionCreationTests(TestCase):
                 self.assertEqual(session.created_by_id, user.pk)
                 self.assertEqual(list(session.attendance.values_list("participant_id", flat=True)), [self.participant.pk])
 
-    def test_unassigned_staff_and_super_admin_cannot_create_sessions(self):
+    def test_unassigned_staff_and_super_admin_without_selected_branch_cannot_create_sessions(self):
         from django.utils import timezone
         for role in UserAccount.Role.values:
             with self.subTest(role=role):
@@ -110,6 +110,47 @@ class SessionCreationTests(TestCase):
                     "date": timezone.localdate(), "time": "09:00", "activity": "Class",
                 }, format="json")
                 self.assertEqual(response.status_code, 400, response.data)
+        self.assertFalse(ProgrammeSession.objects.exists())
+        self.assertFalse(AttendanceRecord.objects.exists())
+
+    def test_super_admin_creates_in_selected_branch_with_only_its_active_roster(self):
+        from django.utils import timezone
+        admin = UserAccount.objects.create_user(username="national", email="national@example.nz", role="super_admin")
+        Participant.objects.create(first_name="Inactive", last_name="Foreign", branch=self.other, is_active=False)
+        self.client.force_authenticate(admin)
+        for branch in (self.branch, self.other):
+            with self.subTest(branch=branch):
+                response = self.client.post("/api/sessions/", {
+                    "date": timezone.localdate(), "time": "09:00", "activity": "Class",
+                    "branch": str(branch.pk), "created_by": "forged",
+                }, format="json")
+                self.assertEqual(response.status_code, 201, response.data)
+                self.assertEqual(response.json()["branch"], str(branch.pk))
+                self.assertEqual(response.data["branch_name"], branch.name)
+                session = ProgrammeSession.objects.get(pk=response.data["id"])
+                self.assertEqual(session.created_by_id, admin.pk)
+                self.assertEqual(session.branch_id, branch.pk)
+                self.assertEqual(set(session.attendance.values_list("participant_id", flat=True)),
+                                 set(Participant.objects.filter(branch=branch, is_active=True).values_list("pk", flat=True)))
+
+    def test_super_admin_branch_selection_must_be_a_real_branch_and_date_cannot_be_past(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        from uuid import uuid4
+        admin = UserAccount.objects.create_user(username="national", email="national@example.nz", role="super_admin")
+        self.client.force_authenticate(admin)
+        for branch in (None, "", "not-a-uuid", str(uuid4())):
+            with self.subTest(branch=branch):
+                response = self.client.post("/api/sessions/", {
+                    "date": timezone.localdate(), "time": "09:00", "activity": "Class", "branch": branch,
+                }, format="json")
+                self.assertEqual(response.status_code, 400, response.data)
+                self.assertIn("branch", response.data)
+        response = self.client.post("/api/sessions/", {
+            "date": timezone.localdate() - timedelta(days=1), "time": "09:00", "activity": "Class", "branch": str(self.branch.pk),
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("date", response.data)
         self.assertFalse(ProgrammeSession.objects.exists())
         self.assertFalse(AttendanceRecord.objects.exists())
 
