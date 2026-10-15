@@ -5,29 +5,24 @@ order: 10
 ---
 ## The menu
 
-The menu shows your kapa's name ("Kapa: …") and these items:
+You work within your own kapa. The main menu contains:
 
-- **Overview**: your kapa's dashboard and reporting quarter settings.
-- **Sessions**: your kapa's sessions and their registers (view only).
-- **Kaumātua**: participants at your kapa, their profiles, consent and physical assessments.
-- **Kaimahi**: your instructors. Add, edit and deactivate kaimahi accounts.
-- **Feedback**: participant voice and quotes for reporting.
-- **Reports**: attendance and physical testing statistics, with AI explanations.
-- **Administration**: your kapa's audit log.
-- **Documents**: organisation files and your kapa's files.
-- **Help**: this page.
+- **Overview**: participant and session figures, follow-up alerts and reporting quarter settings.
+- **Sessions**: create sessions, use the calendar or list, and mark, review or reopen attendance.
+- **Kaumātua**: enrol participants and manage their details, consent, physical assessments and attendance history.
+- **Reports**: attendance and physical-testing statistics with AI explanations.
+- **Feedback**: record quotes or short stories with their speaker type and reporting consent.
+- **Administration**: open **Kaimahi**, **Audit log** or **Documents**.
+- **Help**: these articles and the help assistant.
 
-Everything you see is limited to your own kapa.
+Open your account menu at the top right to change theme or log out.
 
-## Reading the Kaimahi help
+## Managing people
 
-You can also read the Kaimahi help, so you can support your kaimahi with sessions, attendance and physical assessments.
+In **Administration → Kaimahi**, create instructor accounts and edit, deactivate or reactivate instructors assigned to your kapa. In **Kaumātua**, enrol participants and deactivate or reactivate their records without losing history. The Details and Attendance history buttons open separate participant pages.
 
-## What branch managers cannot do
+## Limits of this role
 
-- create or delete sessions, take attendance or finalise registers (kaimahi do this)
-- enrol a new kaumātua (a super admin does this)
-- reactivate a kaumātua or a kaimahi
-- change anyone's role or kapa, or create branch manager or super admin accounts
-- see other kapa, prepare ACC reports, open past reports, or edit AI explanations (super admins do this)
-- edit or delete feedback once it is saved
+Branch managers cannot change staff roles or kapa, create branch manager or super admin accounts, delete sessions, or access another kapa’s records. ACC preparation, past report history and editing generated report narratives are Super Admin features. Saved feedback cannot currently be edited or deleted.
+
+You can also read the Kaimahi help for the shared session, attendance and physical-assessment workflows.

@@ -82,7 +82,7 @@ class SessionDetailView(generics.RetrieveDestroyAPIView):
 
 
 class AttendanceRecordDetailView(generics.GenericAPIView):
-    permission_classes = [IsInstructor | IsBranchManager]
+    permission_classes = ANY_STAFF
     serializer_class = AttendanceRecordSerializer
 
     def get_object(self):
@@ -97,8 +97,8 @@ class AttendanceRecordDetailView(generics.GenericAPIView):
     def patch(self, request, *args, **kwargs):
         # Serialise edits and finalisation against the same session row.
         session = get_object_or_404(
-            ProgrammeSession.objects.select_for_update(),
-            pk=self.kwargs["pk"], branch=request.user.branch,
+            sessions_for(request.user).select_for_update(),
+            pk=self.kwargs["pk"],
         )
         attendance = self.get_object()
         serializer = self.get_serializer(attendance, data=request.data, partial=True)
@@ -114,14 +114,14 @@ class AttendanceRecordDetailView(generics.GenericAPIView):
 
 
 class AttendanceFinalisationView(generics.GenericAPIView):
-    permission_classes = [IsInstructor | IsBranchManager]
+    permission_classes = ANY_STAFF
     serializer_class = AttendanceFinalisationSerializer
 
     @transaction.atomic
     def patch(self, request, pk):
         session = get_object_or_404(
-            ProgrammeSession.objects.select_for_update(),
-            pk=pk, branch=request.user.branch,
+            sessions_for(request.user).select_for_update(),
+            pk=pk,
         )
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

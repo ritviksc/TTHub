@@ -1,11 +1,11 @@
 ---
-title: Changing or deactivating a staff account
+title: Editing and restoring staff accounts
 section: Staff
 order: 21
 ---
 ## Opening a staff member
 
-In **Users**, select a person's name. Their page shows their name, role, kapa and status, and an **Access** panel that explains what their role can see and whether they can sign in.
+In **Administration → Users**, select a person's name. Their page shows their name, role, kapa and status, and an **Access** panel that explains what their role can see and whether they can sign in.
 
 ## Editing details, role or kapa
 
@@ -21,4 +21,6 @@ You can also move people between kapa from the kapa's page with **Assign** (see 
 
 Select **Deactivate** and confirm. They can no longer sign in, and their records are kept. You can also select **Deactivate** in the users list.
 
-Deactivation cannot be undone in the app: there is no reactivate button. Staff accounts cannot be deleted either, and a deactivated account still counts as attached to its kapa (which stops that kapa being deleted).
+For an inactive account, select **Reactivate** in the users list or on its details page, then confirm. The user can sign in again with their existing credentials. Reactivation keeps their role, kapa and saved work. In the users list, Reactivate has a green outline and Deactivate a red outline, with matching sizing and theme colours.
+
+Staff accounts cannot be deleted. A deactivated account still counts as attached to its kapa, which stops that kapa being deleted. Your own account is excluded from the users list and cannot be managed through these actions.

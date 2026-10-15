@@ -121,7 +121,7 @@ test('branch staff keep their existing scoped session pages without fetching nat
   }
 })
 
-test('national session details show branch and absence reasons with no attendance or delete actions', async () => {
+test('national session details expose attendance and review with finalisation locks and no delete action', async () => {
   const context = vm.createContext({
     ref, computed, onMounted() {}, RouterLink: {}, ...sessionUtils,
     auth: { user: { role: 'super_admin' } },
@@ -134,8 +134,9 @@ test('national session details show branch and absence reasons with no attendanc
     { id: 'r1', participant_id: 'p1', name: 'Participant One', status: 'absent', absence_reason: 'transport_issue' },
     { id: 'r2', participant_id: 'p2', name: 'Participant Two', status: 'absent', absence_reason: 'other', absence_reason_other: 'Family commitment' },
   ] }
-  assert.equal(page.canRecordAttendance.value, false)
+  assert.equal(page.canRecordAttendance.value, true)
   assert.equal(page.listRouteName.value, 'sa-sessions')
+  assert.equal(page.attendanceModeRoute.value.name, 'sa-attendance-mode')
   for (const finalised of [false, true]) {
     page.session.value.attendance_finalised = finalised
     const app = createSSRApp({ setup: () => ({ ...page }), render: compile(descriptor.template.content) })
@@ -144,11 +145,11 @@ test('national session details show branch and absence reasons with no attendanc
     assert.match(html, /Hills/)
     assert.match(html, /Transport issue/)
     assert.match(html, /Family commitment/)
-    assert.equal(html.includes('Review attendance'), false)
-    assert.equal(html.includes('Attendance mode'), false)
+    assert.equal(html.includes('Review attendance'), finalised)
+    assert.equal(html.includes('Attendance mode'), !finalised)
     assert.equal(html.includes('Delete session'), false)
-    assert.equal(html.includes('<input'), false)
-    assert.match(html, /<select disabled/)
+    assert.equal(html.includes('<select disabled'), finalised)
+    assert.equal(page.attendanceModeRoute.value.query.review, finalised ? '1' : undefined)
   }
 })
 

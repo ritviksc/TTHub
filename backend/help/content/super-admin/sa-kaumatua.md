@@ -20,6 +20,6 @@ A super admin's profile page works like a branch manager's:
 - record **Photo consent** before adding a photo
 - upload, download, rename and delete documents
 - start or continue a physical assessment
-- see their **Attendance history**
+- use the **Details** and **Attendance history** buttons to move between the two pages
 
-A kaumātua cannot be moved to another kapa from their profile, and there is no reactivate or delete button. **Deactivate participant** keeps their history but stops them being added to new sessions.
+A kaumātua cannot be moved to another kapa from their profile, and there is no delete button. **Deactivate participant** then **Confirm deactivation** keeps their history but stops them being added to new sessions. To restore an inactive person, select **Reactivate participant**, then **Confirm reactivation** in **Participant status**. They can be included in new sessions again; existing rosters and saved history stay intact.

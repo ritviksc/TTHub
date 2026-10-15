@@ -9,7 +9,7 @@ const route = useRoute()
 const router = useRouter()
 const sessionId = route.params.id
 const detailRoute = computed(() => ({
-  name: auth.user?.role === 'branch_manager' ? 'bm-session-detail' : 'in-session-detail',
+  name: auth.user?.role === 'super_admin' ? 'sa-session-detail' : auth.user?.role === 'branch_manager' ? 'bm-session-detail' : 'in-session-detail',
   params: { id: sessionId },
 }))
 
@@ -140,7 +140,7 @@ function participantName(record) {
         <div class="page-header">
           <div>
             <h1>{{ reviewing ? 'Review attendance' : 'Attendance mode' }}</h1>
-            <p class="page-subtitle">{{ session.activity }} · {{ formatSessionDate(session.date) }}</p>
+            <p class="page-subtitle">{{ session.activity }} · {{ formatSessionDate(session.date) }}<template v-if="session.branch_name"> · {{ session.branch_name }}</template></p>
           </div>
           <div class="attendance-actions">
             <button v-if="session.attendance_finalised" class="btn-cancel" :disabled="saving" @click="setFinalised(false)">

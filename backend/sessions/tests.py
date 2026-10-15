@@ -227,13 +227,10 @@ class AttendanceFinalisationTests(TestCase):
         self.assertEqual(self.record.status, "absent")
         self.assertFalse(self.session.attendance_finalised)
 
-    def test_super_admin_and_anonymous_users_cannot_change_attendance(self):
-        admin = UserAccount.objects.create_user(username="admin", email="admin@example.com", role="super_admin", branch=self.branch)
-        for user in (admin, None):
-            with self.subTest(user=user):
-                self.client.force_authenticate(user)
-                self.assertEqual(self.client.patch(self.state_url, {"attendance_finalised": True}, format="json").status_code, 403)
-                self.assertEqual(self.client.patch(self.record_url, {"status": "present"}, format="json").status_code, 403)
+    def test_anonymous_users_cannot_change_attendance(self):
+        self.client.force_authenticate(None)
+        self.assertEqual(self.client.patch(self.state_url, {"attendance_finalised": True}, format="json").status_code, 403)
+        self.assertEqual(self.client.patch(self.record_url, {"status": "present"}, format="json").status_code, 403)
 
     def test_state_is_required(self):
         self.assertEqual(self.client.patch(self.state_url, {}, format="json").status_code, 400)

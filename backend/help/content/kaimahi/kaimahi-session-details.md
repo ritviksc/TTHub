@@ -18,4 +18,4 @@ Use the filters **All**, **Present** and **Absent** to narrow the table. Select 
 
 While the register is not finalised, you can change a person's status (Present or Absent) and absence reason straight from the table. Changes save immediately. For **Other**, type a description; the reason is saved once there is text.
 
-When the register is finalised these controls are greyed out. Select **Review attendance** and then **Reopen attendance** to make corrections.
+When the register is finalised, the table controls are read-only. Select **Review attendance** to edit absence reasons without reopening. To change present/absent status, select **Reopen attendance** from that review, make the corrections and select **Done**. Kaimahi and branch managers can do this within their kapa; super admins can do it for any kapa. The same finalisation and reopening rules apply to every role.

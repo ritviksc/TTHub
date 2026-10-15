@@ -49,6 +49,29 @@ test('review saves absence reasons without reopening finalised attendance', asyn
   assert.deepEqual(events, ['save'])
 })
 
+test('super admin can mark and finalise, then review and reopen with national navigation', async () => {
+  const marking = await mount({ role: 'super_admin' })
+  assert.equal(marking.page.detailRoute.value.name, 'sa-session-detail')
+  await marking.page.toggle(marking.record)
+  assert.equal(marking.record.status, 'present')
+  await marking.page.setFinalised(true)
+  assert.equal(marking.destinations[0].name, 'sa-session-detail')
+
+  const review = await mount({ role: 'super_admin', review: true, finalised: true })
+  review.page.reasonDrafts.value.record.absence_reason = 'transport_issue'
+  await review.page.saveReason(review.record)
+  assert.equal(review.page.session.value.attendance_finalised, true)
+  assert.equal(review.record.status, 'absent')
+  await review.page.setFinalised(false)
+  assert.equal(review.page.reviewing.value, false)
+  const app = createSSRApp({ setup: () => ({ ...review.page }), render: compile(descriptor.template.content) })
+  app.component('RouterLink', { render: () => null })
+  assert.equal((await renderToString(app)).includes('class="absence-form"'), false)
+  await review.page.toggle(review.record)
+  await review.page.setFinalised(true)
+  assert.equal(review.destinations[0].name, 'sa-session-detail')
+})
+
 test('Done saves Other and its explanation before finalising', async () => {
   const { page, events, requests } = await mount({ review: true, finalised: true })
   Object.assign(page.reasonDrafts.value.record, { absence_reason: 'other', absence_reason_other: ' Family commitment ' })

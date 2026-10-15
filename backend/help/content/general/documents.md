@@ -13,7 +13,7 @@ There are three places for files:
 
 ## Uploading and organising files
 
-Open **Documents** in the menu. The sidebar shows **Organisation** and your kapa. A super admin can switch kapa with **Change ▾**.
+Kaimahi open **Documents** in the main menu. Branch managers and super admins open **Administration → Documents**. The sidebar shows **Organisation** and your kapa. A super admin can switch kapa with **Change ▾**.
 
 Select **Upload** to add one or more files, or drag files onto the list. Select a folder to open it, or select a file to download it. Each row has a **⋯** menu with Rename, Move and Delete. You only see that menu if you are allowed to use it.
 

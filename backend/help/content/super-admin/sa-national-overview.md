@@ -5,11 +5,11 @@ order: 11
 ---
 ## What the overview shows
 
-Open **National overview**. The tiles count **Branches**, **Active participants**, **Instructors**, **Branch managers** and **Regions covered**. Staff tiles only count active accounts.
+Open **Overview**. The tiles count **Branches**, **Active participants**, **Instructors**, **Branch managers** and **Regions covered**. Staff tiles only count active accounts.
 
 **Participants by region** shows each region's number of kapa and participants. Kapa with no region are grouped as "Unspecified". **Largest branches** lists the six biggest kapa with their manager (or "No manager") and number of kaimahi; select one to open it, or select **View all branches →**.
 
-Attendance and questionnaire figures are not shown here yet. Use **Reporting** for attendance.
+Attendance and questionnaire figures are not shown here yet. Use **Reports** for attendance and physical statistics, or **Sessions** to browse registers by branch. The overview does not yet combine live attendance, physical-testing and enrolment measures in one dashboard.
 
 ## Needs attention
 

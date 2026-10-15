@@ -5,7 +5,7 @@ order: 40
 ---
 ## The kaimahi list
 
-Open **Kaimahi** to see the instructors at your kapa. Search by name or email, and filter by **All**, **Active** or **Inactive**. The table shows each person's email, status and **Sessions led** (how many sessions they created).
+Open **Administration → Kaimahi** to see the instructors at your kapa. Search by name or email, and filter by **All**, **Active** or **Inactive**. The table shows each person's email, status and **Sessions led** (how many sessions they created).
 
 ## Adding a kaimahi
 
@@ -22,4 +22,4 @@ Select their name, then **Edit details**. You can change their first name, last 
 
 ## Deactivating a kaimahi
 
-Select **Deactivate** in the list, or on their page, and confirm. They can no longer sign in, and the sessions they ran are kept. There is no reactivate button, so ask a super admin if you deactivated someone by mistake.
+Select **Deactivate** in the list, or on their page, and confirm. They can no longer sign in, and the sessions they ran are kept. For an inactive account, select **Reactivate** in the list or on their details page and confirm. They can sign in again with their existing credentials, and their saved work is preserved. In the list, the matching outline buttons are green for Reactivate and red for Deactivate; their colours adapt to the selected theme. Branch managers can manage only instructors assigned to their own kapa.

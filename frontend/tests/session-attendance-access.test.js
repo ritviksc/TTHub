@@ -12,7 +12,7 @@ const { descriptor } = parse(readFileSync(new URL('../src/views/Instructor/Sessi
 const compiled = compileScript(descriptor, { id: 'session-attendance-access-test' }).content
   .replace(/^import[\s\S]*?from ['"][^'"]+['"];?$/gm, '').replace('export default', 'const component =')
 
-for (const [role, prefix] of [['instructor', 'in'], ['branch_manager', 'bm']]) {
+for (const [role, prefix] of [['instructor', 'in'], ['branch_manager', 'bm'], ['super_admin', 'sa']]) {
   test(`${role} can enter attendance mode and sees each absence reason once`, async () => {
     const context = vm.createContext({
       ref, computed, onMounted() {}, RouterLink: {}, ATTENDANCE_STATUSES, ABSENCE_REASONS,
@@ -54,7 +54,7 @@ test('actual attendance routes restrict each role to its own pages', () => {
   const source = readFileSync(new URL('../src/router/index.js', import.meta.url), 'utf8')
     .replace(/^import .*$/gm, '').replace('export default router', 'this.router = router')
   vm.runInContext(source, context)
-  for (const [role, prefix, path] of [['branch_manager', 'bm', 'branch-manager'], ['instructor', 'in', 'instructor']]) {
+  for (const [role, prefix, path] of [['branch_manager', 'bm', 'branch-manager'], ['instructor', 'in', 'instructor'], ['super_admin', 'sa', 'super-admin']]) {
     const route = context.router.routes.find(route => route.name === `${prefix}-attendance-mode`)
     assert.equal(route.path, `/${path}/sessions/:id/attendance`)
     assert.equal(route.meta.requiresAuth, true)

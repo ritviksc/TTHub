@@ -5,7 +5,7 @@ order: 31
 ---
 ## Opening a profile
 
-Open **Kaumātua** and select a name. The profile has two tabs: **Details** and **Attendance history**. The Details tab has the person's physical assessments, their details form, consent, documents and status.
+Open **Kaumātua** and select a name. The **Details** and **Attendance history** buttons open separate pages. The Details page has the person's physical assessments, their details form, consent, documents and status.
 
 ## Editing details
 
@@ -25,4 +25,8 @@ In the **Documents** section, choose a file and select **Upload**. You can uploa
 
 ## Deactivating a kaumātua
 
-If someone has stopped attending, use **Deactivate participant** in the **Participant status** section, then **Confirm deactivation**. They are no longer added to new sessions, and their attendance history and results are kept. There is no reactivate button, so check with your branch manager first.
+If someone has stopped attending, use **Deactivate participant** in the **Participant status** section, then **Confirm deactivation**. They are no longer added to new sessions, and their attendance history and results are kept.
+
+## Reactivating a kaumātua
+
+Open the inactive person’s **Details** page. In **Participant status**, select **Reactivate participant**, then **Confirm reactivation**. They can be included in new sessions again. Their saved history is preserved, and existing session rosters are not changed. All staff roles can reactivate participants they are allowed to access.

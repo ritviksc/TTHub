@@ -5,7 +5,7 @@ order: 51
 ---
 ## Finding a past report
 
-From **Reporting**, select **View past attendance reports**, **View past physical-test reports** or **View past ACC reports**. Reports from every administrator are listed newest first, with the reporting period, kapa (or "All branches"), when it was generated and by whom. Select **Open report**.
+From **Reports**, select **View past attendance reports**, **View past physical-test reports** or **View past ACC reports**. Reports from every administrator are listed newest first, with the reporting period, kapa (or "All branches"), when it was generated and by whom. Select **Open report**.
 
 Only reports with an AI explanation or ACC draft are saved. Viewing statistics alone does not create a past report.
 

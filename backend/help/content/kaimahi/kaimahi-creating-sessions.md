@@ -5,7 +5,7 @@ order: 20
 ---
 ## Finding sessions
 
-Open **Sessions** in the menu. The table lists your kapa's sessions with their activity, date, time and attendance (for example "✓ 12 / 14 present"). Use the filters **This month**, **This quarter** or **All** to narrow the list. Select a row to open the session.
+Open **Sessions** in the menu. Switch between **Calendar** and **List**. The list shows your kapa's sessions with their activity, date, time and attendance (for example "✓ 12 / 14 present"). Use the filters **This month**, **This quarter** or **All** to narrow the list. Select a row to open the session.
 
 ## Creating a new session
 
@@ -15,7 +15,7 @@ Open **Sessions** in the menu. The table lists your kapa's sessions with their a
 
 The date can be today or later, but not in the past ("Session date cannot be in the past.").
 
-Only kaimahi can create sessions. Branch managers and super admins can view sessions but not create them.
+Kaimahi and branch managers create sessions at their own kapa. Super admins can also create sessions and must select the kapa. In the calendar, select a day and use the blue **+ Add session** button, or use a day’s quick-add button for today or a future date.
 
 ## Who is on the roster
 

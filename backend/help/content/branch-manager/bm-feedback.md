@@ -10,7 +10,7 @@ Open **Feedback** to see kaumātua, kaimahi and whānau voices, stories and quot
 ## Recording a new entry
 
 1. Select **+ New entry**.
-2. Type the **Quote / Feedback text**.
+2. Type the **Quote / short story**.
 3. Select **Who gave this feedback?**: Kaumātua, Kaimahi, Whānau or Unknown. Record the original speaker's type; choose Unknown if it is not known.
 4. Choose the **Related kaumātua**, the **Session**, or both. At least one is required, and they must be from your kapa. These identify what the feedback relates to; the speaker type is recorded separately.
 5. Enter the **Date recorded**. It cannot be in the future.

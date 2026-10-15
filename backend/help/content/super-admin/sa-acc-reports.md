@@ -5,7 +5,7 @@ order: 52
 ---
 ## 1. Choose the period and load feedback
 
-Open **Reporting** → **Prepare ACC report**. Set **From** and **To** (both included), choose a kapa or all branches, or use a quarter. Select **Load feedback**.
+Open **Reports** → **Prepare ACC report**. Set **From** and **To** (both included), choose a kapa or all branches, or use a quarter. Select **Load feedback**.
 
 Only feedback with recorded reporting consent is listed, 20 per page. If there is none, the page says no consented feedback was recorded for that period.
 

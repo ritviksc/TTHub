@@ -5,7 +5,7 @@ order: 40
 ---
 ## Starting an assessment
 
-Open **Kaumātua**, select the person, and find the physical assessment section on the **Details** tab. Select **Start physical assessment**. If a draft already exists, select **Continue assessment** instead. Each person can only have one draft at a time, and inactive kaumātua cannot be assessed.
+Open **Kaumātua**, select the person, and find the physical assessment section on the **Details** tab. Select **Start physical assessment**. If a draft already exists, select **Continue assessment** instead. Each person can only have one draft at a time, and inactive kaumātua cannot start a new assessment. Their existing results stay available.
 
 First check the **Assessment date** and select **Save date**. The date cannot be in the future or before their date of birth. Until the date is saved, the other buttons are disabled.
 
@@ -27,6 +27,8 @@ For each exercise choose an outcome: **Measured**, **Unable / stopped for safety
 
 ## Comparing results over time
 
-The profile lists every assessment in the **Assessment history** table with the raw measurements. Choose an exercise in **Exercise to compare** to see a chart of completed assessments. These are raw measurements, not clinical risk ratings.
+The **Baseline and latest completed assessments** table puts the earliest completed assessment beside the most recent one, ordered by assessment date. It shows the change as latest minus baseline. With one completed assessment, a follow-up is needed; drafts do not establish a baseline. Missing or incompatible results show **Not comparable**, rather than a made-up change. Different testing conditions can affect comparisons.
+
+The profile also lists every assessment in the **Assessment history** table with the raw measurements. Choose an exercise in **Exercise to compare** to see a chart of completed assessments. These are raw measurements, not clinical risk ratings.
 
 If someone else changed the assessment while you had it open, you will see "This assessment changed. Reload it before saving." Select **Reload saved assessment** and try again.

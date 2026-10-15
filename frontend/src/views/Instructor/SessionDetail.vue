@@ -22,10 +22,10 @@ const saveError = ref(null)
 const statusFilter = ref('all')
 const isInstructor = computed(() => auth.user?.role === 'instructor')
 const isSuperAdmin = computed(() => auth.user?.role === 'super_admin')
-const canRecordAttendance = computed(() => ['instructor', 'branch_manager'].includes(auth.user?.role))
+const canRecordAttendance = computed(() => ['super_admin', 'instructor', 'branch_manager'].includes(auth.user?.role))
 const listRouteName = computed(() => isSuperAdmin.value ? 'sa-sessions' : isInstructor.value ? 'in-sessions' : 'bm-sessions')
 const attendanceModeRoute = computed(() => ({
-  name: isInstructor.value ? 'in-attendance-mode' : 'bm-attendance-mode',
+  name: isSuperAdmin.value ? 'sa-attendance-mode' : isInstructor.value ? 'in-attendance-mode' : 'bm-attendance-mode',
   params: { id: sessionId },
   query: session.value?.attendance_finalised ? { review: '1' } : {},
 }))
@@ -136,8 +136,7 @@ async function handleDelete() {
         </div>
 
         <p class="page-subtitle">
-          <template v-if="isSuperAdmin">{{ session.attendance_finalised ? 'Attendance finalised.' : 'Attendance not finalised. The register may still change.' }}</template>
-          <template v-else>{{ session.attendance_finalised ? 'Attendance finalised. Use Review attendance to edit absence reasons, or reopen attendance to change who was present.' : 'Attendance not finalised. Use Done in attendance mode to finalise.' }}</template>
+          {{ session.attendance_finalised ? 'Attendance finalised. Use Review attendance to edit absence reasons, or reopen attendance to change who was present.' : 'Attendance not finalised. Use Done in attendance mode to finalise.' }}
         </p>
 
         <div class="stat-grid">

@@ -13,4 +13,6 @@ Select a name to open that person's profile.
 
 ## Enrolling someone new
 
-Kaimahi cannot enrol a new kaumātua in the app. Only a super admin can enrol people, so ask your branch manager to arrange it with a super admin. Once they are enrolled and active, they are added to every new session you create.
+Select **+ Enrol participant**. Enter their first and last name (required), plus any known preferred name, contact details, date of birth, emergency contacts and date joined. Your kapa is assigned automatically. Select **Enrol participant** to save. The form retains your entries if saving fails.
+
+Kaimahi can enrol participants at their own kapa and record photo consent later on the Details page. Branch managers can also record GP consent when enrolling. Once enrolled and active, the person is added to sessions created afterwards; existing session rosters do not change.

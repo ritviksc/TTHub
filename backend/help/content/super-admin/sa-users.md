@@ -5,7 +5,7 @@ order: 20
 ---
 ## The users list
 
-Open **Users**. Filter by role with **All**, **Branch Managers**, **Instructors** or **Super Admins**, and by kapa with the branch list. The table shows each person's name, email, role, kapa and whether they are active. Your own account is not listed, so you cannot edit or deactivate yourself.
+Open **Administration → Users**. Filter by role with **All**, **Branch Managers**, **Instructors** or **Super Admins**, and by kapa with the branch list. The table shows each person's name, email, role, kapa and whether they are active. Your own account is not listed, so you cannot edit or deactivate yourself.
 
 ## Adding a staff account
 

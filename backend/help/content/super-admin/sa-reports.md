@@ -5,7 +5,7 @@ order: 50
 ---
 ## Choosing a report
 
-Open **Reporting**. There are three cards: **ACC reporting**, **Attendance reporting** and **Physical-testing reporting**. Each has a link to the statistics or draft, and a link to past reports.
+Open **Reports**. There are three cards: **ACC reporting**, **Attendance reporting** and **Physical-testing reporting**. Each has a link to the statistics or draft, and a link to past reports.
 
 ## Choosing the period and kapa
 

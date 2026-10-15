@@ -98,6 +98,11 @@ const router = createRouter({
             meta: { requiresAuth: true, roles: SA },
         },
         {
+            path: '/super-admin/sessions/:id/attendance', name: 'sa-attendance-mode',
+            component: () => import('@/views/Instructor/AttendanceMode.vue'),
+            meta: { requiresAuth: true, roles: SA },
+        },
+        {
             path: '/super-admin/users', name: 'sa-users',
             component: () => import('@/views/SuperAdmin/Users.vue'),
             meta: { requiresAuth: true, roles: SA },

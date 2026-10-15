@@ -7,11 +7,11 @@ order: 30
 
 Open **Kaumātua** to see everyone enrolled at your kapa, with **Active** or **Inactive** status. Search by preferred or full name and select a name to open their profile.
 
-There is no enrol button for branch managers. A super admin enrols new kaumātua.
+Select **+ Enrol participant** to add someone. First and last name are required; add known contact details, date joined and emergency contacts. Your kapa is assigned automatically. You can also record GP consent and its date, with an optional supporting document, then select **Enrol participant**.
 
 ## Editing a profile
 
-On the profile you can edit the person's details (name, preferred name, date of birth, contact details, emergency contact, date joined and general notes) and select **Save participant**. General notes are not a clinical record.
+The **Details** and **Attendance history** buttons open separate pages. On Details you can edit the person's details (name, preferred name, date of birth, contact details, emergency contact, date joined and general notes) and select **Save participant**. General notes are not a clinical record.
 
 ## Recording GP consent
 
@@ -32,4 +32,4 @@ In **Documents** on the profile, upload PDF, JPG, PNG, Word or Excel files up to
 
 ## Deactivating
 
-**Deactivate participant** then **Confirm deactivation** stops someone being added to new sessions and keeps their history and results. It cannot be undone in the app.
+**Deactivate participant** then **Confirm deactivation** stops someone being added to new sessions and keeps their history and results. To restore an inactive person, open their Details page and select **Reactivate participant**, then **Confirm reactivation**. They can be included in new sessions again. Existing rosters, attendance history and physical results are retained.
